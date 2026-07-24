@@ -41,7 +41,7 @@
 <body>
 <h1 id="docs-technical-reference">docs — Technical Reference</h1>
 <blockquote>
-<p>Auto-generated on 2026-07-24 15:27 CT from docs/sys/
+<p>Auto-generated on 2026-07-24 16:50 CT from docs/sys/
 Source: <code>scripts/build_reference.py</code></p>
 </blockquote>
 <h2 id="table-of-contents">Table of Contents</h2>
@@ -71,17 +71,24 @@ Source: <code>scripts/build_reference.py</code></p>
 │       ├── app.py             # PySidePWManager — main window and UI logic
 │       ├── dialogs.py         # PasswordGeneratorDialog, DocumentationDialog
 │       └── theme.py           # Dark and light theme stylesheets
-├── aetherlock.py              # Application entry point
+├── main_app_pyside.py         # Thin entry point (delegates to src.main.run)
+├── help_doc.md                # Legacy user documentation
 ├── docs/
 │   ├── USER_GUIDE.md          # Consolidated user documentation
-│   ├── USER_GUIDE.html        # HTML version for in-app help
-│   └── sys/                   # System documentation (REFERENCE, diagram)
+│   └── sys/                   # System documentation (PLAN, ARCHITECTURE, etc.)
+├── instructions/              # Prompt templates for AI workflow
+├── scripts/                   # Utility scripts (build_reference, cost, etc.)
 ├── assets/                    # Application icon resources
+├── .portable                  # Portable mode marker (created at runtime)
+├── AGENTS.md                  # Agent instructions (READ ONLY)
+├── aetherlock.spec           # PyInstaller build spec
 ├── .gitignore
 ├── .repomixignore
 ├── requirements.txt
-├── LICENSE
-└── README.md
+├── password_manager.db        # Encrypted vault (SQLite)
+├── password_manager.db.bak    # Auto-backup
+├── .master.key                # Master password hash (PBKDF2)
+└── .app_settings.json         # App settings (lockout, theme, etc.)
 </code></pre>
 <h2 id="architecture-layers">Architecture Layers</h2>
 <h3 id="1-data-layer-srccore_logicpy-srcdb_managerpy">1. Data Layer (<code>src/core_logic.py</code>, <code>src/db_manager.py</code>)</h3>
@@ -171,8 +178,8 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <td>User-facing documentation (opened from Help menu)</td>
 </tr>
 <tr>
-<td><code>aetherlock.py</code></td>
-<td>Application entry point</td>
+<td><code>aetherlock.spec</code></td>
+<td>PyInstaller spec for building standalone <code>.exe</code></td>
 </tr>
 </tbody>
 </table>
@@ -242,6 +249,7 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li><strong>2026-07-24 (session 2)</strong>: Fixed F0 (missing sys import), F1 (backup call order), F2 (assets dir). Refactored monolithic main_app_pyside.py (~1250 lines) into src/ package (7 files). Added dark/light theme support. Updated PyInstaller spec, .gitignore, requirements.txt.</li>
 <li><strong>2026-07-24 (session 3)</strong>: Added system tray icon with quick-lock (A2). Added portable mode detection (A3). Created venv/ symlink (C3).</li>
 <li><strong>2026-07-24 (session 4)</strong>: Category+tag filters, password health report, entry tags, custom fields, sort toggle, double-click copy, context menu, click-to-filter, favicon fetch, rich text notes, one-click backup. Fixed auto-lock timer bypass, strength bar grid collision, quit-to-tray bug, header clipping, RuntimeWarning. UI polish: QComboBox height matching, right-aligned labels, proportional form stretching, splitter sizing.</li>
+<li><strong>2026-07-24 (session 5)</strong>: Added docstrings to all 129 modules/classes/functions. GitHub Actions CI for Win+macOS builds. Help opens in browser. Cleaned up <code>.gitignore</code> and untracked <code>AGENTS.md</code>, <code>aetherlock.spec</code>, <code>.repomixignore</code>, <code>venv</code>. Updated all doc references from <code>main_app_pyside.py</code> to <code>aetherlock.py</code>.</li>
 </ul>
 <hr />
 <h2 id="project-plan">Project Plan</h2>
@@ -588,6 +596,19 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li>Header text clipping in credential table — added <code>setFixedHeight(50)</code> on horizontal header</li>
 <li><code>sectionClicked.disconnect()</code> RuntimeWarning — moved connection to table creation</li>
 </ul>
+<h2 id="2026-07-24-session-5">2026-07-24 (session 5)</h2>
+<h3 id="added_3">Added</h3>
+<ul>
+<li>Docstrings added to all modules, classes, and functions across 9 source files (~129 items)</li>
+<li>GitHub Actions CI workflow (<code>.github/workflows/build.yml</code>) — builds Windows + macOS executables on release</li>
+<li>Help menu now opens <code>USER_GUIDE.html</code> in system browser via <code>QDesktopServices</code></li>
+</ul>
+<h3 id="changed_2">Changed</h3>
+<ul>
+<li>Cleaned up <code>.gitignore</code>: added <code>.repomixignore</code>, <code>aetherlock.spec</code>, <code>AetherVault/</code></li>
+<li>Removed from tracking: <code>AGENTS.md</code>, <code>aetherlock.spec</code>, <code>.repomixignore</code>, <code>venv</code> symlink</li>
+<li>Updated all doc references from <code>main_app_pyside.py</code> to <code>aetherlock.py</code> / <code>src/gui/app.py</code></li>
+</ul>
 <hr />
 <h2 id="bug-tracker">Bug Tracker</h2>
 <h1 id="aetherlock-bug-tracker">AetherLock Bug Tracker</h1>
@@ -706,6 +727,12 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <td>2026-07-24 (session 2-4)</td>
 <td>DeepSeek V4 Flash</td>
 <td>~$0.15</td>
+</tr>
+<tr>
+<td>2026-07-24</td>
+<td>2026-07-24 (session 5)</td>
+<td>DeepSeek V4 Flash</td>
+<td>~$0.03</td>
 </tr>
 </tbody>
 </table>
@@ -1174,6 +1201,6 @@ flowchart TD
 </code></pre>
 <p>```</p>
 <hr />
-<p><em>Generated on 2026-07-24 15:27 CT by <code>scripts/build_reference.py</code></em></p>
+<p><em>Generated on 2026-07-24 16:50 CT by <code>scripts/build_reference.py</code></em></p>
 </body>
 </html>

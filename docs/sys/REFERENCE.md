@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-07-24 15:27 CT from docs/sys/
+> Auto-generated on 2026-07-24 16:50 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -34,17 +34,24 @@ AetherLock/
 │       ├── app.py             # PySidePWManager — main window and UI logic
 │       ├── dialogs.py         # PasswordGeneratorDialog, DocumentationDialog
 │       └── theme.py           # Dark and light theme stylesheets
-├── aetherlock.py              # Application entry point
+├── main_app_pyside.py         # Thin entry point (delegates to src.main.run)
+├── help_doc.md                # Legacy user documentation
 ├── docs/
 │   ├── USER_GUIDE.md          # Consolidated user documentation
-│   ├── USER_GUIDE.html        # HTML version for in-app help
-│   └── sys/                   # System documentation (REFERENCE, diagram)
+│   └── sys/                   # System documentation (PLAN, ARCHITECTURE, etc.)
+├── instructions/              # Prompt templates for AI workflow
+├── scripts/                   # Utility scripts (build_reference, cost, etc.)
 ├── assets/                    # Application icon resources
+├── .portable                  # Portable mode marker (created at runtime)
+├── AGENTS.md                  # Agent instructions (READ ONLY)
+├── aetherlock.spec           # PyInstaller build spec
 ├── .gitignore
 ├── .repomixignore
 ├── requirements.txt
-├── LICENSE
-└── README.md
+├── password_manager.db        # Encrypted vault (SQLite)
+├── password_manager.db.bak    # Auto-backup
+├── .master.key                # Master password hash (PBKDF2)
+└── .app_settings.json         # App settings (lockout, theme, etc.)
 ```
 
 ## Architecture Layers
@@ -112,7 +119,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 | `src/gui/theme.py` | Dark/light mode stylesheets, QPalette |
 | `src/main.py` | QApplication entry point |
 | `docs/USER_GUIDE.md` | User-facing documentation (opened from Help menu) |
-| `aetherlock.py` | Application entry point |
+| `aetherlock.spec` | PyInstaller spec for building standalone `.exe` |
 
 ## Key Decisions
 
@@ -159,6 +166,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 - **2026-07-24 (session 2)**: Fixed F0 (missing sys import), F1 (backup call order), F2 (assets dir). Refactored monolithic main_app_pyside.py (~1250 lines) into src/ package (7 files). Added dark/light theme support. Updated PyInstaller spec, .gitignore, requirements.txt.
 - **2026-07-24 (session 3)**: Added system tray icon with quick-lock (A2). Added portable mode detection (A3). Created venv/ symlink (C3).
 - **2026-07-24 (session 4)**: Category+tag filters, password health report, entry tags, custom fields, sort toggle, double-click copy, context menu, click-to-filter, favicon fetch, rich text notes, one-click backup. Fixed auto-lock timer bypass, strength bar grid collision, quit-to-tray bug, header clipping, RuntimeWarning. UI polish: QComboBox height matching, right-aligned labels, proportional form stretching, splitter sizing.
+- **2026-07-24 (session 5)**: Added docstrings to all 129 modules/classes/functions. GitHub Actions CI for Win+macOS builds. Help opens in browser. Cleaned up `.gitignore` and untracked `AGENTS.md`, `aetherlock.spec`, `.repomixignore`, `venv`. Updated all doc references from `main_app_pyside.py` to `aetherlock.py`.
 
 ---
 
@@ -450,6 +458,18 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 - Header text clipping in credential table — added `setFixedHeight(50)` on horizontal header
 - `sectionClicked.disconnect()` RuntimeWarning — moved connection to table creation
 
+## 2026-07-24 (session 5)
+
+### Added
+- Docstrings added to all modules, classes, and functions across 9 source files (~129 items)
+- GitHub Actions CI workflow (`.github/workflows/build.yml`) — builds Windows + macOS executables on release
+- Help menu now opens `USER_GUIDE.html` in system browser via `QDesktopServices`
+
+### Changed
+- Cleaned up `.gitignore`: added `.repomixignore`, `aetherlock.spec`, `AetherVault/`
+- Removed from tracking: `AGENTS.md`, `aetherlock.spec`, `.repomixignore`, `venv` symlink
+- Updated all doc references from `main_app_pyside.py` to `aetherlock.py` / `src/gui/app.py`
+
 ---
 
 ## Bug Tracker
@@ -556,6 +576,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 |------|----------|-------|------|
 | 2026-07-24 | 2026-07-24 (1 day) | DeepSeek V4 Flash | $0.00 |
 | 2026-07-24 | 2026-07-24 (session 2-4) | DeepSeek V4 Flash | ~$0.15 |
+| 2026-07-24 | 2026-07-24 (session 5) | DeepSeek V4 Flash | ~$0.03 |
 
 ## Cost Breakdown
 
@@ -1018,4 +1039,4 @@ classDiagram
 
 ---
 
-*Generated on 2026-07-24 15:27 CT by `scripts/build_reference.py`*
+*Generated on 2026-07-24 16:50 CT by `scripts/build_reference.py`*
