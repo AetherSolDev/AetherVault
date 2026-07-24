@@ -60,3 +60,6 @@ docs/sys/PLAN.md
 docs/sys/TASKS.md
 docs/sys/Model_Pricing_Reference.txt
 docs/sys/function_inventory.*
+
+# Scripts/ Individual scripts for prooduction.
+scripts/
