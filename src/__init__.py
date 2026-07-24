@@ -1,7 +1,9 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-24 14:13 CT (America/Chicago)
+# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
 # Path: src/__init__.py
 # Purpose: Package init for AetherLock source. Defines PROJECT_ROOT and portable mode.
+
+"""Package initializer for AetherLock providing PROJECT_ROOT, version constants, and portable mode controls."""
 
 __version__ = "6.0.0"
 VERSION = __version__
@@ -20,10 +22,12 @@ PORTABLE_MARKER = ".portable"
 
 
 def is_portable() -> bool:
+    """Return True if the portable marker file exists in PROJECT_ROOT."""
     return os.path.exists(os.path.join(PROJECT_ROOT, PORTABLE_MARKER))
 
 
 def enable_portable_mode() -> bool:
+    """Create the portable marker file and return True, or return False on failure."""
     try:
         path = os.path.join(PROJECT_ROOT, PORTABLE_MARKER)
         if not os.path.exists(path):
@@ -35,6 +39,7 @@ def enable_portable_mode() -> bool:
 
 
 def disable_portable_mode() -> bool:
+    """Remove the portable marker file and return True, or return False on failure."""
     try:
         path = os.path.join(PROJECT_ROOT, PORTABLE_MARKER)
         if os.path.exists(path):

@@ -1,7 +1,9 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-24 14:13 CT (America/Chicago)
+# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
 # Path: src/gui/app.py
 # Purpose: Main application window and UI logic for AetherLock.
+
+"""Main application window and UI logic for AetherLock."""
 
 import json
 import os
@@ -10,11 +12,11 @@ import shutil
 from typing import List, Optional
 
 from PySide6.QtCore import QEvent, QObject, Qt, QTimer, QUrl
-from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from PySide6.QtGui import (
-    QAction, QColor, QFont, QIcon, QKeySequence,
+    QAction, QColor, QDesktopServices, QFont, QIcon, QKeySequence,
     QPainter, QPixmap, QShortcut,
 )
+from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -75,12 +77,16 @@ AUTO_CLEAR_DELAY = 30000
 
 
 class ClickToCopyFilter(QObject):
+    """Event filter that copies widget text to clipboard on left-click."""
+
     def __init__(self, parent, field_name: str, callback):
+        """Initialize the filter with a field name and copy callback."""
         super().__init__(parent)
         self._field_name = field_name
         self._callback = callback
 
     def eventFilter(self, obj, event):
+        """Intercept left-clicks and copy the widget's text to clipboard."""
         if event.type() == QEvent.MouseButtonPress and event.button() == Qt.LeftButton:
             text = obj.text() if hasattr(obj, "text") else ""
             if text:
@@ -89,7 +95,10 @@ class ClickToCopyFilter(QObject):
 
 
 class PasswordStrengthBar(QProgressBar):
+    """Progress bar that evaluates and displays password strength."""
+
     def __init__(self, parent=None):
+        """Initialize the strength bar with range 0-100 and hide by default."""
         super().__init__(parent)
         self.setRange(0, 100)
         self.setValue(0)
@@ -98,6 +107,7 @@ class PasswordStrengthBar(QProgressBar):
         self.hide()
 
     def evaluate(self, password: str):
+        """Score a password and update the bar with a color-coded strength level."""
         if not password:
             self.hide()
             return
@@ -138,7 +148,10 @@ class PasswordStrengthBar(QProgressBar):
 
 
 class PySidePWManager(QMainWindow):
+    """Main application window handling authentication, credential management, and UI."""
+
     def __init__(self):
+        """Initialize the main window, load settings, and build the UI."""
         super().__init__()
         self.setWindowTitle("AetherLock")
         self.resize(1100, 700)
@@ -197,11 +210,13 @@ class PySidePWManager(QMainWindow):
     # --- Clipboard ---
 
     def clear_clipboard(self):
+        """Clear the system clipboard and stop the clear timer."""
         QApplication.clipboard().setText("")
         self.clipboard_clear_timer.stop()
         self.status_bar.showMessage("Clipboard cleared.", 3000)
 
     def copy_to_clipboard(self, text: str, field_name: str = ""):
+        """Copy text to clipboard and start the auto-clear timer."""
         if not self.is_authenticated:
             self.status_bar.showMessage("Authentication required to copy.", 3000)
             return
@@ -216,6 +231,7 @@ class PySidePWManager(QMainWindow):
         QTimer.singleShot(30000, self._auto_clear_form_check)
 
     def _auto_clear_form_check(self):
+        """Auto-clear the form if a password was copied and no edit is in progress."""
         if self.last_copied_field == "password" and not self.is_editing:
             self.clear_form()
             self.status_bar.showMessage("Password copied — form auto-cleared.", 3000)
@@ -223,6 +239,7 @@ class PySidePWManager(QMainWindow):
     # --- Password Generator ---
 
     def show_password_generator(self):
+        """Open the password generator dialog and insert the result."""
         dlg = PasswordGeneratorDialog(self)
         if dlg.exec() == QDialog.Accepted:
             pw = dlg.get_password()
@@ -234,6 +251,7 @@ class PySidePWManager(QMainWindow):
     # --- Auth ---
 
     def check_setup_state(self):
+        """Show setup or login screen depending on whether a master password exists."""
         if not self.master_password_hash:
             self.show_auth_screen(setup_mode=True)
             self.status_bar.showMessage(
@@ -243,6 +261,7 @@ class PySidePWManager(QMainWindow):
             self.show_auth_screen(setup_mode=False)
 
     def create_auth_ui(self):
+        """Build the authentication screen with password entry and action button."""
         self.auth_frame = QFrame()
         auth_layout = QVBoxLayout(self.auth_frame)
         self.auth_title = QLabel("Password Vault")
@@ -266,12 +285,14 @@ class PySidePWManager(QMainWindow):
         self.auth_index = self.stacked_widget.addWidget(self.auth_frame)
 
     def action_btn_clicked(self):
+        """Route the auth button click to set password or login."""
         if self.action_btn.text() == "Set Master Password":
             self.set_master_password()
         else:
             self.attempt_login()
 
     def show_auth_screen(self, setup_mode=False):
+        """Switch to the authentication screen in setup or login mode."""
         self.stacked_widget.setCurrentIndex(self.auth_index)
         if setup_mode:
             self.auth_title.setText("Setup Master Password")
@@ -288,6 +309,7 @@ class PySidePWManager(QMainWindow):
         self._update_tray_lock_action()
 
     def set_master_password(self):
+        """Validate and store a new master password."""
         pw = self.master_pass_entry.text()
         if len(pw) < 8:
             QMessageBox.warning(
@@ -305,6 +327,7 @@ class PySidePWManager(QMainWindow):
             QMessageBox.critical(self, "Error", "Failed to save master password file.")
 
     def attempt_login(self):
+        """Verify master password and unlock the vault."""
         pw = self.master_pass_entry.text()
         if not pw:
             self.status_bar.showMessage("Please enter a password.", 3000)
@@ -321,6 +344,7 @@ class PySidePWManager(QMainWindow):
             self.status_bar.showMessage("Login failed.", 3000)
 
     def show_main_app(self):
+        """Switch to the main credential management view after successful login."""
         self.stacked_widget.setCurrentIndex(self.main_index)
         self.credentials = self.db_manager.load_all_credentials()
         self.update_list_view()
@@ -332,6 +356,7 @@ class PySidePWManager(QMainWindow):
     # --- Password Visibility ---
 
     def _toggle_password_visibility_button(self, checked):
+        """Toggle the password field between masked and visible text."""
         if checked:
             self.password_entry_ref.setEchoMode(QLineEdit.EchoMode.Normal)
             self.toggle_pass_btn.setText("\U0001f441")
@@ -342,14 +367,22 @@ class PySidePWManager(QMainWindow):
     # --- Theme ---
 
     def show_documentation(self):
-        DocumentationDialog(self).exec()
+        """Open the user guide documentation in the system browser."""
+        path = resource_path(os.path.join("docs", "USER_GUIDE.html"))
+        if os.path.exists(path):
+            QDesktopServices.openUrl(QUrl.fromLocalFile(path))
+        else:
+            QMessageBox.warning(self, "Help Not Found",
+                                "Documentation file not found at:\n" + path)
 
     def _apply_theme(self):
+        """Apply the current theme (light/dark) to the application instance."""
         app = QApplication.instance()
         if app:
             apply_app_theme(app, self.settings.get("theme", "light"))
 
     def toggle_theme(self):
+        """Switch between light and dark themes and persist the choice."""
         current = self.settings.get("theme", "light")
         new_theme = "dark" if current == "light" else "light"
         self.settings["theme"] = new_theme
@@ -363,6 +396,7 @@ class PySidePWManager(QMainWindow):
     # --- View / Edit Mode ---
 
     def enter_view_mode(self):
+        """Switch the form to read-only view mode."""
         self.is_editing = False
         self._set_form_readonly(True)
         self.gen_pass_btn.hide()
@@ -380,6 +414,7 @@ class PySidePWManager(QMainWindow):
         self.strength_bar.hide()
 
     def enter_edit_mode(self):
+        """Switch the form to editable mode for the current entry."""
         if self.current_entry_id is None:
             return
         self.is_editing = True
@@ -395,6 +430,7 @@ class PySidePWManager(QMainWindow):
         self.password_entry_ref.setFocus()
 
     def enter_new_mode(self):
+        """Clear the form and switch to new-entry creation mode."""
         self.is_editing = True
         self.previous_entry_id = self.current_entry_id
         self._clear_fields()
@@ -412,6 +448,7 @@ class PySidePWManager(QMainWindow):
         self.credential_table.clearSelection()
 
     def cancel_edit(self):
+        """Discard changes and return to view mode, restoring the previous entry."""
         if self.current_entry_id:
             entry = next(
                 (c for c in self.credentials if c.db_id == self.current_entry_id), None
@@ -432,6 +469,7 @@ class PySidePWManager(QMainWindow):
         self.enter_view_mode()
 
     def _add_custom_field_row(self):
+        """Add a blank row to the custom fields table."""
         r = self.custom_fields_table.rowCount()
         self.custom_fields_table.insertRow(r)
         self.custom_fields_table.setItem(r, 0, QTableWidgetItem(""))
@@ -439,12 +477,14 @@ class PySidePWManager(QMainWindow):
         self.form_modified()
 
     def _remove_custom_field_row(self):
+        """Remove the selected row from the custom fields table."""
         r = self.custom_fields_table.currentRow()
         if r >= 0:
             self.custom_fields_table.removeRow(r)
             self.form_modified()
 
     def _set_form_readonly(self, ro: bool):
+        """Set all form input fields to read-only or editable."""
         for le in self.input_fields.values():
             le.setReadOnly(ro)
         self.notes_entry.setReadOnly(ro)
@@ -458,6 +498,7 @@ class PySidePWManager(QMainWindow):
             btn.setVisible(not ro)
 
     def _clear_fields(self):
+        """Clear all form fields and reset the custom fields table."""
         for le in self.input_fields.values():
             le.blockSignals(True)
             le.clear()
@@ -471,6 +512,7 @@ class PySidePWManager(QMainWindow):
             self.toggle_pass_btn.setChecked(False)
 
     def _select_entry_in_table(self, db_id: int):
+        """Select the table row corresponding to the given database ID."""
         for row in range(self.credential_table.rowCount()):
             item = self.credential_table.item(row, 4)
             if item and item.text() == str(db_id):
@@ -480,6 +522,7 @@ class PySidePWManager(QMainWindow):
     # --- Main Content ---
 
     def create_main_content(self):
+        """Build the main splitter layout with credential list and detail form."""
         self.main_content_splitter = QSplitter(Qt.Horizontal)
         self.main_content_splitter.setHandleWidth(6)
 
@@ -705,6 +748,7 @@ class PySidePWManager(QMainWindow):
         self._set_form_readonly(True)
 
     def _on_password_text_changed(self, text):
+        """Evaluate password strength and mark the form as modified."""
         if self.is_editing:
             self.strength_bar.evaluate(text)
             self.form_modified()
@@ -712,6 +756,7 @@ class PySidePWManager(QMainWindow):
     # --- Table & Selection ---
 
     def _populate_category_filter(self):
+        """Refresh the category filter dropdown from current credentials."""
         current = self.category_filter.currentText()
         self.category_filter.blockSignals(True)
         self.category_filter.clear()
@@ -726,6 +771,7 @@ class PySidePWManager(QMainWindow):
         self.category_filter.blockSignals(False)
 
     def _populate_tag_filter(self):
+        """Refresh the tag filter dropdown from current credentials."""
         current = self.tag_filter.currentText()
         self.tag_filter.blockSignals(True)
         self.tag_filter.clear()
@@ -744,6 +790,7 @@ class PySidePWManager(QMainWindow):
         self.tag_filter.blockSignals(False)
 
     def update_list_view(self):
+        """Filter credentials by search, category, and tag, then refresh the table."""
         if not self.is_authenticated:
             return
         search = self.search_entry.text().lower()
@@ -806,6 +853,7 @@ class PySidePWManager(QMainWindow):
         self._populate_tag_filter()
 
     def _handle_sort(self, column: int):
+        """Sort the credential table by the clicked column, toggling order on re-click."""
         if column == 4:
             return
         if self.sort_column == column:
@@ -816,6 +864,7 @@ class PySidePWManager(QMainWindow):
         self.credential_table.sortItems(column, self.sort_order)
 
     def _table_cell_double_clicked(self, row: int, col: int):
+        """Copy the double-clicked cell's text to clipboard."""
         if not self.is_authenticated:
             return
         if col == 4:
@@ -828,6 +877,7 @@ class PySidePWManager(QMainWindow):
         self.copy_to_clipboard(item.text(), label)
 
     def _table_cell_clicked(self, row: int, col: int):
+        """Filter by category when a category cell is clicked."""
         if not self.is_authenticated:
             return
         if col != 3:
@@ -840,6 +890,7 @@ class PySidePWManager(QMainWindow):
             self.category_filter.setCurrentIndex(idx)
 
     def _table_context_menu(self, pos):
+        """Show a right-click context menu for the credential table."""
         if not self.is_authenticated:
             return
         item = self.credential_table.itemAt(pos)
@@ -865,6 +916,7 @@ class PySidePWManager(QMainWindow):
         menu.exec(self.credential_table.viewport().mapToGlobal(pos))
 
     def _context_copy_password(self):
+        """Copy the password of the currently right-clicked row."""
         entry_id_item = self.credential_table.item(self.credential_table.currentRow(), 4)
         if not entry_id_item:
             return
@@ -877,13 +929,16 @@ class PySidePWManager(QMainWindow):
             self.copy_to_clipboard(entry.password, "password")
 
     def _context_edit(self):
+        """Enter edit mode from the context menu."""
         if self.current_entry_id:
             self.enter_edit_mode()
 
     def _context_delete(self):
+        """Delete the current entry from the context menu."""
         self.delete_credential()
 
     def _fetch_favicons(self):
+        """Fetch favicons for all credential URLs via Google's favicon service."""
         if not self.is_authenticated:
             return QMessageBox.warning(self, "Denied", "Login first.")
         if not self.credentials:
@@ -910,6 +965,7 @@ class PySidePWManager(QMainWindow):
             reply.finished.connect(lambda r=reply, d=domain: self._on_favicon_fetched(r, d))
 
     def _on_favicon_fetched(self, reply, domain: str):
+        """Cache the downloaded favicon and refresh the table."""
         data = reply.readAll()
         reply.deleteLater()
         if data and len(data) > 0:
@@ -919,6 +975,7 @@ class PySidePWManager(QMainWindow):
                 self.update_list_view()
 
     def display_selected_entry(self):
+        """Populate the form with the credential selected in the table."""
         if self.is_editing:
             return
         rows = self.credential_table.selectionModel().selectedRows()
@@ -943,6 +1000,7 @@ class PySidePWManager(QMainWindow):
             self.fill_form(entry)
 
     def _custom_fields_from_entry(self, raw: str):
+        """Parse JSON custom fields and populate the custom fields table."""
         self.custom_fields_table.setRowCount(0)
         if not raw:
             return
@@ -960,6 +1018,7 @@ class PySidePWManager(QMainWindow):
                 self.custom_fields_table.setItem(r, 1, QTableWidgetItem(pair.get("value", "")))
 
     def _custom_fields_to_json(self) -> str:
+        """Serialize the custom fields table contents to a JSON string."""
         pairs = []
         for r in range(self.custom_fields_table.rowCount()):
             f = self.custom_fields_table.item(r, 0)
@@ -971,6 +1030,7 @@ class PySidePWManager(QMainWindow):
         return json.dumps(pairs)
 
     def fill_form(self, entry: CredentialEntry):
+        """Populate all form fields with data from a CredentialEntry."""
         for key, le in self.input_fields.items():
             v = getattr(entry, key, "") or ""
             le.blockSignals(True)
@@ -988,6 +1048,7 @@ class PySidePWManager(QMainWindow):
         self.enter_view_mode()
 
     def clear_form(self):
+        """Clear the form fields and deselect the current entry."""
         self._clear_fields()
         self.current_entry_id = None
         self.is_form_modified = False
@@ -995,6 +1056,7 @@ class PySidePWManager(QMainWindow):
         self.enter_view_mode()
 
     def form_modified(self):
+        """Mark the form as modified and enable the Save button."""
         if self.is_editing:
             self.is_form_modified = True
             self.save_btn.setEnabled(True)
@@ -1002,6 +1064,7 @@ class PySidePWManager(QMainWindow):
     # --- Save / Delete ---
 
     def save_credential(self):
+        """Validate and save the current credential entry to the database."""
         title = self.input_fields["title"].text().strip()
         password = self.input_fields["password"].text().strip()
         if not title or not password:
@@ -1033,6 +1096,7 @@ class PySidePWManager(QMainWindow):
         self.status_bar.showMessage(msg, 5000)
 
     def delete_credential(self):
+        """Prompt for confirmation and delete the current credential entry."""
         if self.current_entry_id is None:
             return
         title = self.input_fields["title"].text()
@@ -1054,6 +1118,7 @@ class PySidePWManager(QMainWindow):
     # --- Import / Export / Backup ---
 
     def handle_export(self):
+        """Export all credentials to a CSV file selected by the user."""
         if not self.credentials:
             QMessageBox.warning(self, "Export Failed", "No credentials to export.")
             return
@@ -1071,6 +1136,7 @@ class PySidePWManager(QMainWindow):
                 QMessageBox.critical(self, "Export Failed", str(e))
 
     def handle_import(self):
+        """Import credentials from a CSV file selected by the user."""
         path, _ = QFileDialog.getOpenFileName(
             self, "Import Credentials", os.path.expanduser("~"), "CSV Files (*.csv)"
         )
@@ -1092,6 +1158,7 @@ class PySidePWManager(QMainWindow):
                     QMessageBox.critical(self, "Import Failed", str(e))
 
     def handle_backup(self):
+        """Create a timestamped backup copy of the database file."""
         if not os.path.exists(DB_PATH):
             QMessageBox.warning(self, "No Vault", "Nothing to back up.")
             return
@@ -1108,6 +1175,7 @@ class PySidePWManager(QMainWindow):
             self.db_manager._connect()
 
     def handle_restore(self):
+        """Restore the database from a user-selected backup file."""
         reply = QMessageBox.question(
             self, "CRITICAL WARNING",
             "Overwrite current vault with a backup?",
@@ -1137,6 +1205,7 @@ class PySidePWManager(QMainWindow):
     # --- About ---
 
     def show_about_dialog(self):
+        """Display the About dialog with application version and license info."""
         QMessageBox.about(
             self, "About AetherLock",
             "<h2>AetherLock</h2>"
@@ -1157,6 +1226,7 @@ class PySidePWManager(QMainWindow):
     # --- Menu Bar ---
 
     def setup_menu_bar(self):
+        """Create the application menu bar with File, Tools, Settings, and Help menus."""
         mb = QMenuBar()
 
         fm = mb.addMenu("&File")
@@ -1227,6 +1297,7 @@ class PySidePWManager(QMainWindow):
         self.setMenuBar(mb)
 
     def update_lockout_menu_state(self):
+        """Update the check marks on the auto-lock menu to match current settings."""
         cur = self.settings.get("lockout_minutes", DEFAULT_LOCKOUT_MINUTES)
         for a in self.lockout_actions:
             if "Minutes" in a.text():
@@ -1241,6 +1312,7 @@ class PySidePWManager(QMainWindow):
             a.setChecked(m == cur)
 
     def set_lockout_time(self, minutes: int):
+        """Set the inactivity lockout duration and reset the activity timer."""
         self.settings["lockout_minutes"] = minutes
         save_settings(self.settings)
         self.update_lockout_menu_state()
@@ -1253,6 +1325,7 @@ class PySidePWManager(QMainWindow):
     # --- Shortcuts ---
 
     def setup_shortcuts(self):
+        """Register keyboard shortcuts for common actions."""
         QShortcut(QKeySequence("Ctrl+N"), self, self.enter_new_mode)
         QShortcut(QKeySequence("Ctrl+E"), self, self._shortcut_edit)
         QShortcut(QKeySequence("Ctrl+S"), self, self._shortcut_save)
@@ -1260,24 +1333,29 @@ class PySidePWManager(QMainWindow):
         QShortcut(QKeySequence("/"), self, self._shortcut_search)
 
     def _shortcut_edit(self):
+        """Enter edit mode via Ctrl+E shortcut."""
         if not self.is_editing and self.current_entry_id:
             self.enter_edit_mode()
 
     def _shortcut_save(self):
+        """Save the current entry via Ctrl+S shortcut."""
         if self.is_editing:
             self.save_credential()
 
     def _shortcut_escape(self):
+        """Cancel editing via Esc shortcut."""
         if self.is_editing:
             self.cancel_edit()
 
     def _shortcut_search(self):
+        """Focus the search field via / shortcut."""
         self.search_entry.setFocus()
         self.search_entry.selectAll()
 
     # --- Activity Lock ---
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
+        """Reset the activity timer on mouse, keyboard, or deactivation events."""
         if self.is_authenticated:
             if event.type() in (
                 QEvent.MouseMove, QEvent.KeyPress, QEvent.MouseButtonPress,
@@ -1288,6 +1366,7 @@ class PySidePWManager(QMainWindow):
         return super().eventFilter(source, event)
 
     def reset_activity_timer(self):
+        """Restart the inactivity lockout timer based on current settings."""
         mins = self.settings.get("lockout_minutes", DEFAULT_LOCKOUT_MINUTES)
         if mins == LOCKOUT_NEVER:
             if hasattr(self, "activity_lock_timer"):
@@ -1303,6 +1382,7 @@ class PySidePWManager(QMainWindow):
             self.activity_lock_timer.start(ms)
 
     def lock_application(self):
+        """Lock the application due to inactivity and clear the clipboard."""
         if self.is_authenticated:
             QMessageBox.information(
                 self, "Session Locked", "Inactivity detected. Re-login required."
@@ -1314,6 +1394,7 @@ class PySidePWManager(QMainWindow):
     # --- Password Health ---
 
     def show_password_health(self):
+        """Analyze all credentials and display a password health report dialog."""
         if not self.is_authenticated:
             return QMessageBox.warning(self, "Denied", "Login first.")
         if not self.credentials:
@@ -1398,6 +1479,7 @@ class PySidePWManager(QMainWindow):
     # --- Duplicates ---
 
     def find_and_remove_duplicates_ui(self):
+        """Find and remove duplicate credentials (same title + username, keep oldest)."""
         if not self.is_authenticated:
             return QMessageBox.warning(self, "Denied", "Login first.")
         if not self.credentials:
@@ -1421,6 +1503,7 @@ class PySidePWManager(QMainWindow):
     # --- Auto Backup ---
 
     def _auto_backup_db(self, reason: str):
+        """Perform an automatic database backup to the designated backup path."""
         if not os.path.exists(DB_PATH):
             return
         try:
@@ -1434,6 +1517,7 @@ class PySidePWManager(QMainWindow):
     # --- Portable Mode ---
 
     def toggle_portable_mode(self):
+        """Toggle the application between portable and standard modes."""
         if is_portable():
             if disable_portable_mode():
                 self.status_bar.showMessage("Portable mode disabled.", 3000)
@@ -1461,6 +1545,7 @@ class PySidePWManager(QMainWindow):
     # --- System Tray ---
 
     def _make_tray_icon(self) -> QIcon:
+        """Create and return a programmatic system tray icon."""
         pixmap = QPixmap(16, 16)
         pixmap.fill(Qt.transparent)
         painter = QPainter(pixmap)
@@ -1475,6 +1560,7 @@ class PySidePWManager(QMainWindow):
         return QIcon(pixmap)
 
     def _setup_system_tray(self):
+        """Initialize the system tray icon with a context menu."""
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(self._make_tray_icon())
         self.tray_icon.setToolTip("AetherLock")
@@ -1495,6 +1581,7 @@ class PySidePWManager(QMainWindow):
         self.tray_icon.show()
 
     def _update_tray_lock_action(self):
+        """Enable or disable the tray lock action based on auth state."""
         if hasattr(self, "tray_lock_action"):
             self.tray_lock_action.setEnabled(self.is_authenticated)
             self.tray_lock_action.setText(
@@ -1502,19 +1589,23 @@ class PySidePWManager(QMainWindow):
             )
 
     def _tray_activated(self, reason):
+        """Show the window on double-click of the tray icon."""
         if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
             self._show_window()
 
     def _show_window(self):
+        """Bring the application window to the foreground."""
         self.show()
         self.raise_()
         self.activateWindow()
 
     def _tray_lock(self):
+        """Lock the vault from the system tray menu."""
         if self.is_authenticated:
             self.lock_application()
 
     def _quit_application(self):
+        """Clean up resources and quit the application."""
         self.tray_icon.hide()
         if self.is_authenticated and os.path.exists(DB_PATH):
             self._auto_backup_db(reason="Shutdown")
@@ -1525,6 +1616,7 @@ class PySidePWManager(QMainWindow):
     # --- Close ---
 
     def closeEvent(self, event):
+        """Minimize to tray instead of closing the application."""
         event.ignore()
         self.hide()
         self.status_bar.showMessage("Minimized to tray.", 3000)

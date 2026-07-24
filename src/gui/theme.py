@@ -1,13 +1,17 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-24 00:37 CT (America/Chicago)
+# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
 # Path: src/gui/theme.py
 # Purpose: Unified theme system — AetherTime-compatible dark/light palettes and QSS.
+
+"""Unified theme system with dark/light color palettes and QSS stylesheets."""
 
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication
 
 
 class ThemeColors:
+    """Light theme color constants for the application palette."""
+
     BG_PRIMARY = "#f8f9fa"
     BG_SECONDARY = "#ffffff"
     BG_TERTIARY = "#f1f2f6"
@@ -32,6 +36,8 @@ class ThemeColors:
 
 
 class DarkThemeColors:
+    """Dark theme color constants for the application palette."""
+
     BG_PRIMARY = "#1a1a2e"
     BG_SECONDARY = "#2d2d44"
     BG_TERTIARY = "#3d3d5c"
@@ -326,6 +332,7 @@ QSplitter::handle {
 
 
 def apply_theme(app: QApplication, theme_name: str = "light") -> None:
+    """Apply the named theme (light or dark) stylesheet and palette to the application."""
     if theme_name == "dark":
         app.setStyleSheet(DARK_STYLE)
         _apply_dark_palette(app)
@@ -335,6 +342,7 @@ def apply_theme(app: QApplication, theme_name: str = "light") -> None:
 
 
 def _apply_light_palette(app: QApplication) -> None:
+    """Set the application palette to light-mode colors."""
     palette = QPalette()
     palette.setColor(QPalette.ColorRole.Window, QColor(ThemeColors.BG_PRIMARY))
     palette.setColor(QPalette.ColorRole.WindowText, QColor(ThemeColors.TEXT_PRIMARY))
@@ -349,6 +357,7 @@ def _apply_light_palette(app: QApplication) -> None:
 
 
 def _apply_dark_palette(app: QApplication) -> None:
+    """Set the application palette to dark-mode colors."""
     palette = QPalette()
     palette.setColor(QPalette.ColorRole.Window, QColor(DarkThemeColors.BG_PRIMARY))
     palette.setColor(QPalette.ColorRole.WindowText, QColor(DarkThemeColors.TEXT_PRIMARY))

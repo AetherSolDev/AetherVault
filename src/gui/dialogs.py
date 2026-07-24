@@ -1,7 +1,9 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-24 00:37 CT (America/Chicago)
+# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
 # Path: src/gui/dialogs.py
 # Purpose: Dialog classes for password generation and documentation viewing.
+
+"""Dialog classes for password generation and documentation viewing."""
 
 import os
 import sys
@@ -26,6 +28,7 @@ from src.core_logic import generate_strong_password
 
 
 def resource_path(relative_path):
+    """Resolve a file path relative to the application bundle or working directory."""
     try:
         base_path = sys._MEIPASS
     except Exception:
@@ -38,6 +41,7 @@ class PasswordGeneratorDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        """Initialize the dialog, build the UI, and generate an initial password."""
         self.setWindowTitle("Generate Secure Password")
         self.setFixedSize(400, 350)
         self.generated_password = ""
@@ -96,6 +100,7 @@ class PasswordGeneratorDialog(QDialog):
         self._generate_and_display()
 
     def _get_options(self):
+        """Return a dict of current password-generation options from the UI."""
         return {
             "length": self.length_spinbox.value(),
             "use_lower": self.check_lower.isChecked(),
@@ -105,6 +110,7 @@ class PasswordGeneratorDialog(QDialog):
         }
 
     def _generate_and_display(self):
+        """Generate a new password using current options and show it in the display."""
         options = self._get_options()
         if (
             not (
@@ -121,10 +127,12 @@ class PasswordGeneratorDialog(QDialog):
         self.password_display.setText(new_password)
 
     def _accept_password(self):
+        """Store the displayed password and accept the dialog."""
         self.generated_password = self.password_display.text()
         self.accept()
 
     def get_password(self) -> str:
+        """Return the accepted password, or empty string if none was accepted."""
         return self.generated_password
 
 
@@ -133,6 +141,7 @@ class DocumentationDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        """Initialize the dialog, build the UI, and load documentation content."""
         self.setWindowTitle("AetherLock Documentation")
         self.setMinimumSize(700, 500)
         self.layout = QVBoxLayout(self)
@@ -143,6 +152,7 @@ class DocumentationDialog(QDialog):
         self.load_documentation()
 
     def load_documentation(self):
+        """Read the documentation file and display its contents, or show an error."""
         try:
             with open(self.help_file_path, "r", encoding="utf-8") as f:
                 content = f.read()

@@ -1,7 +1,9 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-24 00:37 CT (America/Chicago)
+# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
 # Path: src/main.py
 # Purpose: Application entry point — initializes QApplication and launches main window.
+
+"""Application entry point that initializes QApplication and launches the main window."""
 
 import sys
 
@@ -12,6 +14,7 @@ from src.gui.app import PySidePWManager
 
 
 def run():
+    """Create and run the QApplication, display the main window, and exit on close."""
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     window = PySidePWManager()

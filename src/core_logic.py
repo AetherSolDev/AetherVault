@@ -1,7 +1,9 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-24 00:37 CT (America/Chicago)
+# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
 # Path: src/core_logic.py
 # Purpose: Encryption, hashing, data model, and settings management.
+
+"""Encryption, hashing, credential data model, and application settings management."""
 
 import base64
 import hashlib
@@ -33,6 +35,7 @@ DEFAULT_LOCKOUT_MINUTES = 3
 
 
 def derive_encryption_key(master_password_hash: str) -> bytes:
+    """Derive an AES-256 Fernet key from the master password hash via PBKDF2."""
     if not master_password_hash:
         raise ValueError("Master password hash cannot be empty for key derivation.")
     password_bytes = master_password_hash.encode("utf-8")
@@ -48,12 +51,14 @@ def derive_encryption_key(master_password_hash: str) -> bytes:
 
 
 def get_timestamped_backup_path() -> str:
+    """Return a backup file path with a human-readable timestamp."""
     timestamp = time.strftime("%Y.%m.%d_%H%M%S")
     db_dir = os.path.dirname(DB_PATH)
     return os.path.join(db_dir, f"kiss_vault_{timestamp}.db.bak")
 
 
 def encrypt_data(data: str, key: bytes) -> str:
+    """Encrypt a plaintext string using Fernet symmetric encryption."""
     if not data:
         return ""
     try:
@@ -66,6 +71,7 @@ def encrypt_data(data: str, key: bytes) -> str:
 
 
 def decrypt_data(encrypted_data: str, key: bytes) -> str:
+    """Decrypt a Fernet-encrypted string back to plaintext."""
     if not encrypted_data:
         return ""
     try:
@@ -79,6 +85,7 @@ def decrypt_data(encrypted_data: str, key: bytes) -> str:
 def generate_strong_password(
     length: int = 18, use_lower=True, use_upper=True, use_digit=True, use_symbol=True
 ) -> str:
+    """Generate a cryptographically random password with configurable character sets."""
     if length < 1:
         length = 1
     char_sets = []
@@ -111,12 +118,14 @@ def generate_strong_password(
 
 
 def hash_password(password: str) -> str:
+    """Hash a password with a random salt using PBKDF2-SHA256 and return a Base64 string."""
     salt = os.urandom(16)
     hashed_bytes = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 600000)
     return base64.b64encode(salt + hashed_bytes).decode("utf-8")
 
 
 def verify_password(password: str, stored_hash: str) -> bool:
+    """Verify a password against a stored PBKDF2-SHA256 hash."""
     try:
         decoded_hash = base64.b64decode(stored_hash)
         salt = decoded_hash[:16]
@@ -130,6 +139,7 @@ def verify_password(password: str, stored_hash: str) -> bool:
 
 
 def load_master_password(file_path: str) -> Optional[str]:
+    """Read the stored master password hash from disk, or return None."""
     if os.path.exists(file_path):
         try:
             with open(file_path, "r") as f:
@@ -140,6 +150,7 @@ def load_master_password(file_path: str) -> Optional[str]:
 
 
 def store_master_password(password: str) -> bool:
+    """Hash and persist the master password to the master key file."""
     hashed_pass = hash_password(password)
     try:
         with open(MASTER_KEY_FILE, "w") as f:
@@ -150,6 +161,7 @@ def store_master_password(password: str) -> bool:
 
 
 def load_settings() -> dict:
+    """Load application settings from the JSON settings file, falling back to defaults."""
     try:
         with open(APP_SETTINGS_FILE, "r") as f:
             return json.load(f)
@@ -158,6 +170,7 @@ def load_settings() -> dict:
 
 
 def save_settings(settings: dict):
+    """Persist application settings to the JSON settings file."""
     try:
         with open(APP_SETTINGS_FILE, "w") as f:
             json.dump(settings, f, indent=4)
@@ -166,7 +179,9 @@ def save_settings(settings: dict):
 
 
 class CredentialEntry:
+    """Data class representing a single credential entry with all metadata fields."""
     def __init__(self, **kwargs):
+        """Initialize a CredentialEntry from keyword arguments, defaulting missing fields."""
         self.db_id = kwargs.get("db_id")
         self.title = kwargs.get("title")
         self.url = kwargs.get("url")
@@ -184,6 +199,7 @@ class CredentialEntry:
         self.modified_at = kwargs.get("modified_at")
 
     def to_dict(self) -> Dict[str, Any]:
+        """Serialize this credential entry to a plain dictionary."""
         return {
             "db_id": self.db_id,
             "title": self.title,

@@ -1,7 +1,9 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-24 00:37 CT (America/Chicago)
+# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
 # Path: src/db_manager.py
 # Purpose: SQLite database operations for credential entries.
+
+"""Database operations for credential entries using SQLite."""
 
 import csv
 import os
@@ -24,6 +26,7 @@ class DatabaseManager:
     """Handles all SQLite database operations for credential entries."""
 
     def __init__(self, db_path: str, error_handler):
+        """Initialize database connection and create table if not exists."""
         self.db_path = db_path
         self.conn = None
         self.cursor = None
@@ -33,6 +36,7 @@ class DatabaseManager:
         self._create_table()
 
     def set_encryption_key(self, master_password_hash: str):
+        """Derive and store the encryption key from the master password hash."""
         try:
             self.encryption_key = derive_encryption_key(master_password_hash)
         except Exception as e:
@@ -42,6 +46,7 @@ class DatabaseManager:
             self.encryption_key = b""
 
     def _connect(self):
+        """Establish connection to the SQLite database."""
         try:
             Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
             self.conn = sqlite3.connect(self.db_path)
@@ -51,6 +56,7 @@ class DatabaseManager:
             self.error_handler("Database Error", f"Could not connect to database: {e}")
 
     def _create_table(self):
+        """Create the credentials table if not present, with migration for new columns."""
         if not self.conn:
             return
         sql = """
@@ -85,6 +91,7 @@ class DatabaseManager:
                 pass
 
     def load_all_credentials(self) -> List[CredentialEntry]:
+        """Load and decrypt all credentials, returning a list of CredentialEntry objects."""
         if not self.conn:
             return []
         if not self.encryption_key:
@@ -108,6 +115,7 @@ class DatabaseManager:
         return credentials
 
     def save_credential(self, entry: CredentialEntry) -> Optional[int]:
+        """Encrypt and insert a new credential. Returns the new row ID or None."""
         if not self.conn:
             return None
         if not self.encryption_key:
@@ -132,6 +140,7 @@ class DatabaseManager:
             return None
 
     def update_credential(self, entry: CredentialEntry):
+        """Encrypt and update an existing credential identified by db_id."""
         if not self.conn:
             return
         if not entry.db_id:
@@ -164,6 +173,7 @@ class DatabaseManager:
             self.error_handler("Database Error", f"Error updating credential: {e}")
 
     def delete_credential(self, db_id: int):
+        """Delete a credential from the database by its db_id."""
         if not self.conn:
             return
         sql = "DELETE FROM credentials WHERE db_id = ?"
@@ -174,6 +184,7 @@ class DatabaseManager:
             self.error_handler("Database Error", f"Error deleting credential: {e}")
 
     def create_pre_op_backup(self, operation: str) -> Optional[str]:
+        """Create a timestamped backup before a destructive operation. Returns the backup path or None."""
         if not os.path.exists(self.db_path):
             return None
         try:
@@ -242,6 +253,7 @@ class DatabaseManager:
             return 0
 
     def export_to_csv(self, file_path: str, credentials: List[CredentialEntry]) -> int:
+        """Export a list of credentials to a CSV file. Returns the number of rows written."""
         if not credentials:
             self.error_handler("Export Warning", "No credentials to export.")
             return 0
@@ -264,6 +276,7 @@ class DatabaseManager:
             raise
 
     def import_from_csv(self, file_path: str) -> int:
+        """Import credentials from a CSV file, inserting or updating as needed. Returns the count of imported entries."""
         self.create_pre_op_backup("Import")
         imported_count = 0
         valid_keys = [
