@@ -1,0 +1,1196 @@
+{
+  "timestamp": "2026-07-24T13:40:21.234027",
+  "total_functions": 110,
+  "total_classes": 9,
+  "functions": {
+    "is_portable": {
+      "file": "src/__init__.py",
+      "line_start": 17,
+      "line_end": 18,
+      "parameters": [],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "enable_portable_mode": {
+      "file": "src/__init__.py",
+      "line_start": 21,
+      "line_end": 29,
+      "parameters": [],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "disable_portable_mode": {
+      "file": "src/__init__.py",
+      "line_start": 32,
+      "line_end": 39,
+      "parameters": [],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "derive_encryption_key": {
+      "file": "src/core_logic.py",
+      "line_start": 34,
+      "line_end": 46,
+      "parameters": [
+        "master_password_hash"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "get_timestamped_backup_path": {
+      "file": "src/core_logic.py",
+      "line_start": 49,
+      "line_end": 52,
+      "parameters": [],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "encrypt_data": {
+      "file": "src/core_logic.py",
+      "line_start": 55,
+      "line_end": 64,
+      "parameters": [
+        "data",
+        "key"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "decrypt_data": {
+      "file": "src/core_logic.py",
+      "line_start": 67,
+      "line_end": 75,
+      "parameters": [
+        "encrypted_data",
+        "key"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "generate_strong_password": {
+      "file": "src/core_logic.py",
+      "line_start": 78,
+      "line_end": 109,
+      "parameters": [
+        "length",
+        "use_lower",
+        "use_upper",
+        "use_digit",
+        "use_symbol"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "hash_password": {
+      "file": "src/core_logic.py",
+      "line_start": 112,
+      "line_end": 115,
+      "parameters": [
+        "password"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "verify_password": {
+      "file": "src/core_logic.py",
+      "line_start": 118,
+      "line_end": 128,
+      "parameters": [
+        "password",
+        "stored_hash"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "load_master_password": {
+      "file": "src/core_logic.py",
+      "line_start": 131,
+      "line_end": 138,
+      "parameters": [
+        "file_path"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "store_master_password": {
+      "file": "src/core_logic.py",
+      "line_start": 141,
+      "line_end": 148,
+      "parameters": [
+        "password"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "load_settings": {
+      "file": "src/core_logic.py",
+      "line_start": 151,
+      "line_end": 156,
+      "parameters": [],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "save_settings": {
+      "file": "src/core_logic.py",
+      "line_start": 159,
+      "line_end": 164,
+      "parameters": [
+        "settings"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "__init__": {
+      "file": "src/gui/app.py",
+      "line_start": 140,
+      "line_end": 194,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "to_dict": {
+      "file": "src/core_logic.py",
+      "line_start": 185,
+      "line_end": 202,
+      "parameters": [],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "set_encryption_key": {
+      "file": "src/db_manager.py",
+      "line_start": 34,
+      "line_end": 41,
+      "parameters": [
+        "master_password_hash"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_connect": {
+      "file": "src/db_manager.py",
+      "line_start": 43,
+      "line_end": 49,
+      "parameters": [],
+      "is_method": true,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_create_table": {
+      "file": "src/db_manager.py",
+      "line_start": 51,
+      "line_end": 83,
+      "parameters": [],
+      "is_method": true,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "load_all_credentials": {
+      "file": "src/db_manager.py",
+      "line_start": 85,
+      "line_end": 106,
+      "parameters": [],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "save_credential": {
+      "file": "src/gui/app.py",
+      "line_start": 1003,
+      "line_end": 1032,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "update_credential": {
+      "file": "src/db_manager.py",
+      "line_start": 132,
+      "line_end": 162,
+      "parameters": [
+        "entry"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "delete_credential": {
+      "file": "src/gui/app.py",
+      "line_start": 1034,
+      "line_end": 1051,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "create_pre_op_backup": {
+      "file": "src/db_manager.py",
+      "line_start": 174,
+      "line_end": 189,
+      "parameters": [
+        "operation"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "find_and_remove_duplicates": {
+      "file": "src/db_manager.py",
+      "line_start": 191,
+      "line_end": 240,
+      "parameters": [],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": "Finds and deletes duplicate entries based on (title, username),\nkeeping only the oldest entry (lowest db_id).\nReturns the number of deleted records."
+    },
+    "export_to_csv": {
+      "file": "src/db_manager.py",
+      "line_start": 242,
+      "line_end": 262,
+      "parameters": [
+        "file_path",
+        "credentials"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "import_from_csv": {
+      "file": "src/db_manager.py",
+      "line_start": 264,
+      "line_end": 296,
+      "parameters": [
+        "file_path"
+      ],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "run": {
+      "file": "src/main.py",
+      "line_start": 14,
+      "line_end": 20,
+      "parameters": [],
+      "is_method": true,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "resource_path": {
+      "file": "src/gui/dialogs.py",
+      "line_start": 28,
+      "line_end": 33,
+      "parameters": [
+        "relative_path"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_get_options": {
+      "file": "src/gui/dialogs.py",
+      "line_start": 98,
+      "line_end": 105,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_generate_and_display": {
+      "file": "src/gui/dialogs.py",
+      "line_start": 107,
+      "line_end": 121,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_accept_password": {
+      "file": "src/gui/dialogs.py",
+      "line_start": 123,
+      "line_end": 125,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "get_password": {
+      "file": "src/gui/dialogs.py",
+      "line_start": 127,
+      "line_end": 128,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "load_documentation": {
+      "file": "src/gui/dialogs.py",
+      "line_start": 145,
+      "line_end": 156,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "eventFilter": {
+      "file": "src/gui/app.py",
+      "line_start": 1270,
+      "line_end": 1278,
+      "parameters": [
+        "source",
+        "event"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "evaluate": {
+      "file": "src/gui/app.py",
+      "line_start": 99,
+      "line_end": 136,
+      "parameters": [
+        "password"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "clear_clipboard": {
+      "file": "src/gui/app.py",
+      "line_start": 198,
+      "line_end": 201,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "copy_to_clipboard": {
+      "file": "src/gui/app.py",
+      "line_start": 203,
+      "line_end": 215,
+      "parameters": [
+        "text",
+        "field_name"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_auto_clear_form_check": {
+      "file": "src/gui/app.py",
+      "line_start": 217,
+      "line_end": 220,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "show_password_generator": {
+      "file": "src/gui/app.py",
+      "line_start": 224,
+      "line_end": 231,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "check_setup_state": {
+      "file": "src/gui/app.py",
+      "line_start": 235,
+      "line_end": 242,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "create_auth_ui": {
+      "file": "src/gui/app.py",
+      "line_start": 244,
+      "line_end": 265,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "action_btn_clicked": {
+      "file": "src/gui/app.py",
+      "line_start": 267,
+      "line_end": 271,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "show_auth_screen": {
+      "file": "src/gui/app.py",
+      "line_start": 273,
+      "line_end": 287,
+      "parameters": [
+        "setup_mode"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "set_master_password": {
+      "file": "src/gui/app.py",
+      "line_start": 289,
+      "line_end": 304,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "attempt_login": {
+      "file": "src/gui/app.py",
+      "line_start": 306,
+      "line_end": 320,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "show_main_app": {
+      "file": "src/gui/app.py",
+      "line_start": 322,
+      "line_end": 329,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_toggle_password_visibility_button": {
+      "file": "src/gui/app.py",
+      "line_start": 333,
+      "line_end": 339,
+      "parameters": [
+        "checked"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "show_documentation": {
+      "file": "src/gui/app.py",
+      "line_start": 343,
+      "line_end": 344,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_apply_theme": {
+      "file": "src/gui/app.py",
+      "line_start": 346,
+      "line_end": 349,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "toggle_theme": {
+      "file": "src/gui/app.py",
+      "line_start": 351,
+      "line_end": 360,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "enter_view_mode": {
+      "file": "src/gui/app.py",
+      "line_start": 364,
+      "line_end": 379,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "enter_edit_mode": {
+      "file": "src/gui/app.py",
+      "line_start": 381,
+      "line_end": 394,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "enter_new_mode": {
+      "file": "src/gui/app.py",
+      "line_start": 396,
+      "line_end": 411,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "cancel_edit": {
+      "file": "src/gui/app.py",
+      "line_start": 413,
+      "line_end": 431,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_add_custom_field_row": {
+      "file": "src/gui/app.py",
+      "line_start": 433,
+      "line_end": 438,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_remove_custom_field_row": {
+      "file": "src/gui/app.py",
+      "line_start": 440,
+      "line_end": 444,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_set_form_readonly": {
+      "file": "src/gui/app.py",
+      "line_start": 446,
+      "line_end": 457,
+      "parameters": [
+        "ro"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_clear_fields": {
+      "file": "src/gui/app.py",
+      "line_start": 459,
+      "line_end": 470,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_select_entry_in_table": {
+      "file": "src/gui/app.py",
+      "line_start": 472,
+      "line_end": 477,
+      "parameters": [
+        "db_id"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "create_main_content": {
+      "file": "src/gui/app.py",
+      "line_start": 481,
+      "line_end": 704,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_on_password_text_changed": {
+      "file": "src/gui/app.py",
+      "line_start": 706,
+      "line_end": 709,
+      "parameters": [
+        "text"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_populate_category_filter": {
+      "file": "src/gui/app.py",
+      "line_start": 713,
+      "line_end": 725,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_populate_tag_filter": {
+      "file": "src/gui/app.py",
+      "line_start": 727,
+      "line_end": 743,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "update_list_view": {
+      "file": "src/gui/app.py",
+      "line_start": 745,
+      "line_end": 805,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_handle_sort": {
+      "file": "src/gui/app.py",
+      "line_start": 807,
+      "line_end": 815,
+      "parameters": [
+        "column"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_table_cell_double_clicked": {
+      "file": "src/gui/app.py",
+      "line_start": 817,
+      "line_end": 827,
+      "parameters": [
+        "row",
+        "col"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_table_cell_clicked": {
+      "file": "src/gui/app.py",
+      "line_start": 829,
+      "line_end": 839,
+      "parameters": [
+        "row",
+        "col"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_table_context_menu": {
+      "file": "src/gui/app.py",
+      "line_start": 841,
+      "line_end": 864,
+      "parameters": [
+        "pos"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_context_copy_password": {
+      "file": "src/gui/app.py",
+      "line_start": 866,
+      "line_end": 876,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_context_edit": {
+      "file": "src/gui/app.py",
+      "line_start": 878,
+      "line_end": 880,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_context_delete": {
+      "file": "src/gui/app.py",
+      "line_start": 882,
+      "line_end": 883,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_fetch_favicons": {
+      "file": "src/gui/app.py",
+      "line_start": 885,
+      "line_end": 909,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_on_favicon_fetched": {
+      "file": "src/gui/app.py",
+      "line_start": 911,
+      "line_end": 918,
+      "parameters": [
+        "reply",
+        "domain"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "display_selected_entry": {
+      "file": "src/gui/app.py",
+      "line_start": 920,
+      "line_end": 942,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_custom_fields_from_entry": {
+      "file": "src/gui/app.py",
+      "line_start": 944,
+      "line_end": 959,
+      "parameters": [
+        "raw"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_custom_fields_to_json": {
+      "file": "src/gui/app.py",
+      "line_start": 961,
+      "line_end": 970,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "fill_form": {
+      "file": "src/gui/app.py",
+      "line_start": 972,
+      "line_end": 987,
+      "parameters": [
+        "entry"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "clear_form": {
+      "file": "src/gui/app.py",
+      "line_start": 989,
+      "line_end": 994,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "form_modified": {
+      "file": "src/gui/app.py",
+      "line_start": 996,
+      "line_end": 999,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "handle_export": {
+      "file": "src/gui/app.py",
+      "line_start": 1055,
+      "line_end": 1070,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "handle_import": {
+      "file": "src/gui/app.py",
+      "line_start": 1072,
+      "line_end": 1091,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "handle_backup": {
+      "file": "src/gui/app.py",
+      "line_start": 1093,
+      "line_end": 1107,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "handle_restore": {
+      "file": "src/gui/app.py",
+      "line_start": 1109,
+      "line_end": 1134,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "show_about_dialog": {
+      "file": "src/gui/app.py",
+      "line_start": 1138,
+      "line_end": 1145,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "setup_menu_bar": {
+      "file": "src/gui/app.py",
+      "line_start": 1149,
+      "line_end": 1217,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "update_lockout_menu_state": {
+      "file": "src/gui/app.py",
+      "line_start": 1219,
+      "line_end": 1231,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "set_lockout_time": {
+      "file": "src/gui/app.py",
+      "line_start": 1233,
+      "line_end": 1241,
+      "parameters": [
+        "minutes"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "setup_shortcuts": {
+      "file": "src/gui/app.py",
+      "line_start": 1245,
+      "line_end": 1250,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_shortcut_edit": {
+      "file": "src/gui/app.py",
+      "line_start": 1252,
+      "line_end": 1254,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_shortcut_save": {
+      "file": "src/gui/app.py",
+      "line_start": 1256,
+      "line_end": 1258,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_shortcut_escape": {
+      "file": "src/gui/app.py",
+      "line_start": 1260,
+      "line_end": 1262,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_shortcut_search": {
+      "file": "src/gui/app.py",
+      "line_start": 1264,
+      "line_end": 1266,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "reset_activity_timer": {
+      "file": "src/gui/app.py",
+      "line_start": 1280,
+      "line_end": 1293,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "lock_application": {
+      "file": "src/gui/app.py",
+      "line_start": 1295,
+      "line_end": 1302,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "show_password_health": {
+      "file": "src/gui/app.py",
+      "line_start": 1306,
+      "line_end": 1386,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "find_and_remove_duplicates_ui": {
+      "file": "src/gui/app.py",
+      "line_start": 1390,
+      "line_end": 1409,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_auto_backup_db": {
+      "file": "src/gui/app.py",
+      "line_start": 1413,
+      "line_end": 1422,
+      "parameters": [
+        "reason"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "toggle_portable_mode": {
+      "file": "src/gui/app.py",
+      "line_start": 1426,
+      "line_end": 1449,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_make_tray_icon": {
+      "file": "src/gui/app.py",
+      "line_start": 1453,
+      "line_end": 1465,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_setup_system_tray": {
+      "file": "src/gui/app.py",
+      "line_start": 1467,
+      "line_end": 1485,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_update_tray_lock_action": {
+      "file": "src/gui/app.py",
+      "line_start": 1487,
+      "line_end": 1492,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_tray_activated": {
+      "file": "src/gui/app.py",
+      "line_start": 1494,
+      "line_end": 1496,
+      "parameters": [
+        "reason"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_show_window": {
+      "file": "src/gui/app.py",
+      "line_start": 1498,
+      "line_end": 1501,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_tray_lock": {
+      "file": "src/gui/app.py",
+      "line_start": 1503,
+      "line_end": 1505,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_quit_application": {
+      "file": "src/gui/app.py",
+      "line_start": 1507,
+      "line_end": 1513,
+      "parameters": [],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "closeEvent": {
+      "file": "src/gui/app.py",
+      "line_start": 1517,
+      "line_end": 1520,
+      "parameters": [
+        "event"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "apply_theme": {
+      "file": "src/gui/theme.py",
+      "line_start": 328,
+      "line_end": 334,
+      "parameters": [
+        "app",
+        "theme_name"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": true,
+      "docstring": null
+    },
+    "_apply_light_palette": {
+      "file": "src/gui/theme.py",
+      "line_start": 337,
+      "line_end": 348,
+      "parameters": [
+        "app"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    },
+    "_apply_dark_palette": {
+      "file": "src/gui/theme.py",
+      "line_start": 351,
+      "line_end": 362,
+      "parameters": [
+        "app"
+      ],
+      "is_method": false,
+      "class_name": null,
+      "is_public": false,
+      "docstring": null
+    }
+  },
+  "classes": {}
+}

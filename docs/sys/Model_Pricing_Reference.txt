@@ -1,0 +1,18 @@
+# Created: 2026-07-24
+# Last Edited: 2026-07-24 00:33 CT (America/Chicago)
+# Path: docs/sys/Model_Pricing_Reference.txt
+# Purpose: Reference for model pricing used in cost tracking.
+
+## Model Pricing Reference (as of 2026-07-24)
+
+| Model | Input ($/M tokens) | Output ($/M tokens) |
+|---|---|---|
+| DeepSeek V4 Flash (off-peak) | $0.14 | $0.28 |
+| DeepSeek V4 Flash (peak) | $0.28 | $0.56 |
+| Gemini 2.5 Flash-Lite | $0.10 | $0.40 |
+| Gemini 2.5 Flash | $0.25 | $1.00 |
+| Ollama (local) | $0 (compute only) | $0 |
+
+### Peak Hours
+- DeepSeek peak: 9:00–12:00 & 14:00–18:00 Beijing time (UTC+8)
+- Convert CT to Beijing: CT + 13 hours (CDT) or +14 (CST)

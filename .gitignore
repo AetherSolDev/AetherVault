@@ -1,0 +1,51 @@
+# Virtual environment
+venv/
+.venv/
+kiss/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Environment and secrets
+.env
+*.key
+*.jks
+*.keystore
+
+# App data files
+*.db
+*.db-bak
+*.db.bak
+*.db-shm
+*.db-wal
+.app_settings.json
+.master.key
+.portable
+
+# Build output
+dist/
+build/
+app/build/
+app/release/
+app/debug/
+*.spec
+
+# Logs and temp
+logs/
+*.log
+tmp/
+crash.log
+journal.md
+
+# IDE and system files
+.idea/
+.vscode/
+.DS_Store
+
+# Generated artifacts
+repomix-output.*

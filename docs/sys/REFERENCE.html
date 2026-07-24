@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>docs — Technical Reference</title>
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 960px;
+        margin: 40px auto;
+        padding: 0 20px;
+        line-height: 1.6;
+        color: #1a1a1a;
+    }
+    h1 { border-bottom: 2px solid #0366d6; padding-bottom: 8px; }
+    h2 { border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-top: 40px; }
+    h3 { margin-top: 24px; }
+    code { background: #f6f8fa; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+    pre {
+        background: #f6f8fa;
+        padding: 16px;
+        border-radius: 6px;
+        overflow-x: auto;
+        white-space: pre;
+        font-size: 0.85em;
+        line-height: 1.3;
+    }
+    pre code { padding: 0; background: none; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+    th { background: #f6f8fa; }
+    blockquote { border-left: 4px solid #0366d6; margin: 0; padding: 4px 16px; color: #555; }
+    hr { border: none; border-top: 1px solid #ddd; margin: 32px 0; }
+    @media (max-width: 768px) {
+        pre { font-size: 0.7em; padding: 10px; }
+    }
+</style>
+
+</head>
+<body>
+<h1 id="docs-technical-reference">docs — Technical Reference</h1>
+<blockquote>
+<p>Auto-generated on 2026-07-24 13:51 CT from docs/sys/
+Source: <code>scripts/build_reference.py</code></p>
+</blockquote>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#architecture">Architecture</a></li>
+<li><a href="#project-knowledge">Project Knowledge</a></li>
+<li><a href="#project-plan">Project Plan</a></li>
+<li><a href="#tasks">Tasks</a></li>
+<li><a href="#changelog">Changelog</a></li>
+<li><a href="#bug-tracker">Bug Tracker</a></li>
+<li><a href="#development-costs">Development Costs</a></li>
+<li><a href="#model-pricing-reference">Model Pricing Reference</a></li>
+<li><a href="#diagram-(kisspwm_v6)">Diagram (kissPWM_v6)</a></li>
+</ul>
+<hr />
+<hr />
+<h2 id="architecture">Architecture</h2>
+<h2 id="directory-structure">Directory Structure</h2>
+<pre><code>kissPWM_v6/
+├── src/
+│   ├── __init__.py            # Package init, PROJECT_ROOT constant
+│   ├── core_logic.py          # Encryption, hashing, data model, settings
+│   ├── db_manager.py          # SQLite CRUD, import/export, backup
+│   ├── main.py                # Application entry point (QApplication setup)
+│   └── gui/
+│       ├── __init__.py
+│       ├── app.py             # PySidePWManager — main window and UI logic
+│       ├── dialogs.py         # PasswordGeneratorDialog, DocumentationDialog
+│       └── theme.py           # Dark and light theme stylesheets
+├── main_app_pyside.py         # Thin entry point (delegates to src.main.run)
+├── help_doc.md                # Legacy user documentation
+├── docs/
+│   ├── USER_GUIDE.md          # Consolidated user documentation
+│   └── sys/                   # System documentation (PLAN, ARCHITECTURE, etc.)
+├── instructions/              # Prompt templates for AI workflow
+├── scripts/                   # Utility scripts (build_reference, cost, etc.)
+├── assets/                    # Application icon resources
+├── .portable                  # Portable mode marker (created at runtime)
+├── AGENTS.md                  # Agent instructions (READ ONLY)
+├── kiss_pwm_v6.spec           # PyInstaller build spec
+├── .gitignore
+├── .repomixignore
+├── requirements.txt
+├── password_manager.db        # Encrypted vault (SQLite)
+├── password_manager.db.bak    # Auto-backup
+├── .master.key                # Master password hash (PBKDF2)
+└── .app_settings.json         # App settings (lockout, theme, etc.)
+</code></pre>
+<h2 id="architecture-layers">Architecture Layers</h2>
+<h3 id="1-data-layer-srccore_logicpy-srcdb_managerpy">1. Data Layer (<code>src/core_logic.py</code>, <code>src/db_manager.py</code>)</h3>
+<ul>
+<li>SQLite database with AES-256 encrypted credential storage</li>
+<li>PBKDF2 key derivation from master password (600K iterations)</li>
+<li>Automatic versioned backups</li>
+<li>CSV import/export with encryption</li>
+</ul>
+<h3 id="2-business-logic-srcguiapppy">2. Business Logic (<code>src/gui/app.py</code>)</h3>
+<ul>
+<li>Authentication flow (setup master password → login → encryption key derivation)</li>
+<li>Clipboard management with auto-clear timer (15s)</li>
+<li>Auto-lock on inactivity (configurable 1-30 min)</li>
+<li>Password generation (via dialogs.py)</li>
+<li>Duplicate detection and removal</li>
+<li>System tray icon with quick-lock and minimize-to-tray</li>
+<li>Portable mode detection (.portable marker file)</li>
+<li>Category + tag filtering with dynamic dropdowns</li>
+<li>Password health report (weak/reused/short scan)</li>
+<li>Entry tags (comma-separated) and custom fields (JSON key/value pairs)</li>
+<li>Sort toggle on table columns (Title, Username, Category)</li>
+<li>Double-click to copy, right-click context menu</li>
+<li>Category click-to-filter from table cells</li>
+<li>Favicon auto-fetch from Google service</li>
+<li>Rich text notes with B/I/U formatting toolbar</li>
+<li>One-click timestamped backup</li>
+</ul>
+<h3 id="3-presentation-layer-srcguiapppy-srcguidialogspy">3. Presentation Layer (<code>src/gui/app.py</code>, <code>src/gui/dialogs.py</code>)</h3>
+<ul>
+<li>PySide6 (Qt) GUI with QStackedWidget for auth/main views</li>
+<li>QSplitter with credential list (left) and edit form (right)</li>
+<li>Menu bar: File (export/import/backup/restore), Tools (duplicates), Settings (auto-lock, theme), Help</li>
+<li>Dark/light theme toggle in Settings menu</li>
+</ul>
+<h2 id="data-flow">Data Flow</h2>
+<pre><code>User Input → PySidePWManager (app.py) → DatabaseManager (db_manager.py) → SQLite
+                                                ↓
+                                        core_logic.py (AES-256 encrypt/decrypt)
+</code></pre>
+<hr />
+<h2 id="project-knowledge">Project Knowledge</h2>
+<blockquote>
+<p>Read this first on session resume. Covers 80% of what you need to be
+productive without reading the full codebase. Updated every session.</p>
+</blockquote>
+<hr />
+<h2 id="architecture-tldr">Architecture TL;DR</h2>
+<p>PySide6 desktop password manager. Single-window app with auth screen (setup/login)
+and main split-pane view (credential list + edit form). SQLite backend with AES-256
+encryption via <code>cryptography</code> library. Master password hashed with PBKDF2-SHA256.</p>
+<h2 id="critical-files-map">Critical Files Map</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>core_logic.py</code></td>
+<td>Encryption (Fernet/AES-256), password hashing, <code>CredentialEntry</code> model, settings JSON I/O</td>
+</tr>
+<tr>
+<td><code>db_manager.py</code></td>
+<td>SQLite CRUD for credentials, CSV import/export, duplicate removal, pre-op backup</td>
+</tr>
+<tr>
+<td><code>src/gui/app.py</code></td>
+<td>PySide6 GUI — auth flow, credential list/edit, clipboard mgmt, auto-lock, menus, system tray, health report, favicon fetch</td>
+</tr>
+<tr>
+<td><code>src/gui/dialogs.py</code></td>
+<td>PasswordGeneratorDialog, DocumentationDialog</td>
+</tr>
+<tr>
+<td><code>src/gui/theme.py</code></td>
+<td>Dark/light mode stylesheets, QPalette</td>
+</tr>
+<tr>
+<td><code>src/main.py</code></td>
+<td>QApplication entry point</td>
+</tr>
+<tr>
+<td><code>docs/USER_GUIDE.md</code></td>
+<td>User-facing documentation (opened from Help menu)</td>
+</tr>
+<tr>
+<td><code>kiss_pwm_v6.spec</code></td>
+<td>PyInstaller spec for building standalone <code>.exe</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="key-decisions">Key Decisions</h2>
+<table>
+<thead>
+<tr>
+<th>Decision</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PySide6 (Qt) over Tkinter</td>
+<td>Mature widget set, cross-platform, professional look</td>
+</tr>
+<tr>
+<td>SQLite + AES-256</td>
+<td>Portable single-file vault, no server needed</td>
+</tr>
+<tr>
+<td>PBKDF2 (600K iterations)</td>
+<td>Industry-standard key derivation, OWASP recommended</td>
+</tr>
+<tr>
+<td>QStackedWidget for views</td>
+<td>Reliable view swapping between auth and main content</td>
+</tr>
+<tr>
+<td>Single monolithic file</td>
+<td>Legacy decision — scheduled for refactor into src/ package</td>
+</tr>
+</tbody>
+</table>
+<h2 id="gotchas">Gotchas</h2>
+<ul>
+<li><code>WindowDeactivate</code> now resets activity timer (does NOT immediately lock) — fixed in session 4</li>
+<li><code>sectionClicked</code> sort signal connected once in <code>create_main_content</code>, not on every <code>update_list_view</code></li>
+<li>Password strength bar row is tracked independently via <code>row</code> counter to avoid grid cell collision</li>
+<li>Custom fields stored as JSON array of <code>{"field": "...", "value": "..."}</code> objects in <code>custom_fields</code> TEXT column</li>
+<li>Tags stored as comma-separated string in <code>tags</code> TEXT column — both columns auto-migrated on startup</li>
+<li><code>handle_backup()</code> uses <code>get_timestamped_backup_path()</code> for unique filenames, shows success in status bar (no dialog)</li>
+<li><code>.master.key</code> stores the hash, not the raw password — safe, but file deletion = permanent lockout</li>
+<li>Virtual env: <code>venv/</code> is a symlink → <code>kiss/</code>; both names resolve</li>
+<li>Portable mode: create <code>.portable</code> file in app directory to keep all data local</li>
+<li>System tray: close minimizes to tray; use File → Quit or tray → Quit to fully exit</li>
+</ul>
+<h2 id="code-patterns">Code Patterns</h2>
+<ul>
+<li>Database methods use <code>try/except</code> with <code>error_handler</code> callback (lambda wiring to QMessageBox)</li>
+<li>All passwords encrypted at rest, decrypted in memory during session</li>
+<li><code>CredentialEntry.to_dict()</code> used for serialization</li>
+<li><code>row_factory = sqlite3.Row</code> for named column access</li>
+<li>Lambda closures with default args for button callbacks: <code>lambda checked, entry=line_edit: ...</code></li>
+</ul>
+<h2 id="navigation-hints">Navigation Hints</h2>
+<ul>
+<li><strong>Need to change encryption?</strong> → <code>core_logic.py</code> (encrypt_data, decrypt_data, derive_encryption_key)</li>
+<li><strong>Need to add a DB operation?</strong> → <code>db_manager.py</code> (DatabaseManager class)</li>
+<li><strong>Need to change UI layout?</strong> → <code>main_app_pyside.py</code> (PySidePWManager class)</li>
+<li><strong>Need to add a menu item?</strong> → <code>main_app_pyside.py</code> (setup_menu_bar method)</li>
+<li><strong>Need to change backup behavior?</strong> → <code>db_manager.py</code> (create_pre_op_backup, _auto_backup_db)</li>
+</ul>
+<h2 id="session-history-summary">Session History Summary</h2>
+<ul>
+<li><strong>2026-07-24 (session 1)</strong>: Initial project audit. Set up project scaffolding with New_Project_init template system. Created AGENTS.md, docs/sys/, USER_GUIDE.md, instructions/, scripts/, .repomixignore. Identified 3 bugs and 5 planned changes.</li>
+<li><strong>2026-07-24 (session 2)</strong>: Fixed F0 (missing sys import), F1 (backup call order), F2 (assets dir). Refactored monolithic main_app_pyside.py (~1250 lines) into src/ package (7 files). Added dark/light theme support. Updated PyInstaller spec, .gitignore, requirements.txt.</li>
+<li><strong>2026-07-24 (session 3)</strong>: Added system tray icon with quick-lock (A2). Added portable mode detection (A3). Created venv/ symlink (C3).</li>
+<li><strong>2026-07-24 (session 4)</strong>: Category+tag filters, password health report, entry tags, custom fields, sort toggle, double-click copy, context menu, click-to-filter, favicon fetch, rich text notes, one-click backup. Fixed auto-lock timer bypass, strength bar grid collision, quit-to-tray bug, header clipping, RuntimeWarning. UI polish: QComboBox height matching, right-aligned labels, proportional form stretching, splitter sizing.</li>
+</ul>
+<hr />
+<h2 id="project-plan">Project Plan</h2>
+<h1 id="kisspwm_v6-plan">kissPWM_v6 Plan</h1>
+<h2 id="legend">Legend</h2>
+<ul>
+<li>C = Changes / Updates</li>
+<li>F = Bug</li>
+<li>A = Add</li>
+</ul>
+<h2 id="additions">ADDITIONS</h2>
+<ul>
+<li>[x] A0 — Create <code>src/</code> directory, move source files into organized structure</li>
+<li>[x] A1 — Add dark/light theme toggle</li>
+<li>[x] A2 — Add system tray icon with quick-lock</li>
+<li>[x] A3 — Add portable mode detection and config</li>
+<li>[x] A4 — Category filter + tag filter dropdowns</li>
+<li>[x] A5 — Password health report dialog</li>
+<li>[x] A6 — Entry tags (DB column + form field + filter)</li>
+<li>[x] A7 — Custom fields (DB column + JSON + add/remove table)</li>
+<li>[x] A8 — Sort toggle on Title/Username/Category columns</li>
+<li>[x] A9 — Double-click to copy from table</li>
+<li>[x] A10 — Right-click context menu (Copy, Edit, Delete)</li>
+<li>[x] A11 — Category click-to-filter from table</li>
+<li>[x] A12 — Favicon auto-fetch (Google service)</li>
+<li>[x] A13 — Rich text notes with formatting toolbar</li>
+<li>[x] A14 — One-click timestamped backup</li>
+</ul>
+<h2 id="bugs">BUGS</h2>
+<ul>
+<li>[x] F0 — <code>resource_path()</code> references <code>sys._MEIPASS</code> without <code>sys</code> import at module level</li>
+<li>[x] F1 — <code>find_and_remove_duplicates()</code> calls backup before docstring (wrong execution order)</li>
+<li>[x] F2 — <code>assets/kiss_icon.ico</code> referenced but no <code>assets/</code> directory exists</li>
+<li>[x] F3 — Auto-lock triggers immediately on WindowDeactivate (bypasses configured timeout)</li>
+<li>[x] F4 — Password strength bar hidden by Email QLineEdit in same grid cell</li>
+<li>[x] F5 — File → Quit minimizes to tray instead of quitting</li>
+<li>[x] F6 — Header text clipped in credential table</li>
+<li>[x] F7 — <code>sectionClicked.disconnect()</code> RuntimeWarning on every table refresh</li>
+</ul>
+<h2 id="changes">CHANGES</h2>
+<ul>
+<li>[x] C0 — Refactor <code>main_app_pyside.py</code>: split UI, controllers, clipboard, backup into separate modules</li>
+<li>[x] C1 — Replace <code>help_doc.md</code> with <code>docs/USER_GUIDE.md</code> in-app help reference</li>
+<li>[x] C2 — Update all file headers with proper Created/Last Edited/Purpose</li>
+<li>[x] C3 — Standardize virtual env to <code>venv/</code> (current is <code>kiss/</code>)</li>
+<li>[x] C4 — Move flat <code>.py</code> files into <code>src/</code> package structure</li>
+<li>[x] C5 — Form layout: right-aligned labels, 4px vertical spacing, proportional stretching</li>
+<li>[x] C6 — QComboBox styling: 30px height matching QLineEdit in both themes</li>
+<li>[x] C7 — Splitter: equal initial sizes, form panel capped at 700px</li>
+</ul>
+<hr />
+<h2 id="tasks">Tasks</h2>
+<h1 id="kisspwm_v6-tasks">kissPWM_v6 Tasks</h1>
+<h2 id="legend_1">Legend</h2>
+<ul>
+<li>C = Changes / Updates</li>
+<li>F = Bug</li>
+<li>A = Add</li>
+</ul>
+<h2 id="p0-critical-securitystability">P0 — Critical (security/stability)</h2>
+<ul>
+<li>[x] F0 — Fix <code>resource_path()</code> missing <code>sys</code> import</li>
+<li><strong>ID</strong>: fix-resource-path</li>
+<li><strong>Tags</strong>: bug, gui, packaging</li>
+<li><strong>Details</strong>: <code>sys._MEIPASS</code> referenced but <code>sys</code> not imported at module level in <code>main_app_pyside.py</code></li>
+<li><strong>Files</strong>: <code>main_app_pyside.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: <code>resource_path()</code> works in both dev and PyInstaller builds without NameError</p>
+</li>
+<li>
+<p>[x] F1 — Fix <code>find_and_remove_duplicates()</code> backup call ordering</p>
+</li>
+<li><strong>ID</strong>: fix-backup-order</li>
+<li><strong>Tags</strong>: bug, database</li>
+<li><strong>Details</strong>: <code>create_pre_op_backup()</code> called before docstring, making backup timing non-obvious and potentially mistimed</li>
+<li><strong>Files</strong>: <code>db_manager.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Backup is called at the correct point in the method body, not before the docstring</p>
+</li>
+<li>
+<p>[x] C0 — Refactor <code>main_app_pyside.py</code> into <code>src/</code> package structure</p>
+</li>
+<li><strong>ID</strong>: refactor-src</li>
+<li><strong>Tags</strong>: refactor, architecture</li>
+<li><strong>Details</strong>: Split monolithic ~1250-line file into separate modules: engine.py (business logic), clipboard.py, gui/main_window.py, gui/dialogs/, data/database.py, data/encryption.py</li>
+<li><strong>Files</strong>: <code>main_app_pyside.py</code>, <code>core_logic.py</code>, <code>db_manager.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: App launches and functions identically. Each module has single responsibility. No circular imports.</p>
+</li>
+<li>
+<p>[x] C1 — Update all file headers with standard format</p>
+</li>
+<li><strong>ID</strong>: file-headers</li>
+<li><strong>Tags</strong>: chore, documentation</li>
+<li><strong>Details</strong>: Add <code># Created</code>, <code># Last Edited</code>, <code># Path</code>, <code># Purpose</code> headers to all Python files</li>
+<li><strong>Files</strong>: <code>core_logic.py</code>, <code>db_manager.py</code>, <code>main_app_pyside.py</code></li>
+<li><strong>Acceptance</strong>: Every source file has proper header matching AGENTS.md standard</li>
+</ul>
+<h2 id="p1-important-uxpolish">P1 — Important (UX/Polish)</h2>
+<ul>
+<li>[x] A2 — Add dark/light theme support</li>
+<li><strong>ID</strong>: theme-support</li>
+<li><strong>Tags</strong>: feature, gui</li>
+<li><strong>Details</strong>: Add theme toggle with dark and light mode, persistent setting</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code>, <code>src/gui/theme.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Full app respects dark/light theme, toggle in menu, persists across sessions</p>
+</li>
+<li>
+<p>[x] F2 — Create <code>assets/</code> directory with app icon</p>
+</li>
+<li><strong>ID</strong>: fix-icon</li>
+<li><strong>Tags</strong>: bug, gui</li>
+<li><strong>Details</strong>: <code>assets/kiss_icon.ico</code> referenced but no directory exists</li>
+<li><strong>Files</strong>: <code>assets/</code>, <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: App icon displays correctly in title bar and taskbar</p>
+</li>
+<li>
+<p>[x] C2 — Replace <code>help_doc.md</code> with <code>docs/USER_GUIDE.md</code></p>
+</li>
+<li><strong>ID</strong>: help-to-userguide</li>
+<li><strong>Tags</strong>: change, documentation</li>
+<li><strong>Details</strong>: Update <code>DocumentationDialog</code> to load from <code>docs/USER_GUIDE.md</code> instead of <code>help_doc.md</code></li>
+<li><strong>Files</strong>: <code>main_app_pyside.py</code>, <code>help_doc.md</code>, <code>docs/USER_GUIDE.md</code></li>
+<li><strong>Acceptance</strong>: Help menu opens consolidated user guide</li>
+</ul>
+<h2 id="p2-nice-to-have">P2 — Nice-to-have</h2>
+<ul>
+<li>[x] C3 — Rename virtual env from <code>kiss/</code> to <code>venv/</code></li>
+<li><strong>ID</strong>: fix-venv-name</li>
+<li><strong>Tags</strong>: chore, devx</li>
+<li><strong>Details</strong>: Standardize virtual environment name per template convention</li>
+<li><strong>Files</strong>: <code>.gitignore</code></li>
+<li>
+<p><strong>Acceptance</strong>: <code>venv/</code> is the active virtual environment</p>
+</li>
+<li>
+<p>[x] A2 — Add system tray icon with quick-lock</p>
+</li>
+<li><strong>ID</strong>: tray-icon</li>
+<li><strong>Tags</strong>: feature, gui</li>
+<li><strong>Details</strong>: Minimize to tray, quick-lock from tray context menu</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: App minimizes to tray, tray menu has Lock and Quit options</p>
+</li>
+<li>
+<p>[x] A3 — Add portable mode detection and config</p>
+</li>
+<li><strong>ID</strong>: portable-mode</li>
+<li><strong>Tags</strong>: feature, config</li>
+<li><strong>Details</strong>: <code>.portable</code> marker file keeps all data in app directory; toggle in Settings menu</li>
+<li><strong>Files</strong>: <code>src/__init__.py</code>, <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Toggle in Settings, status bar shows [Portable] when active</p>
+</li>
+<li>
+<p>[x] A4 — Category filter + tag filter dropdowns</p>
+</li>
+<li><strong>ID</strong>: filter-dropdowns</li>
+<li><strong>Tags</strong>: feature, ui</li>
+<li><strong>Details</strong>: QComboBox filters for category and tags next to search bar</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Filters populate dynamically, combine with search text</p>
+</li>
+<li>
+<p>[x] A5 — Password health report dialog</p>
+</li>
+<li><strong>ID</strong>: password-health</li>
+<li><strong>Tags</strong>: feature, tools</li>
+<li><strong>Details</strong>: Scans all entries for weak/reused/short passwords, shows in dialog with table</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Tools → Password Health shows summary + detail table</p>
+</li>
+<li>
+<p>[x] A6 — Entry tags</p>
+</li>
+<li><strong>ID</strong>: entry-tags</li>
+<li><strong>Tags</strong>: feature, database</li>
+<li><strong>Details</strong>: <code>tags TEXT</code> column auto-migrated, QLineEdit in form with comma-separated values</li>
+<li><strong>Files</strong>: <code>src/core_logic.py</code>, <code>src/db_manager.py</code>, <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Tags save/load correctly, filter by tag works</p>
+</li>
+<li>
+<p>[x] A7 — Custom fields</p>
+</li>
+<li><strong>ID</strong>: custom-fields</li>
+<li><strong>Tags</strong>: feature, database</li>
+<li><strong>Details</strong>: <code>custom_fields TEXT</code> column (JSON array), QTableWidget with add/remove in form</li>
+<li><strong>Files</strong>: <code>src/core_logic.py</code>, <code>src/db_manager.py</code>, <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Custom fields save/load correctly as JSON</p>
+</li>
+<li>
+<p>[x] A8 — Sort toggle on Title/Username/Category</p>
+</li>
+<li><strong>ID</strong>: sort-toggle</li>
+<li><strong>Tags</strong>: feature, ui</li>
+<li><strong>Details</strong>: Click column header to sort ascending, click again to toggle</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Columns sort correctly in both directions</p>
+</li>
+<li>
+<p>[x] A9 — Double-click to copy from table</p>
+</li>
+<li><strong>ID</strong>: double-click-copy</li>
+<li><strong>Tags</strong>: feature, ui</li>
+<li><strong>Details</strong>: Double-click any cell to copy value to clipboard with 15s auto-clear</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Double-click copies cell text, status bar shows confirmation</p>
+</li>
+<li>
+<p>[x] A10 — Right-click context menu</p>
+</li>
+<li><strong>ID</strong>: context-menu</li>
+<li><strong>Tags</strong>: feature, ui</li>
+<li><strong>Details</strong>: Right-click row for Copy Username, Copy Password, Edit, Delete</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Context menu actions work correctly</p>
+</li>
+<li>
+<p>[x] A11 — Category click-to-filter</p>
+</li>
+<li><strong>ID</strong>: click-to-filter</li>
+<li><strong>Tags</strong>: feature, ui</li>
+<li><strong>Details</strong>: Single-click category cell auto-sets category filter dropdown</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Clicking category cell updates filter</p>
+</li>
+<li>
+<p>[x] A12 — Favicon auto-fetch</p>
+</li>
+<li><strong>ID</strong>: favicon-fetch</li>
+<li><strong>Tags</strong>: feature, ui</li>
+<li><strong>Details</strong>: Tools → Fetch Favicons downloads 16×16 icons via Google service, displays in Title column</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Favicons appear next to titles after fetch</p>
+</li>
+<li>
+<p>[x] A13 — Rich text notes</p>
+</li>
+<li><strong>ID</strong>: rich-notes</li>
+<li><strong>Tags</strong>: feature, ui</li>
+<li><strong>Details</strong>: B/I/U formatting toolbar, stored as HTML</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Notes save formatting, display correctly on reload</p>
+</li>
+<li>
+<p>[x] A14 — One-click timestamped backup</p>
+</li>
+<li><strong>ID</strong>: one-click-backup</li>
+<li><strong>Tags</strong>: feature, ui</li>
+<li><strong>Details</strong>: Status bar message instead of modal dialog, unique filenames with timestamps</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+<li><strong>Acceptance</strong>: File → Backup saves to <code>kiss_vault_YYYY.MM.DD_HHMMSS.db.bak</code></li>
+</ul>
+<h2 id="p3-future">P3 — Future</h2>
+<ul>
+<li>[ ] Browser extension integration</li>
+<li>[ ] Cloud sync (optional, opt-in)</li>
+<li>[ ] Auto-type / fill hotkey</li>
+</ul>
+<hr />
+<h2 id="changelog">Changelog</h2>
+<h1 id="changelog_1">Changelog</h1>
+<h2 id="2026-07-24-session-3">2026-07-24 (session 3)</h2>
+<h3 id="added">Added</h3>
+<ul>
+<li>Project scaffolding with template system (AGENTS.md, docs/, instructions/, scripts/)</li>
+<li>System documentation: PLAN, ARCHITECTURE, KNOWLEDGE, TASKS, BUGS, COST, mermaid diagram</li>
+<li><code>.repomixignore</code> for AI context management</li>
+<li>Template instructions for bug tracking, changelog, tasks, cost tracking</li>
+<li><code>src/</code> package structure with proper module separation</li>
+<li><code>src/gui/dialogs.py</code> — extracted PasswordGeneratorDialog and DocumentationDialog</li>
+<li><code>src/gui/theme.py</code> — dark and light mode stylesheets</li>
+<li><code>src/main.py</code> — clean application entry point</li>
+<li><code>src/__init__.py</code> — PROJECT_ROOT constant for portable data paths</li>
+<li><code>assets/</code> directory for application icon</li>
+<li>Dark/light theme toggle in Settings menu (persistent across sessions)</li>
+<li>In-app help now loads from consolidated <code>docs/USER_GUIDE.md</code></li>
+</ul>
+<h3 id="changed">Changed</h3>
+<ul>
+<li>Customized AGENTS.md for kissPWM_v6 (paths, critical files, database schema)</li>
+<li>Updated USER_GUIDE.md with actual application features and documentation</li>
+<li>Refactored monolithic <code>main_app_pyside.py</code> (~1250 lines) into <code>src/</code> package (7 files)</li>
+<li>Updated <code>kiss_pwm_v6.spec</code> to use <code>src/main.py</code> as entry point and bundle <code>docs/</code></li>
+<li><code>main_app_pyside.py</code> is now a thin wrapper around <code>src.main.run()</code></li>
+<li>Updated <code>.gitignore</code> to exclude app data files and both <code>kiss/</code> and <code>venv/</code> dirs</li>
+<li>Updated <code>requirements.txt</code> with actual runtime dependencies</li>
+<li><strong>C3</strong>: Created <code>venv/</code> symlink → <code>kiss/</code> for standardized virtual env name</li>
+</ul>
+<h3 id="added_1">Added</h3>
+<ul>
+<li><strong>A3</strong>: Portable mode detection and config — <code>.portable</code> marker file, toggle in Settings menu, status bar indicator</li>
+<li><strong>A2</strong>: System tray icon with quick-lock — tray menu (Show Window, Lock Vault, Quit), minimize-to-tray on close</li>
+</ul>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li><strong>F0</strong>: <code>resource_path()</code> missing <code>sys</code> import — added <code>import sys</code> at module level</li>
+<li><strong>F1</strong>: <code>find_and_remove_duplicates()</code> backup call ordering — moved <code>create_pre_op_backup()</code> after docstring</li>
+<li><strong>F2</strong>: Created <code>assets/</code> directory (icon optionally placed there, gracefully handled)</li>
+</ul>
+<h2 id="2026-07-24-session-4">2026-07-24 (session 4)</h2>
+<h3 id="added_2">Added</h3>
+<ul>
+<li><strong>Category filter</strong> dropdown (QComboBox next to search) with dynamic population from credentials</li>
+<li><strong>Tag filter</strong> dropdown — parses comma-separated tags, filters entries</li>
+<li><strong>Tag field</strong> (<code>tags</code> TEXT column, auto-migrated) on the edit form</li>
+<li><strong>Custom fields</strong> (<code>custom_fields</code> TEXT column, JSON array) with add/remove table UI</li>
+<li><strong>Password health report</strong> (Tools menu) — scans weak/reused/short passwords with detail table</li>
+<li><strong>Sort toggle</strong> — click Title/Username/Category column headers to sort ascending/descending</li>
+<li><strong>Double-click table cell to copy</strong> — copies value to clipboard with 15s auto-clear</li>
+<li><strong>Right-click context menu</strong> on table (Copy Username, Copy Password, Edit, Delete)</li>
+<li><strong>Category click-to-filter</strong> — single-click a category cell to auto-set filter dropdown</li>
+<li><strong>Favicon auto-fetch</strong> (Tools menu) — downloads 16×16 favicons from Google service, caches in-memory, displays in Title column</li>
+<li><strong>Rich text notes</strong> — B/I/U formatting toolbar, stored as HTML</li>
+<li><strong>One-click backup</strong> — status bar message instead of modal dialog, timestamped filenames</li>
+</ul>
+<h3 id="changed_1">Changed</h3>
+<ul>
+<li>Auto-lock: <code>WindowDeactivate</code> now resets activity timer instead of immediately locking</li>
+<li>Table columns: increased default sizes (Title 220, Username 160, Category 140), minimum section 100px</li>
+<li>QComboBox styling: matched 30px height to QLineEdit in both themes</li>
+<li>Form labels right-aligned, grid vertical spacing set to 4px</li>
+<li>Splitter: equal initial sizes [500, 500], form panel capped at 700px max width</li>
+<li>Custom fields table: removed max-height cap, added stretch factor (1:2 with form grid)</li>
+<li>Sort signal moved to <code>create_main_content</code> (connected once, not on every refresh)</li>
+</ul>
+<h3 id="fixed_1">Fixed</h3>
+<ul>
+<li>Password strength bar: hidden by Email QLineEdit in same grid cell — fixed with independent row counter</li>
+<li>File → Quit minimized to tray instead of quitting — now calls <code>_quit_application()</code> directly</li>
+<li>Header text clipping in credential table — added <code>setFixedHeight(50)</code> on horizontal header</li>
+<li><code>sectionClicked.disconnect()</code> RuntimeWarning — moved connection to table creation</li>
+</ul>
+<hr />
+<h2 id="bug-tracker">Bug Tracker</h2>
+<h1 id="kisspwm_v6-bug-tracker">kissPWM_v6 Bug Tracker</h1>
+<h2 id="f0-resource_path-references-sys_meipass-without-module-level-sys-import">F0 — <code>resource_path()</code> references <code>sys._MEIPASS</code> without module-level <code>sys</code> import</h2>
+<ul>
+<li><strong>Status</strong>: Fixed</li>
+<li><strong>Fixed</strong>: 2026-07-24</li>
+<li><strong>Found</strong>: 2026-07-24</li>
+<li><strong>Tags</strong>: bug, gui, packaging</li>
+<li><strong>Description</strong>: <code>resource_path()</code> in <code>main_app_pyside.py:58</code> uses <code>sys._MEIPASS</code> to resolve bundled asset paths in PyInstaller builds, but <code>sys</code> is only imported at the <code>__main__</code> block (line 1233), not at module level. This will cause a <code>NameError</code> in frozen builds.</li>
+<li><strong>Root Cause</strong>: <code>import sys</code> is at line 1233 (<code>if __name__ == "__main__"</code> block) instead of the top of the file.</li>
+<li><strong>Fix</strong>: Add <code>import sys</code> to the top-level imports in <code>main_app_pyside.py</code>.</li>
+<li><strong>Files</strong>: <code>main_app_pyside.py</code></li>
+</ul>
+<h2 id="f1-find_and_remove_duplicates-calls-backup-before-docstring">F1 — <code>find_and_remove_duplicates()</code> calls backup before docstring</h2>
+<ul>
+<li><strong>Status</strong>: Fixed</li>
+<li><strong>Fixed</strong>: 2026-07-24</li>
+<li><strong>Found</strong>: 2026-07-24</li>
+<li><strong>Tags</strong>: bug, database</li>
+<li><strong>Description</strong>: In <code>db_manager.py:244</code>, <code>self.create_pre_op_backup("Duplicate Removal")</code> is called on the line immediately after <code>def find_and_remove_duplicates(self):</code>, before the docstring and actual logic. While Python still executes this correctly (the docstring is a no-op string literal), the intent is confusing — the backup call looks like it belongs to the previous method or is misplaced.</li>
+<li><strong>Root Cause</strong>: The <code>create_pre_op_backup</code> call was placed between the method signature and the docstring during a refactor, making the execution order non-obvious.</li>
+<li><strong>Fix</strong>: Move <code>self.create_pre_op_backup("Duplicate Removal")</code> to after the docstring, at line ~256.</li>
+<li><strong>Files</strong>: <code>db_manager.py</code></li>
+</ul>
+<h2 id="f2-assetskiss_iconico-referenced-but-assets-directory-does-not-exist">F2 — <code>assets/kiss_icon.ico</code> referenced but <code>assets/</code> directory does not exist</h2>
+<ul>
+<li><strong>Status</strong>: Fixed</li>
+<li><strong>Fixed</strong>: 2026-07-24</li>
+<li><strong>Found</strong>: 2026-07-24</li>
+<li><strong>Tags</strong>: bug, gui</li>
+<li><strong>Description</strong>: <code>main_app_pyside.py:252</code> attempts to load an icon from <code>assets/kiss_icon.ico</code>, but no <code>assets/</code> directory exists in the project. The error is silently caught and logged to console only.</li>
+<li><strong>Root Cause</strong>: Icon file was planned but never created/committed.</li>
+<li><strong>Fix</strong>: Create <code>assets/</code> directory with a valid <code>.ico</code> (or <code>.png</code>) application icon, or remove the icon reference. Update <code>kiss_pwm_v6.spec</code> to bundle <code>assets/</code> if not already done.</li>
+<li><strong>Files</strong>: <code>assets/kiss_icon.ico</code> (missing), <code>main_app_pyside.py</code>, <code>kiss_pwm_v6.spec</code></li>
+</ul>
+<h2 id="f3-auto-lock-triggers-immediately-on-windowdeactivate">F3 — Auto-lock triggers immediately on WindowDeactivate</h2>
+<ul>
+<li><strong>Status</strong>: Fixed</li>
+<li><strong>Fixed</strong>: 2026-07-24</li>
+<li><strong>Found</strong>: 2026-07-24</li>
+<li><strong>Tags</strong>: bug, security, ui</li>
+<li><strong>Description</strong>: <code>_check_focus_lock()</code> called <code>lock_application()</code> immediately on <code>WindowDeactivate</code>, bypassing the configured lockout timeout. Switching to another window (e.g., terminal) would lock the vault instantly regardless of the 3-minute setting.</li>
+<li><strong>Root Cause</strong>: <code>eventFilter</code> called <code>_check_focus_lock()</code> on <code>WindowDeactivate</code>, which locked immediately if lockout was not set to "Never".</li>
+<li><strong>Fix</strong>: Changed <code>WindowDeactivate</code> handler to call <code>reset_activity_timer()</code> instead of <code>_check_focus_lock()</code>. The configured timeout is now respected.</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+</ul>
+<h2 id="f4-password-strength-bar-hidden-by-email-qlineedit-in-grid-cell">F4 — Password strength bar hidden by Email QLineEdit in grid cell</h2>
+<ul>
+<li><strong>Status</strong>: Fixed</li>
+<li><strong>Fixed</strong>: 2026-07-24</li>
+<li><strong>Found</strong>: 2026-07-24</li>
+<li><strong>Tags</strong>: bug, ui</li>
+<li><strong>Description</strong>: The <code>PasswordStrengthBar</code> was placed at grid row 4 column 1, but the Email QLineEdit was also at row 4 column 1 (due to <code>enumerate</code> indices). The QLineEdit overwrote the progress bar, making it invisible.</li>
+<li><strong>Root Cause</strong>: Using <code>enumerate</code> for grid rows with an extra row inserted for the strength bar caused a cell collision.</li>
+<li><strong>Fix</strong>: Replaced <code>enumerate</code> with an independent <code>row</code> counter that increments past the strength bar row (row += 1 inside the password block).</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+</ul>
+<h2 id="f5-file-quit-minimizes-to-tray-instead-of-quitting">F5 — File → Quit minimizes to tray instead of quitting</h2>
+<ul>
+<li><strong>Status</strong>: Fixed</li>
+<li><strong>Fixed</strong>: 2026-07-24</li>
+<li><strong>Found</strong>: 2026-07-24</li>
+<li><strong>Tags</strong>: bug, ui</li>
+<li><strong>Description</strong>: File → Quit called <code>self.close()</code> which triggered <code>closeEvent</code> → minimize to tray. There was no way to actually quit the application from the menu.</li>
+<li><strong>Root Cause</strong>: <code>closeEvent</code> always minimized to tray when tray icon was visible.</li>
+<li><strong>Fix</strong>: Created <code>_quit_application()</code> that hides tray, runs cleanup, and calls <code>QApplication.quit()</code>. Both File → Quit and tray → Quit use this method.</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+</ul>
+<h2 id="f6-header-text-clipped-in-credential-table">F6 — Header text clipped in credential table</h2>
+<ul>
+<li><strong>Status</strong>: Fixed</li>
+<li><strong>Fixed</strong>: 2026-07-24</li>
+<li><strong>Found</strong>: 2026-07-24</li>
+<li><strong>Tags</strong>: bug, ui</li>
+<li><strong>Description</strong>: The horizontal header text in the credential table was partially visible, with words cut off at the edges. Increasing column widths or reducing padding didn't fully resolve it.</li>
+<li><strong>Root Cause</strong>: The QHeaderView section height was determined by content and padding, but the minimum size wasn't enough for the bold 11pt font with 4px padding.</li>
+<li><strong>Fix</strong>: Added <code>horizontalHeader().setFixedHeight(50)</code> to force adequate header height.</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+</ul>
+<h2 id="f7-sectionclickeddisconnect-runtimewarning-on-every-table-refresh">F7 — <code>sectionClicked.disconnect()</code> RuntimeWarning on every table refresh</h2>
+<ul>
+<li><strong>Status</strong>: Fixed</li>
+<li><strong>Fixed</strong>: 2026-07-24</li>
+<li><strong>Found</strong>: 2026-07-24</li>
+<li><strong>Tags</strong>: bug, performance</li>
+<li><strong>Description</strong>: Every call to <code>update_list_view()</code> tried to disconnect and reconnect the <code>sectionClicked</code> signal, producing a RuntimeWarning: "Failed to disconnect (None) from signal".</li>
+<li><strong>Root Cause</strong>: Signal connection/disconnection happened in <code>update_list_view</code> (called on every credential change) instead of during table creation.</li>
+<li><strong>Fix</strong>: Moved <code>h.sectionClicked.connect(self._handle_sort)</code> to <code>create_main_content</code> where the table is created once.</li>
+<li><strong>Files</strong>: <code>src/gui/app.py</code></li>
+</ul>
+<hr />
+<h2 id="development-costs">Development Costs</h2>
+<blockquote>
+<p>Summary updated manually. Run <code>python scripts/update_cost.py</code> to append new sessions.</p>
+</blockquote>
+<h2 id="kisspwm_v6-project-cost">kissPWM_v6 Project Cost</h2>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Timeline</th>
+<th>Model</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-07-24</td>
+<td>2026-07-24 (1 day)</td>
+<td>DeepSeek V4 Flash</td>
+<td>$0.00</td>
+</tr>
+<tr>
+<td>2026-07-24</td>
+<td>2026-07-24 (session 2-4)</td>
+<td>DeepSeek V4 Flash</td>
+<td>~$0.15</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cost-breakdown">Cost Breakdown</h2>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Session</th>
+<th>Model</th>
+<th>Tokens In</th>
+<th>Tokens Out</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-07-24</td>
+<td>Project scaffolding &amp; audit</td>
+<td>DeepSeek V4 Flash</td>
+<td>~15,000</td>
+<td>~8,000</td>
+<td>~$0.004</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="model-pricing-reference">Model Pricing Reference</h2>
+<pre><code>## Model Pricing Reference (as of 2026-07-24)
+
+| Model | Input ($/M tokens) | Output ($/M tokens) |
+|---|---|---|
+| DeepSeek V4 Flash (off-peak) | $0.14 | $0.28 |
+| DeepSeek V4 Flash (peak) | $0.28 | $0.56 |
+| Gemini 2.5 Flash-Lite | $0.10 | $0.40 |
+| Gemini 2.5 Flash | $0.25 | $1.00 |
+| Ollama (local) | $0 (compute only) | $0 |
+
+### Peak Hours
+- DeepSeek peak: 9:00–12:00 &amp; 14:00–18:00 Beijing time (UTC+8)
+- Convert CT to Beijing: CT + 13 hours (CDT) or +14 (CST)
+
+</code></pre>
+<hr />
+<h2 id="diagram-kisspwm_v6">Diagram (kissPWM_v6)</h2>
+<pre><code>                                  ┌─────────────────────────────────────┐
+                                  │         MasterPasswordScreen        │
+                                  ├─────────────────────────────────────┤          .master.key
+                                  │ Setup new master password           │◄──────── (PBKDF2 hash)
+                                  │ Verify &amp; derive encryption key      │
+                                  │ Login / Lock screen                 │
+                                  └─────────────┬───────────────────────┘
+                                                │ on success
+                                                ▼
+                ┌───────────────────────────────────────────────────────────────────────────┐
+                │                              PySidePWManager                              │
+                │  ┌──────────────────────────────┐    ┌─────────────────────────────────┐  │
+                │  │        QStackedWidget         │    │  QSystemTrayIcon               │  │
+                │  │  ├─ Auth View                 │    │  ├─ Show Window                │  │
+                │  │  └─ Main Content View         │    │  ├─ Lock Vault                 │  │
+                │  │                               │    │  └─ Quit                       │  │
+                │  └──────────────────────────────┘    └─────────────────────────────────┘  │
+                │                                                                           │
+                │  ┌─────────────────────────────────────────────────────────────────────┐  │
+                │  │                      QSplitter (Horizontal)                        │  │
+                │  │  ┌──────────────────────────────┐  ┌─────────────────────────────┐  │  │
+                │  │  │      Credential List (Left)   │  │      Edit Form (Right)      │  │  │
+                │  │  ├──────────────────────────────┤  ├─────────────────────────────┤  │  │
+                │  │  │ Search [___________]          │  │ Title: [_______________]    │  │  │
+                │  │  │ Category [▼ All]  Tag [▼ All] │  │ URL:   [_______________]    │  │  │
+                │  │  │ ┌────┬──────┬─────┬──────┐   │  │ Username: [_______________] │  │  │
+                │  │  │ │Title│User │ URL │Cat. │   │  │ Password: [_________] [👁] │  │  │
+                │  │  │ ├────┼──────┼─────┼──────┤   │  │           [Generate] [Copy]  │  │  │
+                │  │  │ │     │      │     │      │   │  │           ████████░░ 80%      │  │  │
+                │  │  │ │     │      │     │      │   │  │ Email:  [_______________]    │  │  │
+                │  │  │ └────┴──────┴─────┴──────┘   │  │ Phone:  [_______________]    │  │  │
+                │  │  │ [Add New] [Edit] [Delete]     │  │ Address:[_______________]    │  │  │
+                │  │  │                               │  │ Category:[_______________]    │  │  │
+                │  │  │ Sort: click header ▲/▼       │  │ Tags:   [tag1, tag2, tag3]   │  │  │
+                │  │  │ Right-click: context menu     │  │ Notes:  [B] [I] [U]         │  │  │
+                │  │  │ Double-click: copy cell       │  │          [________________]  │  │  │
+                │  │  │ Click category: set filter    │  │          [________________]  │  │  │
+                │  │  │ Favicon: ✓ in Title column    │  │ Custom Fields:              │  │  │
+                │  │  └──────────────────────────────┘  │  │ ┌───────┬──────────────┐  │  │  │
+                │  │                                    │  │ │ Field │ Value        │  │  │  │
+                │  │                                    │  │ ├───────┼──────────────┤  │  │  │
+                │  │                                    │  │ │ API   │ abc123       │  │  │  │
+                │  │                                    │  │ └───────┴──────────────┘  │  │  │
+                │  │                                    │  │ [+ Add] [- Remove]        │  │  │
+                │  │                                    │  │ [Save] [Cancel]           │  │  │
+                │  │                                    │  └─────────────────────────────┘  │  │
+                │  └─────────────────────────────────────────────────────────────────────┘  │
+                └───────────────────────────────────────────────────────────────────────────┘
+                                            │
+                                            ▼
+                ┌───────────────────────────────────────────────────────────────────────────┐
+                │                             DatabaseManager                               │
+                │  ┌─────────────────────────────────────────────────────────────────────┐  │
+                │  │  credentials table                                                    │  │
+                │  │  db_id, title, url, username, email, password(encrypted), phone,     │  │
+                │  │  address, category, notes, tags, custom_fields, parent_id,           │  │
+                │  │  created_at, modified_at                                             │  │
+                │  │                                                                      │  │
+                │  │  ┌──────────────────────────────────────────────────────────────┐    │  │
+                │  │  │  core_logic.py  encrypt_data() / decrypt_data() (Fernet/AES) │    │  │
+                │  │  │  PBKDF2 key derivation (480K iterations)                     │    │  │
+                │  │  │  CredentialEntry data model                                  │    │  │
+                │  │  └──────────────────────────────────────────────────────────────┘    │  │
+                │  └─────────────────────────────────────────────────────────────────────┘  │
+                │                                                                           │
+                │  ┌─────────────────────────────────────────────────────────────────────┐  │
+                │  │  Tools &amp; Features                                                    │  │
+                │  │  ├─ CSV Import / Export                                              │  │
+                │  │  ├─ Timestamped Auto-Backup (on save, shutdown)                      │  │
+                │  │  ├─ Manual Backup (1-click, timestamped filename)                    │  │
+                │  │  ├─ Password Health Report (weak/reused/short scan)                  │  │
+                │  │  ├─ Fetch Favicons (Google service, cached in-memory)                │  │
+                │  │  ├─ Find &amp; Remove Duplicates (title+username match)                  │  │
+                │  │  └─ Password Generator (length 8-64, char set options)               │  │
+                │  └─────────────────────────────────────────────────────────────────────┘  │
+                │                                                                           │
+                │  ┌─────────────────────────────────────────────────────────────────────┐  │
+                │  │  Configuration                                                        │  │
+                │  │  ├─ Theme: Dark / Light (persistent in .app_settings.json)            │  │
+                │  │  ├─ Auto-Lock: 1/3/5/10/30 min or Never                             │  │
+                │  │  ├─ Clipboard: auto-clear after 15s                                 │  │
+                │  │  └─ Portable Mode: data stays in app directory (.portable marker)    │  │
+                │  └─────────────────────────────────────────────────────────────────────┘  │
+                └───────────────────────────────────────────────────────────────────────────┘
+
+------------------
+
+```mermaid
+flowchart TD
+    subgraph Auth[&quot;Authentication Layer&quot;]
+        A1[Setup Master Password] --&gt; A2[Hash with PBKDF2]
+        A2 --&gt; A3[Store hash in .master.key]
+        A4[Login] --&gt; A5[Verify password]
+        A5 --&gt; A6[Derive encryption key]
+    end
+
+    subgraph UI[&quot;PySide6 GUI&quot;]
+        U1[QStackedWidget]
+        U1 --&gt; U2[Auth View]
+        U1 --&gt; U3[Main Content View]
+        U3 --&gt; U4[QSplitter]
+        U4 --&gt; U5[Credential List]
+        U4 --&gt; U6[Edit Form]
+        U6 --&gt; U7[Password Generator]
+        U6 --&gt; U8[Rich Text Notes]
+        U6 --&gt; U9[Custom Fields]
+        U6 --&gt; U10[Tags Field]
+        U5 --&gt; U11[Sort Toggle]
+        U5 --&gt; U12[Context Menu]
+        U5 --&gt; U13[Favicon Icons]
+        U5 --&gt; U14[Double-Click Copy]
+        U15[System Tray Icon]
+        U15 --&gt; U16[Lock Vault]
+        U15 --&gt; U17[Show Window]
+        U15 --&gt; U18[Quit]
+    end
+
+    subgraph UI2[&quot;Filters &amp; Tools&quot;]
+        F1[Search Bar]
+        F2[Category Filter]
+        F3[Tag Filter]
+        F4[Password Health Report]
+        F5[Fetch Favicons]
+    end
+
+    subgraph Config[&quot;Configuration&quot;]
+        P1[Portable Mode]
+        P2[Theme Dark/Light]
+        P3[Auto-Lock Timer]
+    end
+
+    subgraph Data[&quot;Data Layer&quot;]
+        D1[SQLite Database]
+        D2[credentials table]
+        D2 --&gt; D3[tags TEXT]
+        D2 --&gt; D4[custom_fields TEXT]
+        D2 --&gt; D5[AES-256 encrypted password]
+        D6[CSV Import/Export]
+        D7[Auto Backup]
+    end
+
+    Auth --&gt; UI
+    UI --&gt; Filters
+    Filters --&gt; Data
+    UI --&gt; Data
+    Config --&gt; UI
+</code></pre>
+<pre><code class="language-mermaid">classDiagram
+    class PySidePWManager {
+        -QStackedWidget stacked_widget
+        -DatabaseManager db_manager
+        -credentials: List[CredentialEntry]
+        -_favicon_cache: dict
+        -sort_column, sort_order
+        +check_setup_state()
+        +attempt_login()
+        +save_credential()
+        +delete_credential()
+        +handle_export()
+        +handle_import()
+        +lock_application()
+        +show_password_health()
+        +_fetch_favicons()
+        +_handle_sort()
+        +_table_context_menu()
+        +_table_cell_double_clicked()
+        +_table_cell_clicked()
+    }
+
+    class DatabaseManager {
+        -conn: sqlite3.Connection
+        -encryption_key: bytes
+        +load_all_credentials()
+        +save_credential()
+        +update_credential()
+        +delete_credential()
+        +export_to_csv()
+        +import_from_csv()
+        +find_and_remove_duplicates()
+    }
+
+    class CredentialEntry {
+        +db_id, title, url, username
+        +email, password, phone, address
+        +category, notes, tags
+        +custom_fields, parent_id
+        +created_at, modified_at
+        +to_dict()
+    }
+
+    PySidePWManager --&gt; DatabaseManager
+    DatabaseManager --&gt; CredentialEntry
+    DatabaseManager ..&gt; core_logic : encrypt/decrypt
+</code></pre>
+<p>```</p>
+<hr />
+<p><em>Generated on 2026-07-24 13:51 CT by <code>scripts/build_reference.py</code></em></p>
+</body>
+</html>

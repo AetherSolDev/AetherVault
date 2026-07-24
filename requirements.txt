@@ -1,0 +1,14 @@
+# Created: 2026-07-24
+# Last Edited: 2026-07-24 00:33 CT (America/Chicago)
+# Path: requirements.txt
+# Purpose: Project dependencies for kissPWM_v6.
+
+# Application dependencies
+PySide6>=6.5.0
+cryptography>=41.0.0
+
+# Optional — only needed if using mermaid_to_ascii.py for diagram generation
+# mermaidx
+
+# Optional — only needed if using build_reference.py for HTML output
+# markdown
