@@ -34,24 +34,17 @@ AetherLock/
 │       ├── app.py             # PySidePWManager — main window and UI logic
 │       ├── dialogs.py         # PasswordGeneratorDialog, DocumentationDialog
 │       └── theme.py           # Dark and light theme stylesheets
-├── main_app_pyside.py         # Thin entry point (delegates to src.main.run)
-├── help_doc.md                # Legacy user documentation
+├── aetherlock.py              # Application entry point
 ├── docs/
 │   ├── USER_GUIDE.md          # Consolidated user documentation
-│   └── sys/                   # System documentation (PLAN, ARCHITECTURE, etc.)
-├── instructions/              # Prompt templates for AI workflow
-├── scripts/                   # Utility scripts (build_reference, cost, etc.)
+│   ├── USER_GUIDE.html        # HTML version for in-app help
+│   └── sys/                   # System documentation (REFERENCE, diagram)
 ├── assets/                    # Application icon resources
-├── .portable                  # Portable mode marker (created at runtime)
-├── AGENTS.md                  # Agent instructions (READ ONLY)
-├── aetherlock.spec           # PyInstaller build spec
 ├── .gitignore
 ├── .repomixignore
 ├── requirements.txt
-├── password_manager.db        # Encrypted vault (SQLite)
-├── password_manager.db.bak    # Auto-backup
-├── .master.key                # Master password hash (PBKDF2)
-└── .app_settings.json         # App settings (lockout, theme, etc.)
+├── LICENSE
+└── README.md
 ```
 
 ## Architecture Layers
@@ -119,7 +112,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 | `src/gui/theme.py` | Dark/light mode stylesheets, QPalette |
 | `src/main.py` | QApplication entry point |
 | `docs/USER_GUIDE.md` | User-facing documentation (opened from Help menu) |
-| `aetherlock.spec` | PyInstaller spec for building standalone `.exe` |
+| `aetherlock.py` | Application entry point |
 
 ## Key Decisions
 
@@ -156,8 +149,8 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 - **Need to change encryption?** → `core_logic.py` (encrypt_data, decrypt_data, derive_encryption_key)
 - **Need to add a DB operation?** → `db_manager.py` (DatabaseManager class)
-- **Need to change UI layout?** → `main_app_pyside.py` (PySidePWManager class)
-- **Need to add a menu item?** → `main_app_pyside.py` (setup_menu_bar method)
+- **Need to change UI layout?** → `src/gui/app.py` (PySidePWManager class)
+- **Need to add a menu item?** → `src/gui/app.py` (setup_menu_bar method)
 - **Need to change backup behavior?** → `db_manager.py` (create_pre_op_backup, _auto_backup_db)
 
 ## Session History Summary

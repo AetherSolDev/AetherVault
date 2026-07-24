@@ -48,6 +48,8 @@ journal.md
 
 # Generated artifacts
 repomix-output.*
+.repomixignore
+AetherVault/
 
 # Docs/sys individual files (consolidated into REFERENCE.md/html)
 # Keep only the mmd diagram and combined reference
@@ -65,3 +67,4 @@ docs/sys/function_inventory.*
 scripts/
 instructions/
 AGENTS.md
+aetherlock.spec

@@ -71,24 +71,17 @@ Source: <code>scripts/build_reference.py</code></p>
 │       ├── app.py             # PySidePWManager — main window and UI logic
 │       ├── dialogs.py         # PasswordGeneratorDialog, DocumentationDialog
 │       └── theme.py           # Dark and light theme stylesheets
-├── main_app_pyside.py         # Thin entry point (delegates to src.main.run)
-├── help_doc.md                # Legacy user documentation
+├── aetherlock.py              # Application entry point
 ├── docs/
 │   ├── USER_GUIDE.md          # Consolidated user documentation
-│   └── sys/                   # System documentation (PLAN, ARCHITECTURE, etc.)
-├── instructions/              # Prompt templates for AI workflow
-├── scripts/                   # Utility scripts (build_reference, cost, etc.)
+│   ├── USER_GUIDE.html        # HTML version for in-app help
+│   └── sys/                   # System documentation (REFERENCE, diagram)
 ├── assets/                    # Application icon resources
-├── .portable                  # Portable mode marker (created at runtime)
-├── AGENTS.md                  # Agent instructions (READ ONLY)
-├── aetherlock.spec           # PyInstaller build spec
 ├── .gitignore
 ├── .repomixignore
 ├── requirements.txt
-├── password_manager.db        # Encrypted vault (SQLite)
-├── password_manager.db.bak    # Auto-backup
-├── .master.key                # Master password hash (PBKDF2)
-└── .app_settings.json         # App settings (lockout, theme, etc.)
+├── LICENSE
+└── README.md
 </code></pre>
 <h2 id="architecture-layers">Architecture Layers</h2>
 <h3 id="1-data-layer-srccore_logicpy-srcdb_managerpy">1. Data Layer (<code>src/core_logic.py</code>, <code>src/db_manager.py</code>)</h3>
@@ -178,8 +171,8 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <td>User-facing documentation (opened from Help menu)</td>
 </tr>
 <tr>
-<td><code>aetherlock.spec</code></td>
-<td>PyInstaller spec for building standalone <code>.exe</code></td>
+<td><code>aetherlock.py</code></td>
+<td>Application entry point</td>
 </tr>
 </tbody>
 </table>
@@ -239,8 +232,8 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <ul>
 <li><strong>Need to change encryption?</strong> → <code>core_logic.py</code> (encrypt_data, decrypt_data, derive_encryption_key)</li>
 <li><strong>Need to add a DB operation?</strong> → <code>db_manager.py</code> (DatabaseManager class)</li>
-<li><strong>Need to change UI layout?</strong> → <code>main_app_pyside.py</code> (PySidePWManager class)</li>
-<li><strong>Need to add a menu item?</strong> → <code>main_app_pyside.py</code> (setup_menu_bar method)</li>
+<li><strong>Need to change UI layout?</strong> → <code>src/gui/app.py</code> (PySidePWManager class)</li>
+<li><strong>Need to add a menu item?</strong> → <code>src/gui/app.py</code> (setup_menu_bar method)</li>
 <li><strong>Need to change backup behavior?</strong> → <code>db_manager.py</code> (create_pre_op_backup, _auto_backup_db)</li>
 </ul>
 <h2 id="session-history-summary">Session History Summary</h2>

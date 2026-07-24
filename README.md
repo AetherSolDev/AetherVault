@@ -60,7 +60,7 @@ source venv/bin/activate   # Linux/macOS
 pip install -r requirements.txt
 
 # Run the application
-python main_app_pyside.py
+python aetherlock.py
 ```
 
 ### Build Standalone Executable
@@ -123,7 +123,7 @@ AetherLock/
 │   └── sys/                 # System documentation
 ├── scripts/                 # Utility scripts
 ├── assets/                  # Application icon (optional)
-├── main_app_pyside.py       # Thin entry point
+├── aetherlock.py            # Application entry point
 ├── requirements.txt
 └── aetherlock.spec         # PyInstaller build spec
 ```
