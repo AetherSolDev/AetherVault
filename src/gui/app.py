@@ -144,7 +144,7 @@ class PySidePWManager(QMainWindow):
         self.resize(1100, 700)
         self.setMinimumSize(750, 500)
 
-        icon_path = resource_path(os.path.join("assets", "kiss_icon.ico"))
+        icon_path = resource_path(os.path.join("assets", "aetherlock.ico"))
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 

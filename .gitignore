@@ -17,14 +17,14 @@ __pycache__/
 *.jks
 *.keystore
 
-# App data files
-*.db
-*.db-bak
-*.db.bak
-*.db-shm
-*.db-wal
-.app_settings.json
-.master.key
+# App data files (runtime-generated in src/data/)
+src/data/*.db
+src/data/*.db-bak
+src/data/*.db.bak
+src/data/*.db-shm
+src/data/*.db-wal
+src/data/.master.key
+src/data/.app_settings.json
 .portable
 
 # Build output
@@ -33,7 +33,6 @@ build/
 app/build/
 app/release/
 app/debug/
-*.spec
 
 # Logs and temp
 logs/
@@ -49,3 +48,15 @@ journal.md
 
 # Generated artifacts
 repomix-output.*
+
+# Docs/sys individual files (consolidated into REFERENCE.md/html)
+# Keep only the mmd diagram and combined reference
+docs/sys/ARCHITECTURE.md
+docs/sys/BUGS.md
+docs/sys/CHANGELOG.md
+docs/sys/COST.md
+docs/sys/KNOWLEDGE.md
+docs/sys/PLAN.md
+docs/sys/TASKS.md
+docs/sys/Model_Pricing_Reference.txt
+docs/sys/function_inventory.*

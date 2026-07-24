@@ -8,6 +8,7 @@ import os
 import shutil
 import sqlite3
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from src.core_logic import (
@@ -42,6 +43,7 @@ class DatabaseManager:
 
     def _connect(self):
         try:
+            Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
             self.conn = sqlite3.connect(self.db_path)
             self.conn.row_factory = sqlite3.Row
             self.cursor = self.conn.cursor()

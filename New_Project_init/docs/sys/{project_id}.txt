@@ -1,4 +1,0 @@
-# Created: YYYY-MM-DD
-# Last Edited: YYYY-MM-DD HH:MM CT (America/Chicago)
-# Path: templates/docs/sys/{project_id}.txt
-# Purpose: ASCII flowchart generated from the Mermaid diagram.

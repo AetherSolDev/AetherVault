@@ -20,11 +20,12 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from src import PROJECT_ROOT
 
-DB_PATH = os.path.join(PROJECT_ROOT, "password_manager.db")
-MASTER_KEY_FILE = os.path.join(PROJECT_ROOT, ".master.key")
+DATA_DIR = os.path.join(PROJECT_ROOT, "src", "data")
+DB_PATH = os.path.join(DATA_DIR, "aetherlock.db")
+MASTER_KEY_FILE = os.path.join(DATA_DIR, ".master.key")
 DB_BACKUP_PATH = f"{DB_PATH}.bak"
 JOURNAL_FILE = os.path.join(PROJECT_ROOT, "journal.md")
-APP_SETTINGS_FILE = os.path.join(PROJECT_ROOT, ".app_settings.json")
+APP_SETTINGS_FILE = os.path.join(DATA_DIR, ".app_settings.json")
 
 APPLICATION_SALT = b"password_manager_salt_value_12345"
 backend = default_backend()

@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-07-24 15:10 CT from docs/sys/
+> Auto-generated on 2026-07-24 15:27 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -1025,4 +1025,4 @@ classDiagram
 
 ---
 
-*Generated on 2026-07-24 15:10 CT by `scripts/build_reference.py`*
+*Generated on 2026-07-24 15:27 CT by `scripts/build_reference.py`*
