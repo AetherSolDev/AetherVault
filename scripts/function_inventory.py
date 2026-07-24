@@ -2,7 +2,7 @@
 # Created: 2026-07-05
 # Path: scripts/function_inventory.py
 # Last Edited: 2026-07-24 13:36 CT (America/Chicago)
-# Purpose: Generate a tree view of all functions in the kissPWM_v6 codebase
+# Purpose: Generate a tree view of all functions in the AetherLock codebase
 
 import os
 import re
@@ -169,7 +169,7 @@ class FunctionInventory:
     def to_tree(self) -> str:
         """Generate a tree view of all functions."""
         lines = []
-        lines.append("📂 kissPWM_v6 Function Inventory")
+        lines.append("📂 AetherLock Function Inventory")
         lines.append("=" * 50)
         lines.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         lines.append(f"Total Functions: {len(self.functions)}")

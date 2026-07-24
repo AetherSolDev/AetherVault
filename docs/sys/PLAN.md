@@ -1,9 +1,9 @@
 # Created: 2026-07-24
 # Last Edited: 2026-07-24 13:36 CT (America/Chicago)
 # Path: docs/sys/PLAN.md
-# Purpose: High-level project plan with phases and milestones for kissPWM_v6.
+# Purpose: High-level project plan with phases and milestones for AetherLock.
 
-# kissPWM_v6 Plan
+# AetherLock Plan
 
 ## Legend
 - C = Changes / Updates

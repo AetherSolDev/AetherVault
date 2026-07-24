@@ -1,11 +1,11 @@
 # Created: 2026-07-24
 # Last Edited: 2026-07-24 13:36 CT (America/Chicago)
 # Path: docs/sys/ARCHITECTURE.md
-# Purpose: Architecture diagram and description for kissPWM_v6.
+# Purpose: Architecture diagram and description for AetherLock.
 
 ## Directory Structure
 ```
-kissPWM_v6/
+AetherLock/
 ├── src/
 │   ├── __init__.py            # Package init, PROJECT_ROOT constant
 │   ├── core_logic.py          # Encryption, hashing, data model, settings
@@ -26,7 +26,7 @@ kissPWM_v6/
 ├── assets/                    # Application icon resources
 ├── .portable                  # Portable mode marker (created at runtime)
 ├── AGENTS.md                  # Agent instructions (READ ONLY)
-├── kiss_pwm_v6.spec           # PyInstaller build spec
+├── aetherlock.spec           # PyInstaller build spec
 ├── .gitignore
 ├── .repomixignore
 ├── requirements.txt

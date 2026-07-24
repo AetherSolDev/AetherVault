@@ -133,7 +133,7 @@ class DocumentationDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("KISS Password Manager Documentation")
+        self.setWindowTitle("AetherLock Documentation")
         self.setMinimumSize(700, 500)
         self.layout = QVBoxLayout(self)
         self.text_editor = QTextEdit()

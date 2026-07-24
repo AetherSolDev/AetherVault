@@ -1,8 +1,8 @@
-# KISS Password Manager
+# AetherLock
 
-**K**eep **I**t **S**imple & **S**ecure — A local, portable, encrypted password vault.
+A local, portable, encrypted password vault.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5+-green.svg)](https://pypi.org/project/PySide6/)
 [![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey)]()
@@ -12,7 +12,7 @@
 
 ## Overview
 
-KISS Password Manager is a desktop application that stores your credentials in an encrypted local SQLite database. No cloud, no servers, no subscriptions — your data stays on your machine, encrypted with AES-256.
+AetherLock is a desktop application that stores your credentials in an encrypted local SQLite database. No cloud, no servers, no subscriptions — your data stays on your machine, encrypted with AES-256.
 
 ### Features
 
@@ -48,8 +48,8 @@ KISS Password Manager is a desktop application that stores your credentials in a
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/kissPWM_v6.git
-cd kissPWM_v6
+git clone https://github.com/your-username/AetherLock.git
+cd AetherLock
 
 # Create and activate virtual environment
 python -m venv venv
@@ -67,8 +67,8 @@ python main_app_pyside.py
 
 ```bash
 pip install pyinstaller
-pyinstaller kiss_pwm_v6.spec
-# Output in dist/kiss_pwm_v6/
+pyinstaller aetherlock.spec
+# Output in dist/aetherlock/
 ```
 
 ## Usage
@@ -107,7 +107,7 @@ Technical reference: [`docs/sys/REFERENCE.html`](docs/sys/REFERENCE.html)
 ## Project Structure
 
 ```
-kissPWM_v6/
+AetherLock/
 ├── src/
 │   ├── __init__.py          # Version, PROJECT_ROOT, portable mode
 │   ├── core_logic.py        # Encryption, hashing, data model, settings
@@ -125,7 +125,7 @@ kissPWM_v6/
 ├── assets/                  # Application icon (optional)
 ├── main_app_pyside.py       # Thin entry point
 ├── requirements.txt
-└── kiss_pwm_v6.spec         # PyInstaller build spec
+└── aetherlock.spec         # PyInstaller build spec
 ```
 
 ## Tech Stack
@@ -138,8 +138,8 @@ kissPWM_v6/
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+GNU General Public License v3.0 — see [LICENSE](LICENSE)
 
 ## Contributing
 
-Bug reports and feature requests are welcome via [GitHub Issues](https://github.com/your-username/kissPWM_v6/issues).
+Bug reports and feature requests are welcome via [GitHub Issues](https://github.com/your-username/AetherLock/issues).

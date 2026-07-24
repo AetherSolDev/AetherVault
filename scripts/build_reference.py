@@ -237,7 +237,7 @@ def main():
     userguide_md = project_root / "docs" / "USER_GUIDE.md"
     userguide_html = project_root / "docs" / "USER_GUIDE.html"
     if userguide_md.exists():
-        md_to_html(userguide_md, userguide_html, "KISS Password Manager — User Guide")
+        md_to_html(userguide_md, userguide_html, "AetherLock — User Guide")
 
     print("✅ Reference build complete")
 

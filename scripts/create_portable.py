@@ -12,7 +12,7 @@ from pathlib import Path
 from datetime import datetime
 
 # Configurable — set to your project name
-PROJECT_ID = "kissPWM_v6"
+PROJECT_ID = "AetherLock"
 
 
 def get_current_version():

@@ -5,7 +5,7 @@
 
 > Summary updated manually. Run `python scripts/update_cost.py` to append new sessions.
 
-## kissPWM_v6 Project Cost
+## AetherLock Project Cost
 
 | Date | Timeline | Model | Cost |
 |------|----------|-------|------|

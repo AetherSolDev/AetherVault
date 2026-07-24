@@ -1,17 +1,17 @@
-📂 kissPWM_v6 Function Inventory
+📂 AetherLock Function Inventory
 ==================================================
-Generated: 2026-07-24 13:40:21
+Generated: 2026-07-24 15:10:26
 Total Functions: 110
 Total Classes: 9
 
 📁 src/
     🔹 __init__()
     🔹 __init__(db_path, error_handler)
-  🔹 __init__(parent)
-  🔹 __init__(parent)
   🔹 __init__(parent, field_name, callback)
   🔹 __init__(parent)
   🔹 __init__()
+  🔹 __init__(parent)
+  🔹 __init__(parent)
   🔹 action_btn_clicked()
   🔹 apply_theme(app, theme_name)
   🔹 attempt_login()
@@ -115,11 +115,11 @@ Total Classes: 9
       🔹 set_encryption_key(master_password_hash)
       🔹 update_credential(entry)
   📁 src/gui/
-    🔹 __init__(parent)
-    🔹 __init__(parent)
     🔹 __init__(parent, field_name, callback)
     🔹 __init__(parent)
     🔹 __init__()
+    🔹 __init__(parent)
+    🔹 __init__(parent)
     🔹 action_btn_clicked()
     🔹 apply_theme(app, theme_name)
     🔹 attempt_login()

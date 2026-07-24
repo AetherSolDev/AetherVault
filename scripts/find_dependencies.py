@@ -71,7 +71,7 @@ def main():
     # ===== Generate Report =====
     lines = []
     lines.append("=" * 70)
-    lines.append("kissPWM_v6 Function Dependency Report")
+    lines.append("AetherLock Function Dependency Report")
     lines.append("=" * 70)
     lines.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     lines.append(f"Total Functions: {len(inventory['functions'])}")

@@ -1,9 +1,9 @@
 # Created: 2026-07-24
 # Last Edited: 2026-07-24 13:36 CT (America/Chicago)
 # Path: docs/sys/BUGS.md
-# Purpose: Bug tracker for the kissPWM_v6 project.
+# Purpose: Bug tracker for the AetherLock project.
 
-# kissPWM_v6 Bug Tracker
+# AetherLock Bug Tracker
 
 ## F0 — `resource_path()` references `sys._MEIPASS` without module-level `sys` import
 
@@ -35,8 +35,8 @@
 - **Tags**: bug, gui
 - **Description**: `main_app_pyside.py:252` attempts to load an icon from `assets/kiss_icon.ico`, but no `assets/` directory exists in the project. The error is silently caught and logged to console only.
 - **Root Cause**: Icon file was planned but never created/committed.
-- **Fix**: Create `assets/` directory with a valid `.ico` (or `.png`) application icon, or remove the icon reference. Update `kiss_pwm_v6.spec` to bundle `assets/` if not already done.
-- **Files**: `assets/kiss_icon.ico` (missing), `main_app_pyside.py`, `kiss_pwm_v6.spec`
+- **Fix**: Create `assets/` directory with a valid `.ico` (or `.png`) application icon, or remove the icon reference. Update `aetherlock.spec` to bundle `assets/` if not already done.
+- **Files**: `assets/kiss_icon.ico` (missing), `main_app_pyside.py`, `aetherlock.spec`
 
 ## F3 — Auto-lock triggers immediately on WindowDeactivate
 

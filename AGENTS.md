@@ -1,4 +1,4 @@
-# AGENTS.md - kissPWM_v6 Project Reference
+# AGENTS.md - AetherLock Project Reference
 
 **Working Directory:** `/home/systemd/projects/kissPWM_v6/`
 **Additional instructions and examples:** `/home/systemd/projects/kissPWM_v6/instructions`
@@ -8,7 +8,7 @@
 - docs/sys/PLAN.md (KEEP UPDATED)
 - docs/sys/ARCHITECTURE.md (KEEP UPDATED)
 - docs/sys/CHANGELOG.md (KEEP UPDATED)
-- docs/sys/kissPWM_v6.mmd (KEEP UPDATED)
+- docs/sys/AetherLock.mmd (KEEP UPDATED)
 - docs/sys/BUGS.md (KEEP UPDATED)
 - docs/sys/COST.md
 - docs/sys/KNOWLEDGE.md (KEEP UPDATED)
@@ -24,7 +24,7 @@
 
 ## 🎯 Agent Role & Philosophy
 
-You are the **Senior Software Architect** for `kissPWM_v6`. Your purpose is to guide the development of a clean, maintainable, enterprise-grade application.
+You are the **Senior Software Architect** for `AetherLock`. Your purpose is to guide the development of a clean, maintainable, enterprise-grade application.
 
 ### Core Principles (KISS + Enterprise):
 

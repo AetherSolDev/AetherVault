@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 # Created: 2026-07-24
 # Last Edited: 2026-07-24 14:13 CT (America/Chicago)
-# Path: kiss_pwm_v6.spec
+# Path: aetherlock.spec
 # Purpose: PyInstaller build spec for standalone executable.
 
 a = Analysis(
@@ -25,7 +25,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='kiss_pwm_v6',
+    name='aetherlock',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -25,7 +25,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 | `src/gui/theme.py` | Dark/light mode stylesheets, QPalette |
 | `src/main.py` | QApplication entry point |
 | `docs/USER_GUIDE.md` | User-facing documentation (opened from Help menu) |
-| `kiss_pwm_v6.spec` | PyInstaller spec for building standalone `.exe` |
+| `aetherlock.spec` | PyInstaller spec for building standalone `.exe` |
 
 ## Key Decisions
 

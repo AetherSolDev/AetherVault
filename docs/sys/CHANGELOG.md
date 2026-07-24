@@ -22,10 +22,10 @@
 - In-app help now loads from consolidated `docs/USER_GUIDE.md`
 
 ### Changed
-- Customized AGENTS.md for kissPWM_v6 (paths, critical files, database schema)
+- Customized AGENTS.md for AetherLock (paths, critical files, database schema)
 - Updated USER_GUIDE.md with actual application features and documentation
 - Refactored monolithic `main_app_pyside.py` (~1250 lines) into `src/` package (7 files)
-- Updated `kiss_pwm_v6.spec` to use `src/main.py` as entry point and bundle `docs/`
+- Updated `aetherlock.spec` to use `src/main.py` as entry point and bundle `docs/`
 - `main_app_pyside.py` is now a thin wrapper around `src.main.run()`
 - Updated `.gitignore` to exclude app data files and both `kiss/` and `venv/` dirs
 - Updated `requirements.txt` with actual runtime dependencies

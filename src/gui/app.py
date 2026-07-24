@@ -1,7 +1,7 @@
 # Created: 2025-12-04
 # Last Edited: 2026-07-24 14:13 CT (America/Chicago)
 # Path: src/gui/app.py
-# Purpose: Main application window and UI logic for kissPWM_v6.
+# Purpose: Main application window and UI logic for AetherLock.
 
 import json
 import os
@@ -140,7 +140,7 @@ class PasswordStrengthBar(QProgressBar):
 class PySidePWManager(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("KISS Password Manager")
+        self.setWindowTitle("AetherLock")
         self.resize(1100, 700)
         self.setMinimumSize(750, 500)
 
@@ -1138,11 +1138,20 @@ class PySidePWManager(QMainWindow):
 
     def show_about_dialog(self):
         QMessageBox.about(
-            self, "About KISS Password Manager",
-            "<h2>KISS Password Manager</h2>"
+            self, "About AetherLock",
+            "<h2>AetherLock</h2>"
             f"<p>Version {VERSION}</p>"
             "<p>PySide6 + SQLite + AES-256</p>"
-            "<p>Local, portable, secure credential storage.</p>",
+            "<p>Local, portable, secure credential storage.</p>"
+            "<hr>"
+            "<p><b>License: GPL v3</b></p>"
+            "<p>This program is free software: you can redistribute it and/or modify "
+            "it under the terms of the GNU General Public License as published by "
+            "the Free Software Foundation, either version 3 of the License, or "
+            "(at your option) any later version.</p>"
+            "<p>This program is distributed in the hope that it will be useful, "
+            "but WITHOUT ANY WARRANTY; without even the implied warranty of "
+            "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>",
         )
 
     # --- Menu Bar ---
@@ -1468,7 +1477,7 @@ class PySidePWManager(QMainWindow):
     def _setup_system_tray(self):
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(self._make_tray_icon())
-        self.tray_icon.setToolTip("KISS Password Manager")
+        self.tray_icon.setToolTip("AetherLock")
 
         tray_menu = QMenu(self)
         self.tray_show_action = tray_menu.addAction("Show Window")

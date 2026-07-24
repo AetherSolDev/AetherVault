@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-07-24 13:51 CT from docs/sys/
+> Auto-generated on 2026-07-24 15:10 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -13,7 +13,7 @@
 - [Bug Tracker](#bug-tracker)
 - [Development Costs](#development-costs)
 - [Model Pricing Reference](#model-pricing-reference)
-- [Diagram (kissPWM_v6)](#diagram-(kisspwm_v6))
+- [Diagram (aetherlock)](#diagram-(aetherlock))
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## Directory Structure
 ```
-kissPWM_v6/
+AetherLock/
 ├── src/
 │   ├── __init__.py            # Package init, PROJECT_ROOT constant
 │   ├── core_logic.py          # Encryption, hashing, data model, settings
@@ -44,7 +44,7 @@ kissPWM_v6/
 ├── assets/                    # Application icon resources
 ├── .portable                  # Portable mode marker (created at runtime)
 ├── AGENTS.md                  # Agent instructions (READ ONLY)
-├── kiss_pwm_v6.spec           # PyInstaller build spec
+├── aetherlock.spec           # PyInstaller build spec
 ├── .gitignore
 ├── .repomixignore
 ├── requirements.txt
@@ -119,7 +119,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 | `src/gui/theme.py` | Dark/light mode stylesheets, QPalette |
 | `src/main.py` | QApplication entry point |
 | `docs/USER_GUIDE.md` | User-facing documentation (opened from Help menu) |
-| `kiss_pwm_v6.spec` | PyInstaller spec for building standalone `.exe` |
+| `aetherlock.spec` | PyInstaller spec for building standalone `.exe` |
 
 ## Key Decisions
 
@@ -171,7 +171,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 ## Project Plan
 
-# kissPWM_v6 Plan
+# AetherLock Plan
 
 ## Legend
 - C = Changes / Updates
@@ -219,7 +219,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 ## Tasks
 
-# kissPWM_v6 Tasks
+# AetherLock Tasks
 
 ## Legend
 - C = Changes / Updates
@@ -408,10 +408,10 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 - In-app help now loads from consolidated `docs/USER_GUIDE.md`
 
 ### Changed
-- Customized AGENTS.md for kissPWM_v6 (paths, critical files, database schema)
+- Customized AGENTS.md for AetherLock (paths, critical files, database schema)
 - Updated USER_GUIDE.md with actual application features and documentation
 - Refactored monolithic `main_app_pyside.py` (~1250 lines) into `src/` package (7 files)
-- Updated `kiss_pwm_v6.spec` to use `src/main.py` as entry point and bundle `docs/`
+- Updated `aetherlock.spec` to use `src/main.py` as entry point and bundle `docs/`
 - `main_app_pyside.py` is now a thin wrapper around `src.main.run()`
 - Updated `.gitignore` to exclude app data files and both `kiss/` and `venv/` dirs
 - Updated `requirements.txt` with actual runtime dependencies
@@ -461,7 +461,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 ## Bug Tracker
 
-# kissPWM_v6 Bug Tracker
+# AetherLock Bug Tracker
 
 ## F0 — `resource_path()` references `sys._MEIPASS` without module-level `sys` import
 
@@ -493,8 +493,8 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 - **Tags**: bug, gui
 - **Description**: `main_app_pyside.py:252` attempts to load an icon from `assets/kiss_icon.ico`, but no `assets/` directory exists in the project. The error is silently caught and logged to console only.
 - **Root Cause**: Icon file was planned but never created/committed.
-- **Fix**: Create `assets/` directory with a valid `.ico` (or `.png`) application icon, or remove the icon reference. Update `kiss_pwm_v6.spec` to bundle `assets/` if not already done.
-- **Files**: `assets/kiss_icon.ico` (missing), `main_app_pyside.py`, `kiss_pwm_v6.spec`
+- **Fix**: Create `assets/` directory with a valid `.ico` (or `.png`) application icon, or remove the icon reference. Update `aetherlock.spec` to bundle `assets/` if not already done.
+- **Files**: `assets/kiss_icon.ico` (missing), `main_app_pyside.py`, `aetherlock.spec`
 
 ## F3 — Auto-lock triggers immediately on WindowDeactivate
 
@@ -557,7 +557,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 > Summary updated manually. Run `python scripts/update_cost.py` to append new sessions.
 
-## kissPWM_v6 Project Cost
+## AetherLock Project Cost
 
 | Date | Timeline | Model | Cost |
 |------|----------|-------|------|
@@ -593,7 +593,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 ---
 
-## Diagram (kissPWM_v6)
+## Diagram (aetherlock)
 
 ```
                                   ┌─────────────────────────────────────┐
@@ -683,6 +683,176 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 ------------------
 
+
+ +------------------------------------------------------+
+ | Auth["Authentication Layer"]                         |
+ |                                                      |
+ |                                                      |
+ | +----------------------+    +----------------------+ |      +----------------------+        +----------------------+
+ | |                      |    |                      | |      |                      |        |                      |
+ | |     Setup Master     |    |        Login         | |      |         Auth         |        |        Config        |
+ | |       Password       |    |                      | |      |                      |        |                      |
+ | |                      |    |                      | |      |                      |        |                      |
+ | +----------------------+    +----------------------+ |      +----------------------+        +----------------------+
+ |             |                           |            |                 |                                |
+ |             |                           |            |                 |                                |
+ |             |                           |            |                 | +------------------------------+
+ |             |                           |            |                 | |
+ |             v                           v            |                 v v
+ | +----------------------+    +----------------------+ |      +----------------------+
+ | |                      |    |                      | |      |                      |
+ | |   Hash with PBKDF2   |    |   Verify password    | |      |          UI          |
+ | |                      |    |                      | |      |                      |
+ | +----------------------+    +----------------------+ |      +----------------------+
+ |             |                           |            |                  |
+ |             |                           |            |                  |
+ |             |                           |            |                  +---------------+
+ |             |                           |            |                  |               |
+ |             v                           v            |                  v               |
+ | +----------------------+    +----------------------+ |      +----------------------+    |
+ | |                      |    |                      | |      |                      |    |
+ | |    Store hash in     |    |  Derive encryption   | |      |       Filters        |    |
+ | |     .master.key      |    |         key          | |      |                      |    |
+ | |                      |    |                      | |      |                      |    |
+ | +----------------------+    +----------------------+ |      +----------------------+    |
+ |                                                      |                 |                |
+ +------------------------------------------------------------------------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------+
+ | UI["PySide6 GUI"]                                                      | +--------------+                                                                                                                                                    |
+ |                                                                        | |                                                                                                                                                                   |
+ |                                                                        v v                                                                                                                                                                   |
+ | +----------------------+    +----------------------+        +----------------------+                                                                                                                                                         |
+ | |                      |    |                      |        |                      |                                                                                                                                                         |
+ | |    QStackedWidget    |    |   System Tray Icon   |        |         Data         |                                                                                                                                                         |
+ | |                      |    |                      |        |                      |                                                                                                                                                         |
+ | +----------------------+    +----------------------+        +----------------------+                                                                                                                                                         |
+ |             |                           |                                                                                                                                                                                                    |
+ |             |                           |                                                                                                                                                                                                    |
+ |             +---------------------------|-------------------------------+                                                                                                                                                                    |
+ |             |                           |                               |                                                                                                                                                                    |
+ |             |                           |                               |                                                                                                                                                                    |
+ |             |                           |                               |                                                                                                                                                                    |
+ |             |                           |                               |                                                                                                                                                                    |
+ |             |                           |---------------------------------------------------------------+                                                                                                                                    |
+ |             |                           |                               |                               |                                                                                                                                    |
+ |             |                           |                               |                               |                                                                                                                                    |
+ |             |                           |                               |                               |                                                                                                                                    |
+ |             |                           |                               |                               |                                                                                                                                    |
+ |             |                           +-----------------------------------------------------------------------------------------------+                                                                                                    |
+ |             |                           |                               |                               |                               |                                                                                                    |
+ |             |                           |                               |                               |                               |                                                                                                    |
+ |             |                           |                               |                               |                               |                                                                                                    |
+ |             |                           |                               |                               |                               |                                                                                                    |
+ |             |                           |                               |                               |                               |                                                                                                    |
+ |             |                           |                               |                               |                               |                                                                                                    |
+ |             v                           v                               v                               v                               v                                                                                                    |
+ | +----------------------+    +----------------------+        +----------------------+        +----------------------+        +----------------------+                                                                                         |
+ | |                      |    |                      |        |                      |        |                      |        |                      |                                                                                         |
+ | |      Auth View       |    |  Main Content View   |        |      Lock Vault      |        |     Show Window      |        |         Quit         |                                                                                         |
+ | |                      |    |                      |        |                      |        |                      |        |                      |                                                                                         |
+ | +----------------------+    +----------------------+        +----------------------+        +----------------------+        +----------------------+                                                                                         |
+ |                                         |                                                                                                                                                                                                    |
+ |             +---------------------------+                                                                                                                                                                                                    |
+ |             v                                                                                                                                                                                                                                |
+ | +----------------------+                                                                                                                                                                                                                     |
+ | |                      |                                                                                                                                                                                                                     |
+ | |      QSplitter       |                                                                                                                                                                                                                     |
+ | |                      |                                                                                                                                                                                                                     |
+ | +----------------------+                                                                                                                                                                                                                     |
+ |             |                                                                                                                                                                                                                                |
+ |             +---------------------------+                                                                                                                                                                                                    |
+ |             v                           v                                                                                                                                                                                                    |
+ | +----------------------+    +----------------------+                                                                                                                                                                                         |
+ | |                      |    |                      |                                                                                                                                                                                         |
+ | |   Credential List    |    |      Edit Form       |                                                                                                                                                                                         |
+ | |                      |    |                      |                                                                                                                                                                                         |
+ | +----------------------+    +----------------------+    +-----------------------------------------------------------------------------------------------------------------------------------------------------------------------+            |
+ |             |                           |               |                                                                                                                                                                       |            |
+ |             |---------------+           +---------------+---------------------------------------------------------------------------------------------------------------+                                                       |            |
+ |             |               |           |                                                                                                                               |                                                       |            |
+ |             |               |           |                                                                                                                               |                                                       |            |
+ |             |-------------+ |           |-----------------------------------------------------------------------------------------------+                               |                                                       |            |
+ |             |             | |           |                                                                                               |                               |                                                       |            |
+ |             |             | |           |                                                                                               |                               |                                                       |            |
+ |             +----------+  | |           |                                                                                               |                               |                                                       |            |
+ |             |          |  | |           |                                                                                               |                               |                                                       |            |
+ |             |          |  | |           |                                                                                               |                               |                                                       |            |
+ |             |          |  | |           |                                                                                               |                               |                                                       |            |
+ |             |          |  | |           |                                                                                               |                               |                                                       |            |
+ |             |          |  | |           |                                                                                               |                               |                                                       |            |
+ |             |          |  | |           +-----------------------------------------------------------------------------------------------------------------------------------------------------------+                           |            |
+ |             |          |  | |                                                                                                           |                               |                           |                           |            |
+ |             |          |  | |                                                                                                           |                               |                           |                           |            |
+ |             |          |  +---------------------------------------------+                                                               |                               |                           |                           |            |
+ |             |          |    |                                           |                                                               |                               |                           |                           |            |
+ |             |          |    |                                           |                                                               |                               |                           |                           |            |
+ |             |          +--------------------------------------------------------------------------------+                               |                               |                           |                           |            |
+ |             v                           v                               v                               v                               v                               v                           v                           v            |
+ | +----------------------+    +----------------------+        +----------------------+        +----------------------+        +----------------------+        +----------------------+    +----------------------+    +----------------------+ |
+ | |                      |    |                      |        |                      |        |                      |        |                      |        |                      |    |                      |    |                      | |
+ | |     Sort Toggle      |    |     Context Menu     |        |    Favicon Icons     |        |  Double-Click Copy   |        |  Password Generator  |        |   Rich Text Notes    |    |    Custom Fields     |    |      Tags Field      | |
+ | |                      |    |                      |        |                      |        |                      |        |                      |        |                      |    |                      |    |                      | |
+ | +----------------------+    +----------------------+        +----------------------+        +----------------------+        +----------------------+        +----------------------+    +----------------------+    +----------------------+ |
+ |                                                                                                                                                                                                                                              |
+ +----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+
+
+
+ +------------------------------------------------------------------------------------------------------------------------------------------------------+
+ | UI2["Filters & Tools"]                                                                                                                               |
+ |                                                                                                                                                      |
+ |                                                                                                                                                      |
+ | +----------------------+    +----------------------+        +----------------------+        +----------------------+        +----------------------+ |
+ | |                      |    |                      |        |                      |        |                      |        |                      | |
+ | |      Search Bar      |    |   Category Filter    |        |      Tag Filter      |        |   Password Health    |        |    Fetch Favicons    | |
+ | |                      |    |                      |        |                      |        |        Report        |        |                      | |
+ | |                      |    |                      |        |                      |        |                      |        |                      | |
+ | +----------------------+    +----------------------+        +----------------------+        +----------------------+        +----------------------+ |
+ |                                                                                                                                                      |
+ +------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+
+
+
+ +--------------------------------------------------------------------------------------+
+ | Config["Configuration"]                                                              |
+ |                                                                                      |
+ |                                                                                      |
+ | +----------------------+    +----------------------+        +----------------------+ |
+ | |                      |    |                      |        |                      | |
+ | |    Portable Mode     |    |   Theme Dark/Light   |        |   Auto-Lock Timer    | |
+ | |                      |    |                      |        |                      | |
+ | +----------------------+    +----------------------+        +----------------------+ |
+ |                                                                                      |
+ +--------------------------------------------------------------------------------------+
+
+
+
+
+ +----------------------------------------------------------------------------------------------------------------------+
+ | Data["Data Layer"]                                                                                                   |
+ |                                                                                                                      |
+ |                                                                                                                      |
+ | +----------------------+    +----------------------+        +----------------------+        +----------------------+ |
+ | |                      |    |                      |        |                      |        |                      | |
+ | |   SQLite Database    |    |  credentials table   |        |  CSV Import/Export   |        |     Auto Backup      | |
+ | |                      |    |                      |        |                      |        |                      | |
+ | +----------------------+    +----------------------+        +----------------------+        +----------------------+ |
+ |                                         |                                                                            |
+ |                                         +-------------------------------+                                            |
+ |                                         |                               |                                            |
+ |                                         |                               |                                            |
+ |             +---------------------------|                               |                                            |
+ |             v                           v                               v                                            |
+ | +----------------------+    +----------------------+        +----------------------+                                 |
+ | |                      |    |                      |        |                      |                                 |
+ | |      tags TEXT       |    |  custom_fields TEXT  |        |  AES-256 encrypted   |                                 |
+ | |                      |    |                      |        |       password       |                                 |
+ | |                      |    |                      |        |                      |                                 |
+ | +----------------------+    +----------------------+        +----------------------+                                 |
+ |                                                                                                                      |
+ +----------------------------------------------------------------------------------------------------------------------+
+
 ```mermaid
 flowchart TD
     subgraph Auth["Authentication Layer"]
@@ -744,6 +914,64 @@ flowchart TD
     Config --> UI
 ```
 
+
+          +-------------------------------------+
+          |           PySidePWManager           |
+          +-------------------------------------+
+          | -QStackedWidget stacked_widget      |
+          | -DatabaseManager db_manager         |
+          | -credentials: List[CredentialEntry] |
+          | -_favicon_cache: dict               |
+          | -sort_column, sort_order            |
+          +-------------------------------------+
+          | +check_setup_state()                |
+          | +attempt_login()                    |
+          | +save_credential()                  |
+          | +delete_credential()                |
+          | +handle_export()                    |
+          | +handle_import()                    |
+          | +lock_application()                 |
+          | +show_password_health()             |
+          | +_fetch_favicons()                  |
+          | +_handle_sort()                     |
+          | +_table_context_menu()              |
+          | +_table_cell_double_clicked()       |
+          | +_table_cell_clicked()              |
+          +-------------------------------------+
+                             |
+                             |
+                             |
+                             >
+             +-------------------------------+
+             |        DatabaseManager        |
+             +-------------------------------+
+             | -conn: sqlite3.Connection     |
+             | -encryption_key: bytes        |
+             +-------------------------------+
+             | +load_all_credentials()       |
+             | +save_credential()            |
+             | +update_credential()          |
+             | +delete_credential()          |
+             | +export_to_csv()              |
+             | +import_from_csv()            |
+             | +find_and_remove_duplicates() |
+             +-------------------------------+
+                            | :
+                    |-------- :
+                    |         :
+                    >         ............encrypt/decrypt
+  +----------------------------------+            :
+  |         CredentialEntry          |            :
+  +----------------------------------+            :
+  | +db_id, title, url, username     |            >
+  | +email, password, phone, address |    +--------------+
+  | +category, notes, tags           |    |  core_logic  |
+  | +custom_fields, parent_id        |    +--------------+
+  | +created_at, modified_at         |
+  +----------------------------------+
+  | +to_dict()                       |
+  +----------------------------------+
+
 ```mermaid
 classDiagram
     class PySidePWManager {
@@ -797,4 +1025,4 @@ classDiagram
 
 ---
 
-*Generated on 2026-07-24 13:51 CT by `scripts/build_reference.py`*
+*Generated on 2026-07-24 15:10 CT by `scripts/build_reference.py`*

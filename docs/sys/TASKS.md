@@ -1,9 +1,9 @@
 # Created: 2026-07-24
 # Last Edited: 2026-07-24 13:36 CT (America/Chicago)
 # Path: docs/sys/TASKS.md
-# Purpose: Detailed task breakdown for kissPWM_v6.
+# Purpose: Detailed task breakdown for AetherLock.
 
-# kissPWM_v6 Tasks
+# AetherLock Tasks
 
 ## Legend
 - C = Changes / Updates
