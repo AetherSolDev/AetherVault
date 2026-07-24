@@ -1,7 +1,12 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-24 08:02 CT (America/Chicago)
+# Last Edited: 2026-07-24 14:13 CT (America/Chicago)
 # Path: src/__init__.py
 # Purpose: Package init for kissPWM_v6 source. Defines PROJECT_ROOT and portable mode.
+
+__version__ = "6.0.0"
+VERSION = __version__
+__app_name__ = "KISS Password Manager"
+APP_NAME = __app_name__
 
 import os
 import sys

@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-24 00:37 CT (America/Chicago)
+# Last Edited: 2026-07-24 14:13 CT (America/Chicago)
 # Path: src/gui/app.py
 # Purpose: Main application window and UI logic for kissPWM_v6.
 
@@ -45,6 +45,7 @@ from PySide6.QtWidgets import (
 
 from src import (
     PORTABLE_MARKER,
+    VERSION,
     disable_portable_mode,
     enable_portable_mode,
     is_portable,
@@ -1139,7 +1140,7 @@ class PySidePWManager(QMainWindow):
         QMessageBox.about(
             self, "About KISS Password Manager",
             "<h2>KISS Password Manager</h2>"
-            "<p>Version 6.0</p>"
+            f"<p>Version {VERSION}</p>"
             "<p>PySide6 + SQLite + AES-256</p>"
             "<p>Local, portable, secure credential storage.</p>",
         )
