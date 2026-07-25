@@ -1,9 +1,9 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
+# Last Edited: 2026-07-25 18:12 CT (America/Chicago)
 # Path: src/main.py
-# Purpose: Application entry point — initializes QApplication and launches main window.
+# Purpose: Application entry point — initializes QApplication and launches AetherVault main window.
 
-"""Application entry point that initializes QApplication and launches the main window."""
+"""Application entry point that initializes QApplication and launches the AetherVault main window."""
 
 import sys
 

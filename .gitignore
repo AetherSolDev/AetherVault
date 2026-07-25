@@ -30,6 +30,7 @@ src/data/.app_settings.json
 # Build output
 dist/
 build/
+*.egg-info
 app/build/
 app/release/
 app/debug/
@@ -67,4 +68,4 @@ docs/sys/function_inventory.*
 scripts/
 instructions/
 AGENTS.md
-aetherlock.spec
+aethervault.spec

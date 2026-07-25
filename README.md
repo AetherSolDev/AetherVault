@@ -1,4 +1,4 @@
-# AetherLock
+# AetherVault
 
 A local, portable, encrypted password vault.
 
@@ -12,7 +12,7 @@ A local, portable, encrypted password vault.
 
 ## Overview
 
-AetherLock is a desktop application that stores your credentials in an encrypted local SQLite database. No cloud, no servers, no subscriptions — your data stays on your machine, encrypted with AES-256.
+AetherVault is a desktop application that stores your credentials in an encrypted local SQLite database. No cloud, no servers, no subscriptions — your data stays on your machine, encrypted with AES-256.
 
 ### Features
 
@@ -44,31 +44,31 @@ AetherLock is a desktop application that stores your credentials in an encrypted
 - Python 3.12+
 - pip
 
-### Setup
+### Quick Install (editable)
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/AetherLock.git
-cd AetherLock
+git clone https://github.com/brandonmunoz1975-ops/AetherVault.git
+cd AetherVault
 
 # Create and activate virtual environment
 python -m venv venv
 source venv/bin/activate   # Linux/macOS
 # venv\Scripts\activate    # Windows
 
-# Install dependencies
-pip install -r requirements.txt
+# Install package and dependencies
+pip install -e .
 
 # Run the application
-python aetherlock.py
+aethervault
 ```
 
 ### Build Standalone Executable
 
 ```bash
 pip install pyinstaller
-pyinstaller aetherlock.spec
-# Output in dist/aetherlock/
+pyinstaller aethervault.spec
+# Output in dist/aethervault/
 ```
 
 ## Usage
@@ -107,7 +107,7 @@ Technical reference: [`docs/sys/REFERENCE.html`](docs/sys/REFERENCE.html)
 ## Project Structure
 
 ```
-AetherLock/
+AetherVault/
 ├── src/
 │   ├── __init__.py          # Version, PROJECT_ROOT, portable mode
 │   ├── core_logic.py        # Encryption, hashing, data model, settings
@@ -123,9 +123,10 @@ AetherLock/
 │   └── sys/                 # System documentation
 ├── scripts/                 # Utility scripts
 ├── assets/                  # Application icon (optional)
-├── aetherlock.py            # Application entry point
+├── aethervault.py           # Legacy entry point
+├── pyproject.toml           # Package build config & CLI entry point
 ├── requirements.txt
-└── aetherlock.spec         # PyInstaller build spec
+└── aethervault.spec        # PyInstaller build spec
 ```
 
 ## Tech Stack
@@ -142,4 +143,4 @@ GNU General Public License v3.0 — see [LICENSE](LICENSE)
 
 ## Contributing
 
-Bug reports and feature requests are welcome via [GitHub Issues](https://github.com/your-username/AetherLock/issues).
+Bug reports and feature requests are welcome via [GitHub Issues](https://github.com/brandonmunoz1975-ops/AetherVault/issues).

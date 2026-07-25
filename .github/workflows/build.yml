@@ -18,10 +18,10 @@ jobs:
         os: [windows-latest, macos-latest]
         include:
           - os: windows-latest
-            artifact_name: aetherlock-windows-x86_64
+            artifact_name: aethervault-windows-x86_64
             separator: ";"
           - os: macos-latest
-            artifact_name: aetherlock-macos-universal
+            artifact_name: aethervault-macos-universal
             separator: ":"
     runs-on: ${{ matrix.os }}
     steps:
@@ -40,8 +40,8 @@ jobs:
       - name: Build with PyInstaller
         run: >
           pyinstaller --onefile --windowed
-          --name aetherlock
-          --icon assets/aetherlock.ico
+          --name aethervault
+          --icon assets/aethervault.ico
           --add-data "assets${{ matrix.separator }}assets"
           --add-data "docs${{ matrix.separator }}docs"
           --add-data "README.md${{ matrix.separator }}."
@@ -52,5 +52,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist/aetherlock*
+          path: dist/aethervault*
           if-no-files-found: error

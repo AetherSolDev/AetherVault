@@ -1,7 +1,7 @@
 # Created: 2026-07-24
 # Last Edited: 2026-07-24 00:33 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
-# Purpose: User-facing handbook for AetherLock — KISS Python Password Manager.
+# Purpose: User-facing handbook for AetherVault.
 
 # KISS Python Password Manager — User Guide
 
@@ -39,12 +39,12 @@ KISS Python Password Manager is a portable, local password vault that stores you
 ### Setup from Source
 
 ```bash
-git clone https://github.com/your-org/AetherLock.git
-cd AetherLock
+git clone https://github.com/brandonmunoz1975-ops/AetherVault.git
+cd AetherVault
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python aetherlock.py
+python aethervault.py
 ```
 
 ### Standalone Executable

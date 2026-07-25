@@ -1,7 +1,7 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-24 00:33 CT (America/Chicago)
+# Last Edited: 2026-07-25 18:12 CT (America/Chicago)
 # Path: requirements.txt
-# Purpose: Project dependencies for AetherLock.
+# Purpose: Project dependencies for AetherVault.
 
 # Application dependencies
 PySide6>=6.5.0

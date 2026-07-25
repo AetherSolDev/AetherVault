@@ -142,7 +142,7 @@ class DocumentationDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         """Initialize the dialog, build the UI, and load documentation content."""
-        self.setWindowTitle("AetherLock Documentation")
+        self.setWindowTitle("AetherVault Documentation")
         self.setMinimumSize(700, 500)
         self.layout = QVBoxLayout(self)
         self.text_editor = QTextEdit()

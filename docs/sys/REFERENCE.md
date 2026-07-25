@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-07-24 16:50 CT from docs/sys/
+> Auto-generated on 2026-07-25 18:14 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -13,7 +13,7 @@
 - [Bug Tracker](#bug-tracker)
 - [Development Costs](#development-costs)
 - [Model Pricing Reference](#model-pricing-reference)
-- [Diagram (aetherlock)](#diagram-(aetherlock))
+- [Diagram (aethervault)](#diagram-(aethervault))
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## Directory Structure
 ```
-AetherLock/
+AetherVault/
 ├── src/
 │   ├── __init__.py            # Package init, PROJECT_ROOT constant
 │   ├── core_logic.py          # Encryption, hashing, data model, settings
@@ -172,7 +172,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 ## Project Plan
 
-# AetherLock Plan
+# AetherVault Plan
 
 ## Legend
 - C = Changes / Updates
@@ -220,7 +220,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 ## Tasks
 
-# AetherLock Tasks
+# AetherVault Tasks
 
 ## Legend
 - C = Changes / Updates
@@ -474,7 +474,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 ## Bug Tracker
 
-# AetherLock Bug Tracker
+# AetherVault Bug Tracker
 
 ## F0 — `resource_path()` references `sys._MEIPASS` without module-level `sys` import
 
@@ -570,7 +570,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 > Summary updated manually. Run `python scripts/update_cost.py` to append new sessions.
 
-## AetherLock Project Cost
+## AetherVault Project Cost
 
 | Date | Timeline | Model | Cost |
 |------|----------|-------|------|
@@ -607,7 +607,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 ---
 
-## Diagram (aetherlock)
+## Diagram (aethervault)
 
 ```
                                   ┌─────────────────────────────────────┐
@@ -1039,4 +1039,4 @@ classDiagram
 
 ---
 
-*Generated on 2026-07-24 16:50 CT by `scripts/build_reference.py`*
+*Generated on 2026-07-25 18:14 CT by `scripts/build_reference.py`*

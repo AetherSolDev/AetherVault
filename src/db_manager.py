@@ -1,9 +1,9 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
+# Last Edited: 2026-07-25 18:12 CT (America/Chicago)
 # Path: src/db_manager.py
-# Purpose: SQLite database operations for credential entries.
+# Purpose: SQLite database operations for AetherVault credential entries.
 
-"""Database operations for credential entries using SQLite."""
+"""Database operations for AetherVault credential entries using SQLite."""
 
 import csv
 import os

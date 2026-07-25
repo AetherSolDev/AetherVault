@@ -1,7 +1,7 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
+# Last Edited: 2026-07-25 18:12 CT (America/Chicago)
 # Path: src/gui/theme.py
-# Purpose: Unified theme system — AetherTime-compatible dark/light palettes and QSS.
+# Purpose: Unified theme system for AetherVault — dark/light palettes and QSS.
 
 """Unified theme system with dark/light color palettes and QSS stylesheets."""
 

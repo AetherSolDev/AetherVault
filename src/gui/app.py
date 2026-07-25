@@ -1,9 +1,9 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
+# Last Edited: 2026-07-25 18:12 CT (America/Chicago)
 # Path: src/gui/app.py
-# Purpose: Main application window and UI logic for AetherLock.
+# Purpose: Main application window and UI logic for AetherVault.
 
-"""Main application window and UI logic for AetherLock."""
+"""Main application window and UI logic for AetherVault."""
 
 import json
 import os
@@ -153,11 +153,11 @@ class PySidePWManager(QMainWindow):
     def __init__(self):
         """Initialize the main window, load settings, and build the UI."""
         super().__init__()
-        self.setWindowTitle("AetherLock")
+        self.setWindowTitle("AetherVault")
         self.resize(1100, 700)
         self.setMinimumSize(750, 500)
 
-        icon_path = resource_path(os.path.join("assets", "aetherlock.ico"))
+        icon_path = resource_path(os.path.join("assets", "aethervault.ico"))
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
@@ -1207,8 +1207,8 @@ class PySidePWManager(QMainWindow):
     def show_about_dialog(self):
         """Display the About dialog with application version and license info."""
         QMessageBox.about(
-            self, "About AetherLock",
-            "<h2>AetherLock</h2>"
+            self, "About AetherVault",
+            "<h2>AetherVault</h2>"
             f"<p>Version {VERSION}</p>"
             "<p>PySide6 + SQLite + AES-256</p>"
             "<p>Local, portable, secure credential storage.</p>"
@@ -1563,7 +1563,7 @@ class PySidePWManager(QMainWindow):
         """Initialize the system tray icon with a context menu."""
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(self._make_tray_icon())
-        self.tray_icon.setToolTip("AetherLock")
+        self.tray_icon.setToolTip("AetherVault")
 
         tray_menu = QMenu(self)
         self.tray_show_action = tray_menu.addAction("Show Window")

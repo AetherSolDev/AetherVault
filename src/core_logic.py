@@ -1,9 +1,9 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
+# Last Edited: 2026-07-25 18:12 CT (America/Chicago)
 # Path: src/core_logic.py
-# Purpose: Encryption, hashing, data model, and settings management.
+# Purpose: Encryption, hashing, data model, and settings management for AetherVault.
 
-"""Encryption, hashing, credential data model, and application settings management."""
+"""Encryption, hashing, credential data model, and application settings management for AetherVault."""
 
 import base64
 import hashlib
@@ -23,7 +23,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from src import PROJECT_ROOT
 
 DATA_DIR = os.path.join(PROJECT_ROOT, "src", "data")
-DB_PATH = os.path.join(DATA_DIR, "aetherlock.db")
+DB_PATH = os.path.join(DATA_DIR, "aethervault.db")
 MASTER_KEY_FILE = os.path.join(DATA_DIR, ".master.key")
 DB_BACKUP_PATH = f"{DB_PATH}.bak"
 JOURNAL_FILE = os.path.join(PROJECT_ROOT, "journal.md")
@@ -54,7 +54,7 @@ def get_timestamped_backup_path() -> str:
     """Return a backup file path with a human-readable timestamp."""
     timestamp = time.strftime("%Y.%m.%d_%H%M%S")
     db_dir = os.path.dirname(DB_PATH)
-    return os.path.join(db_dir, f"kiss_vault_{timestamp}.db.bak")
+    return os.path.join(db_dir, f"aethervault_{timestamp}.db.bak")
 
 
 def encrypt_data(data: str, key: bytes) -> str:
