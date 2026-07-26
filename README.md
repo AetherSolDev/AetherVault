@@ -37,6 +37,10 @@ AetherVault is a desktop application that stores your credentials in an encrypte
 - **Right-click context menu** — copy username/password, edit, delete
 - **Sortable columns** — click Title/Username/Category to sort ascending/descending
 
+## Screenshots
+
+![AetherVault Main Screen](assets/main.png)
+
 ## Installation
 
 ### Prerequisites
