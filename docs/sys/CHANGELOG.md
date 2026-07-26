@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-25 18:12 CT (America/Chicago)
+# Last Edited: 2026-07-26 00:48 CT (America/Chicago)
 # Path: docs/sys/CHANGELOG.md
 # Purpose: Changelog tracking all significant project changes for AetherVault.
 
@@ -79,6 +79,18 @@
 - **Renamed files**: `aetherlock.py` → `aethervault.py`, `aetherlock.spec` → `aethervault.spec`, `assets/aetherlock.ico` → `assets/aethervault.ico`, `docs/sys/aetherlock.mmd` → `docs/sys/aethervault.mmd`
 - **Updated** all 30+ source files, docs, and config to use `AetherVault` naming
 - **Rebuilt** REFERENCE.md, REFERENCE.html, and USER_GUIDE.html from updated sources
+
+## 2026-07-26 (session 7)
+
+### Changed
+- **Cleanup**: Removed `docs/sys/COST.md` and `docs/sys/KNOWLEDGE.md` from git tracking (keep local only)
+- **Docs**: Updated all documentation to reference `src/data/aethervault.db` instead of `password_manager.db`
+- **README**: Added `assets/main.png` screenshot, updated project tree and data storage table
+- **USER_GUIDE**: Rebranded from "KISS Python Password Manager" to "AetherVault", fixed install instructions
+- **Git**: Added `password_manager.db` to `.gitignore`
+
+### Removed
+- Deleted stale files: root `password_manager.db`, `src/data/aetherlock.db`, `src/data/aetherlock.db.bak`, `src/data/kiss_vault_*.db.bak`
 
 ## 2026-07-24 (session 5)
 
