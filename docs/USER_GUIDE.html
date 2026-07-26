@@ -40,7 +40,7 @@
 </head>
 <body>
 <h1 id="created-2026-07-24">Created: 2026-07-24</h1>
-<h1 id="last-edited-2026-07-24-0033-ct-americachicago">Last Edited: 2026-07-24 00:33 CT (America/Chicago)</h1>
+<h1 id="last-edited-2026-07-26-0045-ct-americachicago">Last Edited: 2026-07-26 00:45 CT (America/Chicago)</h1>
 <h1 id="path-docsuser_guidemd">Path: docs/USER_GUIDE.md</h1>
 <h1 id="purpose-user-facing-handbook-for-aethervault">Purpose: User-facing handbook for AetherVault.</h1>
 <h1 id="kiss-python-password-manager-user-guide">KISS Python Password Manager — User Guide</h1>
@@ -155,26 +155,26 @@ python aethervault.py
 </thead>
 <tbody>
 <tr>
-<td><code>password_manager.db</code></td>
+<td><code>src/data/aethervault.db</code></td>
 <td>Encrypted vault (SQLite)</td>
 </tr>
 <tr>
-<td><code>password_manager.db.bak</code></td>
+<td><code>src/data/aethervault.db.bak</code></td>
 <td>Auto-generated backup</td>
 </tr>
 <tr>
-<td><code>.master.key</code></td>
+<td><code>src/data/.master.key</code></td>
 <td>Master password hash (PBKDF2)</td>
 </tr>
 <tr>
-<td><code>.app_settings.json</code></td>
+<td><code>src/data/.app_settings.json</code></td>
 <td>Application settings (unencrypted)</td>
 </tr>
 </tbody>
 </table>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <h3 id="icon-file-not-found-warning-in-console">"Icon file not found" warning in console</h3>
-<p>The app icon is optional. The application will run fine without it. To resolve, place a <code>kiss_icon.ico</code> file in an <code>assets/</code> directory next to the executable.</p>
+<p>The app icon is optional. The application will run fine without it. To resolve, place an icon file in an <code>assets/</code> directory next to the executable.</p>
 <h3 id="cant-open-the-vault-after-restore">Can't open the vault after restore</h3>
 <p>Restore requires the same master password that was used when the backup was created. If you've changed your master password since the backup, the old backup won't work.</p>
 <h3 id="app-locks-too-quickly-too-slowly">App locks too quickly / too slowly</h3>
@@ -183,7 +183,7 @@ python aethervault.py
 <ul>
 <li><strong>Can I recover a forgotten master password?</strong> No. The master password is not stored; only a one-way hash is saved. Without the original password, your vault is permanently inaccessible.</li>
 <li><strong>Is my data secure?</strong> Yes. All passwords are encrypted with AES-256 (Fernet). The encryption key is derived from your master password using PBKDF2 with 600,000 iterations.</li>
-<li><strong>Can I use the same database on multiple computers?</strong> Yes. Copy the <code>password_manager.db</code> file to another computer with the application installed. Use the same master password to unlock it.</li>
+<li><strong>Can I use the same database on multiple computers?</strong> Yes. Copy the <code>src/data/aethervault.db</code> file to another computer with the application installed. Use the same master password to unlock it.</li>
 <li><strong>How do I migrate from another password manager?</strong> Export your data to CSV and import it via <code>File &gt; Import Vault (CSV)</code>. The CSV must have columns: title, username, password, url, email, phone, address, category, notes.</li>
 </ul>
 </body>

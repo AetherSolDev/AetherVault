@@ -48,10 +48,11 @@ AetherVault/
 ├── .gitignore
 ├── .repomixignore
 ├── requirements.txt
-├── password_manager.db        # Encrypted vault (SQLite)
-├── password_manager.db.bak    # Auto-backup
-├── .master.key                # Master password hash (PBKDF2)
-└── .app_settings.json         # App settings (lockout, theme, etc.)
+├── src/data/                  # Runtime data (gitignored)
+│   ├── aethervault.db         # Encrypted vault (SQLite)
+│   ├── aethervault.db.bak     # Auto-backup
+│   ├── .master.key            # Master password hash (PBKDF2)
+│   └── .app_settings.json     # App settings (lockout, theme, etc.)
 ```
 
 ## Architecture Layers

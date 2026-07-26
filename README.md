@@ -89,9 +89,9 @@ pyinstaller aethervault.spec
 
 | File | Purpose |
 |------|---------|
-| `password_manager.db` | Encrypted SQLite vault |
-| `.master.key` | PBKDF2 hash of master password |
-| `.app_settings.json` | Theme, auto-lock, and app preferences |
+| `src/data/aethervault.db` | Encrypted SQLite vault |
+| `src/data/.master.key` | PBKDF2 hash of master password |
+| `src/data/.app_settings.json` | Theme, auto-lock, and app preferences |
 | `.portable` | Marker file for portable mode |
 
 ## Security
@@ -121,12 +121,16 @@ AetherVault/
 │       ├── app.py           # Main window and UI logic
 │       ├── dialogs.py       # Password generator, documentation viewer
 │       └── theme.py         # Dark/light mode stylesheets
+├── src/data/                # Runtime data (gitignored)
+│   ├── aethervault.db       # Encrypted vault
+│   ├── .master.key          # Master password hash
+│   └── .app_settings.json   # App preferences
 ├── docs/
 │   ├── USER_GUIDE.md        # User documentation
 │   ├── USER_GUIDE.html      # HTML version for in-app help
 │   └── sys/                 # System documentation
+├── assets/                  # Application icon and screenshots
 ├── scripts/                 # Utility scripts
-├── assets/                  # Application icon (optional)
 ├── aethervault.py           # Legacy entry point
 ├── pyproject.toml           # Package build config & CLI entry point
 ├── requirements.txt

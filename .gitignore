@@ -27,6 +27,9 @@ src/data/.master.key
 src/data/.app_settings.json
 .portable
 
+# Root-level stale database file (pre-refactor artifact)
+password_manager.db
+
 # Build output
 dist/
 build/

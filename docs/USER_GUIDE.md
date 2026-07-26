@@ -1,11 +1,9 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-24 00:33 CT (America/Chicago)
+# Last Edited: 2026-07-26 00:45 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
-# KISS Python Password Manager — User Guide
-
-**KISS** = **K**eep **I**t **S**imple & **S**ecure
+# AetherVault — User Guide
 
 ## Table of Contents
 
@@ -22,7 +20,7 @@
 
 ## Getting Started
 
-KISS Python Password Manager is a portable, local password vault that stores your credentials in an encrypted SQLite database. All passwords are encrypted with AES-256 using a key derived from your master password. The application runs on Windows, Linux, and macOS.
+AetherVault is a portable, local password vault that stores your credentials in an encrypted SQLite database. All passwords are encrypted with AES-256 using a key derived from your master password. The application runs on Windows, Linux, and macOS.
 
 ### Key Benefits
 - **Portable** — single file database, easy to back up and move
@@ -43,8 +41,8 @@ git clone https://github.com/brandonmunoz1975-ops/AetherVault.git
 cd AetherVault
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python aethervault.py
+pip install -e .
+aethervault
 ```
 
 ### Standalone Executable
@@ -113,15 +111,15 @@ All files are stored in the application directory:
 
 | File | Purpose |
 |------|---------|
-| `password_manager.db` | Encrypted vault (SQLite) |
-| `password_manager.db.bak` | Auto-generated backup |
-| `.master.key` | Master password hash (PBKDF2) |
-| `.app_settings.json` | Application settings (unencrypted) |
+| `src/data/aethervault.db` | Encrypted vault (SQLite) |
+| `src/data/aethervault.db.bak` | Auto-generated backup |
+| `src/data/.master.key` | Master password hash (PBKDF2) |
+| `src/data/.app_settings.json` | Application settings (unencrypted) |
 
 ## Troubleshooting
 
 ### "Icon file not found" warning in console
-The app icon is optional. The application will run fine without it. To resolve, place a `kiss_icon.ico` file in an `assets/` directory next to the executable.
+The app icon is optional. The application will run fine without it. To resolve, place an icon file in an `assets/` directory next to the executable.
 
 ### Can't open the vault after restore
 Restore requires the same master password that was used when the backup was created. If you've changed your master password since the backup, the old backup won't work.
@@ -133,5 +131,5 @@ Adjust the auto-lock timeout in `Settings > Auto-Lock`. The default is 3 minutes
 
 - **Can I recover a forgotten master password?** No. The master password is not stored; only a one-way hash is saved. Without the original password, your vault is permanently inaccessible.
 - **Is my data secure?** Yes. All passwords are encrypted with AES-256 (Fernet). The encryption key is derived from your master password using PBKDF2 with 600,000 iterations.
-- **Can I use the same database on multiple computers?** Yes. Copy the `password_manager.db` file to another computer with the application installed. Use the same master password to unlock it.
+- **Can I use the same database on multiple computers?** Yes. Copy the `src/data/aethervault.db` file to another computer with the application installed. Use the same master password to unlock it.
 - **How do I migrate from another password manager?** Export your data to CSV and import it via `File > Import Vault (CSV)`. The CSV must have columns: title, username, password, url, email, phone, address, category, notes.
