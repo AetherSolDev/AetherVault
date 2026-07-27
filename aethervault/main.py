@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-27 13:53 CT (America/Chicago)
+# Last Edited: 2026-07-27 16:10 CT (America/Chicago)
 # Path: aethervault/main.py
 # Purpose: Application entry point with CLI switches (--version, --debug, --upgrade, --foreground).
 
@@ -13,36 +13,80 @@ import sys
 import textwrap
 import urllib.request
 import urllib.error
+from typing import Optional
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
 
-from aethervault import VERSION
+from aethervault import PROJECT_ROOT, VERSION
 from aethervault.gui.app import PySidePWManager
 
 GITHUB_TAGS_API = "https://api.github.com/repos/brandonmunoz1975-ops/AetherVault/tags"
 
 
-def check_for_upgrades() -> bool:
-    """Check GitHub tags for a newer version. Returns True if upgrade was performed."""
+GIT_REPO_URL = "https://github.com/brandonmunoz1975-ops/AetherVault.git"
+RELEASES_URL = "https://github.com/brandonmunoz1975-ops/AetherVault/releases/latest"
+
+
+def _is_git_repo() -> bool:
+    """Return True if PROJECT_ROOT contains a .git directory."""
+    return os.path.isdir(os.path.join(PROJECT_ROOT, ".git"))
+
+
+def _print_upgrade_instructions(latest_tag: str):
+    """Print platform-appropriate upgrade instructions."""
+    print(f"\nNew version available: v{latest_tag} (current: v{VERSION})")
+    print()
+
+    if _is_git_repo():
+        print(textwrap.dedent(f"""\
+        You cloned from Git — pull the latest code:
+
+            cd {PROJECT_ROOT}
+            git pull
+            pip install -e .
+
+        """))
+    else:
+        print(textwrap.dedent(f"""\
+        To upgrade via pip:
+
+            pip install --upgrade git+{GIT_REPO_URL}
+
+        """))
+
+    print(f"Or download the latest release from:\n    {RELEASES_URL}\n")
+
+
+def _fetch_latest_tag() -> Optional[str]:
+    """Fetch the latest version tag from GitHub. Returns tag string or None."""
     try:
         req = urllib.request.Request(GITHUB_TAGS_API, headers={"User-Agent": "AetherVault"})
         with urllib.request.urlopen(req, timeout=10) as resp:
             tags = json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
         print(f"Upgrade check failed (HTTP {e.code})")
-        return False
+        return None
     except (urllib.error.URLError, json.JSONDecodeError, OSError) as e:
         print(f"Upgrade check failed: {e}")
-        return False
+        return None
 
     if not tags:
         print("No version tags found on GitHub.")
-        return False
+        return None
 
     latest_tag = tags[0].get("name", "").lstrip("v")
     if not latest_tag:
         print("Could not determine latest version.")
+        return None
+
+    return latest_tag
+
+
+def check_for_upgrades() -> bool:
+    """Check GitHub tags for a newer version. Returns True if upgrade is available."""
+    latest_tag = _fetch_latest_tag()
+    if latest_tag is None:
         return False
 
     def parse_ver(v: str):
@@ -56,14 +100,7 @@ def check_for_upgrades() -> bool:
         print(f"You're up to date! (v{VERSION})")
         return False
 
-    print(f"New version available: v{latest_tag} (current: v{VERSION})")
-    print(textwrap.dedent(f"""
-    To upgrade via pip:
-        pip install --upgrade git+https://github.com/brandonmunoz1975-ops/AetherVault.git
-
-    Or download the latest release from:
-        https://github.com/brandonmunoz1975-ops/AetherVault/releases/latest
-    """))
+    _print_upgrade_instructions(latest_tag)
     return True
 
 
@@ -99,7 +136,7 @@ def run():
     parser.add_argument(
         "--upgrade", "-u",
         action="store_true",
-        help="Check GitHub for a newer release",
+        help="Check for updates and show upgrade instructions",
     )
     parser.add_argument(
         "--foreground", "-f",
