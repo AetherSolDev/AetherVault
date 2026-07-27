@@ -39,7 +39,7 @@ AetherVault is a desktop application that stores your credentials in an encrypte
 
 ## Screenshots
 
-![AetherVault Main Screen](assets/main.png)
+![AetherVault Main Screen](src/assets/main.png)
 
 ## Installation
 
@@ -48,32 +48,56 @@ AetherVault is a desktop application that stores your credentials in an encrypte
 - Python 3.12+
 - pip
 
-### Quick Install (editable)
+### Option 1: Global Install (Editable)
+
+Installs the `aethervault` command system-wide. Works in any directory.
 
 ```bash
-# Clone the repository
 git clone https://github.com/brandonmunoz1975-ops/AetherVault.git
 cd AetherVault
 
-# Create and activate virtual environment
+# Outside any virtual environment:
+pip install --user --break-system-packages -e .
+
+# Run from anywhere:
+aethervault
+```
+
+### Option 2: Virtual Environment (Isolated)
+
+```bash
+git clone https://github.com/brandonmunoz1975-ops/AetherVault.git
+cd AetherVault
+
 python -m venv venv
 source venv/bin/activate   # Linux/macOS
 # venv\Scripts\activate    # Windows
 
-# Install package and dependencies
 pip install -e .
-
-# Run the application
 aethervault
 ```
 
-### Build Standalone Executable
+### Option 3: Standalone Executable (PyInstaller)
+
+No Python or pip needed on the target machine.
 
 ```bash
 pip install pyinstaller
 pyinstaller aethervault.spec
 # Output in dist/aethervault/
+
+# Copy the dist/aethervault/ folder to any machine and run:
+./aethervault
 ```
+
+### CLI Reference
+
+| Command | Description |
+|---------|-------------|
+| `aethervault` | Launch the GUI |
+| `aethervault --version` | Show installed version |
+| `aethervault --debug` | Launch with debug logging to terminal |
+| `aethervault --upgrade` | Check GitHub for a newer version |
 
 ## Usage
 
@@ -114,27 +138,35 @@ Technical reference: [`docs/sys/REFERENCE.html`](docs/sys/REFERENCE.html)
 AetherVault/
 ├── src/
 │   ├── __init__.py          # Version, PROJECT_ROOT, portable mode
-│   ├── core_logic.py        # Encryption, hashing, data model, settings
-│   ├── db_manager.py        # SQLite CRUD, import/export, backup
-│   ├── main.py              # Application entry point
-│   └── gui/
-│       ├── app.py           # Main window and UI logic
-│       ├── dialogs.py       # Password generator, documentation viewer
-│       └── theme.py         # Dark/light mode stylesheets
-├── src/data/                # Runtime data (gitignored)
-│   ├── aethervault.db       # Encrypted vault
-│   ├── .master.key          # Master password hash
-│   └── .app_settings.json   # App preferences
-├── docs/
-│   ├── USER_GUIDE.md        # User documentation
-│   ├── USER_GUIDE.html      # HTML version for in-app help
-│   └── sys/                 # System documentation
-├── assets/                  # Application icon and screenshots
-├── scripts/                 # Utility scripts
-├── aethervault.py           # Legacy entry point
+│   ├── core_logic.py        # Encryption, hashing, score_password, data model, settings
+│   ├── db_manager.py        # SQLite CRUD, import/export/preview, backup, WAL
+│   ├── main.py              # Entry point with CLI (--version, --debug, --upgrade)
+│   ├── assets/              # App icon (aethervault.ico) and screenshots
+│   ├── docs/                # User guide (MD + HTML) and system documentation
+│   │   ├── USER_GUIDE.md
+│   │   ├── USER_GUIDE.html
+│   │   └── sys/             # PLAN, ARCHITECTURE, CHANGELOG, etc.
+│   ├── gui/
+│   │   ├── app.py           # Main window coordinator
+│   │   ├── credential_form.py   # Entry detail/edit form
+│   │   ├── credential_table.py  # Credential list with search/filter
+│   │   ├── conflict_dialog.py   # Import conflict resolution
+│   │   ├── dialogs.py       # Password generator, documentation viewer
+│   │   ├── password_strength.py # Strength bar widget
+│   │   └── theme.py         # Dark/light mode stylesheets
+│   └── data/                # Runtime data (gitignored)
+│       ├── aethervault.db
+│       ├── .master.key
+│       └── .app_settings.json
+├── tests/                   # pytest test suite (22 tests)
+│   ├── test_score_password.py
+│   ├── test_credential_entry.py
+│   ├── test_db_manager.py
+│   └── conftest.py
+├── MANIFEST.in              # Package data for pip non-editable installs
 ├── pyproject.toml           # Package build config & CLI entry point
 ├── requirements.txt
-└── aethervault.spec        # PyInstaller build spec
+└── aethervault.spec         # PyInstaller build spec
 ```
 
 ## Tech Stack

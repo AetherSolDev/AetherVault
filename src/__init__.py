@@ -5,7 +5,7 @@
 
 """Package initializer for AetherVault providing PROJECT_ROOT, version constants, and portable mode controls."""
 
-__version__ = "6.1.0"
+__version__ = "6.1.1"
 VERSION = __version__
 __app_name__ = "AetherVault"
 APP_NAME = __app_name__

@@ -19,26 +19,27 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 from src import VERSION
 from src.gui.app import PySidePWManager
 
-GITHUB_API = "https://api.github.com/repos/brandonmunoz1975-ops/AetherVault/releases/latest"
+GITHUB_TAGS_API = "https://api.github.com/repos/brandonmunoz1975-ops/AetherVault/tags"
 
 
 def check_for_upgrades() -> bool:
-    """Check GitHub for a newer release. Returns True if upgrade was performed."""
+    """Check GitHub tags for a newer version. Returns True if upgrade was performed."""
     try:
-        req = urllib.request.Request(GITHUB_API, headers={"User-Agent": "AetherVault"})
+        req = urllib.request.Request(GITHUB_TAGS_API, headers={"User-Agent": "AetherVault"})
         with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode())
+            tags = json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
-        if e.code == 404:
-            print("No releases published yet. Check back later.")
-        else:
-            print(f"Upgrade check failed (HTTP {e.code})")
+        print(f"Upgrade check failed (HTTP {e.code})")
         return False
     except (urllib.error.URLError, json.JSONDecodeError, OSError) as e:
         print(f"Upgrade check failed: {e}")
         return False
 
-    latest_tag = data.get("tag_name", "").lstrip("v")
+    if not tags:
+        print("No version tags found on GitHub.")
+        return False
+
+    latest_tag = tags[0].get("name", "").lstrip("v")
     if not latest_tag:
         print("Could not determine latest version.")
         return False

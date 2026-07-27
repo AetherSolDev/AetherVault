@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aethervault"
-version = "6.1.0"
+version = "6.1.1"
 description = "A secure, local-first password manager with AES-256 encryption"
 authors = [
     {name = "AetherVault Team"},
@@ -27,3 +27,10 @@ aethervault = "src.main:run"
 
 [tool.setuptools.packages.find]
 include = ["src*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.md", "*.html", "*.ico", "*.png"]
+
+[tool.setuptools.data-files]
+"src/docs" = ["src/docs/USER_GUIDE.md", "src/docs/USER_GUIDE.html"]
+"src/assets" = ["src/assets/aethervault.ico", "src/assets/main.png"]

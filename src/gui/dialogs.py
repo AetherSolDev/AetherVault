@@ -28,12 +28,18 @@ from src.core_logic import generate_strong_password
 
 
 def resource_path(relative_path):
-    """Resolve a file path relative to the application bundle or project root."""
+    """Resolve a file path relative to the application bundle, project root, or package data."""
     try:
         base_path = sys._MEIPASS
     except Exception:
         base_path = PROJECT_ROOT
-    return os.path.join(base_path, relative_path)
+    candidate = os.path.join(base_path, relative_path)
+    if os.path.exists(candidate):
+        return candidate
+    src_candidate = os.path.join(base_path, "src", relative_path)
+    if os.path.exists(src_candidate):
+        return src_candidate
+    return candidate
 
 
 class PasswordGeneratorDialog(QDialog):

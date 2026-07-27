@@ -60,15 +60,15 @@ New_Project_init/
 
 # Docs/sys individual files (consolidated into REFERENCE.md/html)
 # Keep only the mmd diagram and combined reference
-docs/sys/ARCHITECTURE.md
-docs/sys/BUGS.md
-docs/sys/CHANGELOG.md
-docs/sys/COST.md
-docs/sys/KNOWLEDGE.md
-docs/sys/PLAN.md
-docs/sys/TASKS.md
-docs/sys/Model_Pricing_Reference.txt
-docs/sys/function_inventory.*
+src/docs/sys/ARCHITECTURE.md
+src/docs/sys/BUGS.md
+src/docs/sys/CHANGELOG.md
+src/docs/sys/COST.md
+src/docs/sys/KNOWLEDGE.md
+src/docs/sys/PLAN.md
+src/docs/sys/TASKS.md
+src/docs/sys/Model_Pricing_Reference.txt
+src/docs/sys/function_inventory.*
 
 # Scripts/ Individual scripts for prooduction.
 scripts/
