@@ -55,6 +55,9 @@ repomix-output.*
 .repomixignore
 AetherVault/
 
+# Project template system (scratch directory, not part of app)
+New_Project_init/
+
 # Docs/sys individual files (consolidated into REFERENCE.md/html)
 # Keep only the mmd diagram and combined reference
 docs/sys/ARCHITECTURE.md

@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-25 18:12 CT (America/Chicago)
+# Last Edited: 2026-07-27 13:27 CT (America/Chicago)
 # Path: src/core_logic.py
 # Purpose: Encryption, hashing, data model, and settings management for AetherVault.
 
@@ -8,6 +8,8 @@
 import base64
 import hashlib
 import json
+import logging
+import re
 import os
 import random
 import string
@@ -32,6 +34,7 @@ APP_SETTINGS_FILE = os.path.join(DATA_DIR, ".app_settings.json")
 APPLICATION_SALT = b"password_manager_salt_value_12345"
 backend = default_backend()
 DEFAULT_LOCKOUT_MINUTES = 3
+logger = logging.getLogger(__name__)
 
 
 def derive_encryption_key(master_password_hash: str) -> bytes:
@@ -66,7 +69,7 @@ def encrypt_data(data: str, key: bytes) -> str:
         encrypted_bytes = f.encrypt(data.encode("utf-8"))
         return encrypted_bytes.decode("utf-8")
     except Exception as e:
-        print(f"Encryption failed: {e}")
+        logger.error("Encryption failed: %s", e)
         return data
 
 
@@ -138,6 +141,28 @@ def verify_password(password: str, stored_hash: str) -> bool:
         return False
 
 
+def score_password(password: str) -> int:
+    """Score a password 0-100 based on length and character diversity."""
+    if not password:
+        return 0
+    score = 0
+    if len(password) >= 8:
+        score += 15
+    if len(password) >= 12:
+        score += 15
+    if len(password) >= 16:
+        score += 10
+    if re.search(r"[a-z]", password):
+        score += 10
+    if re.search(r"[A-Z]", password):
+        score += 15
+    if re.search(r"\d", password):
+        score += 15
+    if re.search(r"[^a-zA-Z0-9]", password):
+        score += 20
+    return min(score, 100)
+
+
 def load_master_password(file_path: str) -> Optional[str]:
     """Read the stored master password hash from disk, or return None."""
     if os.path.exists(file_path):
@@ -175,7 +200,7 @@ def save_settings(settings: dict):
         with open(APP_SETTINGS_FILE, "w") as f:
             json.dump(settings, f, indent=4)
     except IOError as e:
-        print(f"Error saving settings: {e}")
+        logger.error("Error saving settings: %s", e)
 
 
 class CredentialEntry:
@@ -183,20 +208,22 @@ class CredentialEntry:
     def __init__(self, **kwargs):
         """Initialize a CredentialEntry from keyword arguments, defaulting missing fields."""
         self.db_id = kwargs.get("db_id")
-        self.title = kwargs.get("title")
-        self.url = kwargs.get("url")
-        self.username = kwargs.get("username")
-        self.email = kwargs.get("email")
-        self.password = kwargs.get("password")
-        self.phone = kwargs.get("phone")
-        self.address = kwargs.get("address")
-        self.category = kwargs.get("category")
-        self.notes = kwargs.get("notes")
+        self.title = kwargs.get("title", "")
+        self.url = kwargs.get("url", "")
+        self.username = kwargs.get("username", "")
+        self.email = kwargs.get("email", "")
+        self.password = kwargs.get("password", "")
+        self.phone = kwargs.get("phone", "")
+        self.address = kwargs.get("address", "")
+        self.category = kwargs.get("category", "")
+        self.notes = kwargs.get("notes", "")
         self.tags = kwargs.get("tags", "")
         self.custom_fields = kwargs.get("custom_fields", "")
         self.parent_id = kwargs.get("parent_id", 0)
         self.created_at = kwargs.get("created_at")
         self.modified_at = kwargs.get("modified_at")
+        self.time_last_used = kwargs.get("time_last_used", "")
+        self.time_password_changed = kwargs.get("time_password_changed", "")
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize this credential entry to a plain dictionary."""
@@ -216,4 +243,6 @@ class CredentialEntry:
             "parent_id": self.parent_id,
             "created_at": self.created_at,
             "modified_at": self.modified_at,
+            "time_last_used": self.time_last_used,
+            "time_password_changed": self.time_password_changed,
         }

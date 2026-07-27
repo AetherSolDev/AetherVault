@@ -1,9 +1,38 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-26 00:48 CT (America/Chicago)
+# Last Edited: 2026-07-27 13:47 CT (America/Chicago)
 # Path: docs/sys/CHANGELOG.md
 # Purpose: Changelog tracking all significant project changes for AetherVault.
 
 # Changelog
+
+## [6.1.0] — 2026-07-27
+
+### Added
+- **Version bump criteria** documented in AGENTS.md — SemVer from conventional commit types
+- **Import conflict system** — `preview_import()` scans for title+username collisions; `execute_import()` with per-entry resolution (Keep Vault / Use Import) or bulk import and review later
+- **`score_password()`** extracted to `core_logic.py` — single source of truth for password strength scoring
+- **Test suite** — 22 tests across 3 files (`test_score_password`, `test_credential_entry`, `test_db_manager`) with pytest fixtures
+- **`tests/conftest.py`** — shared temp database and sample entry fixtures
+- **`docs/sys/AUDIT_REPORT.md`** — formal audit trail with 12 findings, all resolved
+
+### Changed
+- **God file split**: `app.py` 1627→968 lines. Extracted `CredentialForm` (344), `CredentialTable` (334), `ClickToCopyFilter` (24), `PasswordStrengthBar` (46)
+- **`setup_menu_bar()`** 70→6 lines — extracted into 4 builder methods
+- **`CredentialEntry.__init__()`** — all string fields default to `""` instead of `None`
+- **`import_from_csv()`** — now uses column alias mapping for browser CSV compatibility (73 aliases, 17 fields)
+- **`handle_import()`** — preview-first flow with conflict detection
+- **`_connect()`** — added `PRAGMA journal_mode=WAL`
+- **`DatabaseManager`** — added `__enter__`/`__exit__` context manager protocol
+- **`resource_path()`** — uses `PROJECT_ROOT` instead of `os.path.abspath(".")`
+- **`CredentialTable`** — added `time_last_used` and `time_password_changed` columns
+- **`New_Project_init/AGENTS.md`** — added versioning section, updated safety.md with NAS mount check and trash directory
+
+### Fixed
+- **All 12 audit findings** resolved (score C→A)
+- Duplicate password scoring logic eliminated (was in 2 places, now one `score_password()`)
+- `print()` calls in `core_logic.py` replaced with `logging`
+- ALTER TABLE SQL now uses whitelist guard instead of raw f-string
+- `show_password_health()` reduced 82→64 lines via `score_password()` reuse
 
 ## 2026-07-24 (session 3)
 

@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-24 16:22 CT (America/Chicago)
+# Last Edited: 2026-07-27 13:47 CT (America/Chicago)
 # Path: src/gui/dialogs.py
 # Purpose: Dialog classes for password generation and documentation viewing.
 
@@ -28,11 +28,11 @@ from src.core_logic import generate_strong_password
 
 
 def resource_path(relative_path):
-    """Resolve a file path relative to the application bundle or working directory."""
+    """Resolve a file path relative to the application bundle or project root."""
     try:
         base_path = sys._MEIPASS
     except Exception:
-        base_path = os.path.abspath(".")
+        base_path = PROJECT_ROOT
     return os.path.join(base_path, relative_path)
 
 
