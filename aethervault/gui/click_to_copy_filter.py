@@ -1,6 +1,6 @@
 # Created: 2026-07-27
 # Last Edited: 2026-07-27 13:47 CT (America/Chicago)
-# Path: src/gui/click_to_copy_filter.py
+# Path: aethervault/gui/click_to_copy_filter.py
 # Purpose: Event filter that copies widget text to clipboard on left-click.
 
 """Event filter that copies widget text to clipboard on left-click."""

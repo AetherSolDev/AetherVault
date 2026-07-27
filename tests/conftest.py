@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-07-27 13:47 CT (America/Chicago)
+# Last Edited: 2026-07-27 16:01 CT (America/Chicago)
 # Path: tests/conftest.py
 # Purpose: Shared test fixtures for AetherVault test suite.
 
@@ -19,6 +19,17 @@ def temp_db():
     err = lambda t, m: None
     dm = DatabaseManager(db_path, err)
     dm.set_encryption_key("test_key_placeholder_12345678901234567890")
+    yield dm
+    dm.conn.close()
+    import os
+    os.unlink(db_path)
+
+
+@pytest.fixture
+def temp_db_no_key():
+    db_path = tempfile.mktemp(suffix=".db")
+    err = lambda t, m: None
+    dm = DatabaseManager(db_path, err)
     yield dm
     dm.conn.close()
     import os

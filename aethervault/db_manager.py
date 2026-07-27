@@ -1,6 +1,6 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-27 13:27 CT (America/Chicago)
-# Path: src/db_manager.py
+# Last Edited: 2026-07-27 15:57 CT (America/Chicago)
+# Path: aethervault/db_manager.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
 """Database operations for AetherVault credential entries using SQLite."""
@@ -255,39 +255,19 @@ class DatabaseManager:
 
         self.create_pre_op_backup("Duplicate Removal")
 
-        cursor = self.conn.cursor()
         deleted_count = 0
         try:
-            cursor.execute("""
-                SELECT MIN(db_id)
-                FROM credentials
-                GROUP BY title, username
-                HAVING COUNT(*) > 1
-            """)
-            ids_to_keep = {row[0] for row in cursor.fetchall()}
-            cursor.execute("""
-                SELECT db_id
-                FROM credentials
-                WHERE (title, username) IN (
-                    SELECT title, username
+            self.cursor.execute(
+                """
+                DELETE FROM credentials
+                WHERE db_id NOT IN (
+                    SELECT MIN(db_id)
                     FROM credentials
                     GROUP BY title, username
-                    HAVING COUNT(*) > 1
                 )
-            """)
-            all_duplicate_ids = {row[0] for row in cursor.fetchall()}
-            ids_to_delete = all_duplicate_ids - ids_to_keep
-            if not ids_to_delete:
-                return 0
-            placeholders = ",".join("?" * len(ids_to_delete))
-            cursor.execute(
-                f"""
-                DELETE FROM credentials
-                WHERE db_id IN ({placeholders})
-            """,
-                tuple(ids_to_delete),
+            """
             )
-            deleted_count = cursor.rowcount
+            deleted_count = self.cursor.rowcount
             self.conn.commit()
             return deleted_count
         except sqlite3.Error as e:
@@ -333,6 +313,8 @@ class DatabaseManager:
         """Import credentials from a CSV file, inserting or updating as needed.
         Handles varying column names across browsers via alias mapping.
         Returns the count of imported entries."""
+        if not self.encryption_key:
+            raise RuntimeError("Encryption key not set. Please unlock the vault first.")
         self.create_pre_op_backup("Import")
         imported_count = 0
         required = {"title", "password"}
@@ -379,6 +361,8 @@ class DatabaseManager:
         """Scan a CSV and identify conflicts with existing (title, username) pairs.
         Returns {'total_rows': int, 'conflicts': list, 'non_conflict_count': int}.
         Each conflict: {'vault': dict, 'import': dict} with decrypted vault data."""
+        if not self.encryption_key:
+            raise RuntimeError("Encryption key not set. Please unlock the vault first.")
         existing = self.load_all_credentials()
         existing_by_key = {}
         for e in existing:
@@ -429,6 +413,8 @@ class DatabaseManager:
         conflict_decisions: {(title_lower, username_lower): 'keep_vault'|'replace'}
         Keys omitted from conflict_decisions are inserted as new entries.
         Returns count of imported/updated entries."""
+        if not self.encryption_key:
+            raise RuntimeError("Encryption key not set. Please unlock the vault first.")
         self.create_pre_op_backup("Import")
         imported_count = 0
         required = {"title", "password"}

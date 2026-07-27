@@ -1,6 +1,6 @@
 # Created: 2025-12-04
 # Last Edited: 2026-07-27 13:27 CT (America/Chicago)
-# Path: src/core_logic.py
+# Path: aethervault/core_logic.py
 # Purpose: Encryption, hashing, data model, and settings management for AetherVault.
 
 """Encryption, hashing, credential data model, and application settings management for AetherVault."""

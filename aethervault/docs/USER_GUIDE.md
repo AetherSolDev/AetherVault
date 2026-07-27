@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-27 15:35 CT (America/Chicago)
+# Last Edited: 2026-07-27 16:06 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -122,7 +122,7 @@ All files are stored in the application directory:
 | File | Purpose |
 |------|---------|
 | `src/data/aethervault.db` | Encrypted vault (SQLite) |
-| `src/data/aethervault.db.bak` | Auto-generated backup |
+| `src/data/aethervault.db.bak` | Auto-generated backup files |
 | `src/data/.master.key` | Master password hash (PBKDF2) |
 | `src/data/.app_settings.json` | Application settings (unencrypted) |
 

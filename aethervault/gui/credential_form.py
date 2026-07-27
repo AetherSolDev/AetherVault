@@ -1,6 +1,6 @@
 # Created: 2026-07-27
 # Last Edited: 2026-07-27 13:47 CT (America/Chicago)
-# Path: src/gui/credential_form.py
+# Path: aethervault/gui/credential_form.py
 # Purpose: Credential detail/edit form widget for the right panel.
 
 """Credential detail/edit form widget for the right panel."""

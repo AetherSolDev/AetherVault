@@ -137,37 +137,40 @@ Technical reference: [`docs/sys/REFERENCE.html`](docs/sys/REFERENCE.html)
 
 ```
 AetherVault/
-├── src/
-│   ├── __init__.py          # Version, PROJECT_ROOT, portable mode
-│   ├── core_logic.py        # Encryption, hashing, score_password, data model, settings
-│   ├── db_manager.py        # SQLite CRUD, import/export/preview, backup, WAL
-│   ├── main.py              # Entry point with CLI (--version, --debug, --upgrade, --foreground, auto-detach)
-│   ├── assets/              # App icon (aethervault.ico) and screenshots
-│   ├── docs/                # User guide (MD + HTML) and system documentation
-│   │   ├── USER_GUIDE.md
+├── aethervault/
+│   ├── __init__.py              # Version, PROJECT_ROOT, portable mode
+│   ├── core_logic.py            # Encryption, hashing, score_password, data model, settings
+│   ├── db_manager.py            # SQLite CRUD, import/export/preview, backup, WAL
+│   ├── main.py                  # Entry point with CLI (--version, --debug, --upgrade, --foreground, auto-detach)
+│   ├── assets/                  # App icon (aethervault.ico) and screenshots
+│   ├── docs/
+│   │   ├── USER_GUIDE.md        # User-facing documentation
 │   │   ├── USER_GUIDE.html
-│   │   └── sys/             # PLAN, ARCHITECTURE, CHANGELOG, etc.
-│   ├── gui/
-│   │   ├── app.py           # Main window coordinator
-│   │   ├── credential_form.py   # Entry detail/edit form
-│   │   ├── credential_table.py  # Credential list with search/filter
-│   │   ├── conflict_dialog.py   # Import conflict resolution
-│   │   ├── dialogs.py       # Password generator, documentation viewer
-│   │   ├── password_strength.py # Strength bar widget
-│   │   └── theme.py         # Dark/light mode stylesheets
-│   └── data/                # Runtime data (gitignored)
+│   │   └── sys/                 # PLAN, ARCHITECTURE, CHANGELOG, etc.
+│   └── gui/
+│       ├── app.py               # Main window coordinator
+│       ├── click_to_copy_filter.py
+│       ├── conflict_dialog.py   # Import conflict resolution
+│       ├── credential_form.py   # Entry detail/edit form
+│       ├── credential_table.py  # Credential list with search/filter
+│       ├── dialogs.py           # Password generator, documentation viewer
+│       ├── password_strength.py # Strength bar widget
+│       └── theme.py             # Dark/light mode stylesheets
+├── tests/                       # pytest test suite (61 tests)
+│   ├── test_core_logic.py       # encryption, hashing, password gen, settings
+│   ├── test_score_password.py   # password strength scoring
+│   ├── test_credential_entry.py # data model
+│   ├── test_db_manager.py       # CRUD, import/export, duplicates, backup, key guards
+│   └── conftest.py
+├── src/
+│   └── data/                    # Runtime data (gitignored)
 │       ├── aethervault.db
 │       ├── .master.key
 │       └── .app_settings.json
-├── tests/                   # pytest test suite (22 tests)
-│   ├── test_score_password.py
-│   ├── test_credential_entry.py
-│   ├── test_db_manager.py
-│   └── conftest.py
-├── MANIFEST.in              # Package data for pip non-editable installs
-├── pyproject.toml           # Package build config & CLI entry point
+├── MANIFEST.in                  # Package data for pip non-editable installs
+├── pyproject.toml               # Package build config & CLI entry point
 ├── requirements.txt
-└── aethervault.spec         # PyInstaller build spec
+└── aethervault.spec             # PyInstaller build spec
 ```
 
 ## Tech Stack

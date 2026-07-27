@@ -1,6 +1,6 @@
 # Created: 2026-07-27
 # Last Edited: 2026-07-27 13:47 CT (America/Chicago)
-# Path: src/gui/password_strength.py
+# Path: aethervault/gui/password_strength.py
 # Purpose: Progress bar widget that evaluates and displays password strength.
 
 """Progress bar widget that evaluates and displays password strength."""

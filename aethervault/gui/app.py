@@ -1,6 +1,6 @@
 # Created: 2025-12-04
 # Last Edited: 2026-07-27 13:47 CT (America/Chicago)
-# Path: src/gui/app.py
+# Path: aethervault/gui/app.py
 # Purpose: Main application window — coordinates auth, menus, CRUD, import/export.
 
 """Main application window — coordinates auth, menus, CRUD, import/export."""

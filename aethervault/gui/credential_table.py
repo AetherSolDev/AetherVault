@@ -1,6 +1,6 @@
 # Created: 2026-07-27
 # Last Edited: 2026-07-27 13:47 CT (America/Chicago)
-# Path: src/gui/credential_table.py
+# Path: aethervault/gui/credential_table.py
 # Purpose: Credential list table widget with search, filter, and context menu.
 
 """Credential list table widget with search, filter, and context menu."""
