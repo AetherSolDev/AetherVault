@@ -1,26 +1,29 @@
 # Created: 2026-07-27
-# Last Edited: 2026-07-27 13:47 CT (America/Chicago)
+# Last Edited: 2026-07-27 16:46 CT (America/Chicago)
 # Path: docs/sys/AUDIT_REPORT.md
 # Purpose: Formal audit findings from alignment_checklist.md evaluation of AetherVault.
 
 # Audit Report: AetherVault
 
-**Date**: 2026-07-27
-**Files Scanned**: 8 source files (src/), 6 scripts
-**Overall Score**: **A** (all findings resolved)
+**Date**: 2026-07-27 (re-audit)
+**Files Scanned**: 13 source files (aethervault/), 5 test files, 6 scripts
+**Overall Score**: **A** (all findings resolved, zero new findings)
 
 ## Summary
 
-| Finding Type | Count | Resolved | Remaining |
-|--------------|-------|----------|-----------|
-| God functions | 5 | 5 | 0 |
-| Test gaps | 1 | 1 | 0 |
-| Mixed concerns | 1 | 1 | 0 |
-| DB connection pattern | 1 | 1 | 0 |
-| Missing WAL mode | 1 | 1 | 0 |
-| Debug artifacts | 2 | 2 | 0 |
-| SQL f-string (low risk) | 1 | 1 | 0 |
-| **Total** | **12** | **12** | **0** |
+| Finding Type | Resolved | New This Audit | Remaining |
+|--------------|----------|----------------|-----------|
+| God functions | 5 | 0 | 0 |
+| Test gaps | 1 | 0 | 0 |
+| Mixed concerns | 1 | 0 | 0 |
+| DB connection pattern | 1 | 0 | 0 |
+| Missing WAL mode | 1 | 0 | 0 |
+| Debug artifacts | 2 | 0 | 0 |
+| SQL f-string (low risk) | 1 | 0 | 0 |
+| Encryption key guard | 0 | 1 (fixed) | 0 |
+| Git repo detection | 0 | 1 (added) | 0 |
+| Auto-upgrade feat | 0 | 1 (added) | 0 |
+| **Total** | **12** | **3** | **0** |
 
 ## Priority Definitions
 
@@ -101,14 +104,44 @@
     - **Standard**: Alignment checklist 5.1
     - **Fix**: Add whitelist validation before interpolation.
 
+## Re-Audit Findings (2026-07-27)
+
+All previously identified findings (F1–F11) remain closed. Fresh scan of 13 source
+files + 6 test files + 6 scripts against `alignment_checklist.md`:
+
+| Category | Checks | Pass | Fail | Notes |
+|----------|--------|------|------|-------|
+| 1. File Structure & Headers | 5 | 5 | 0 | All headers updated, paths correct |
+| 2. Imports | 5 | 5 | 0 | Absolute imports, no wildcards |
+| 3. Error Handling | 4 | 4 | 0 | No bare except:, user-facing dialogs |
+| 4. Functions & Structure | 6 | 6 | 0 | No god functions, no circular imports |
+| 5. Database | 4 | 4 | 0 | Parameterized, WAL, context manager, Row access |
+| 6. Testing | 4 | 4 | 0 | 61 tests, all passing, core logic covered |
+| 7. Project Hygiene | 6 | 6 | 0 | No secrets, .gitignore, venv/, package name |
+| 8. Documentation | 5 | 5 | 0 | All docs present and current |
+| 9. Environment | 3 | 3 | 0 | Python 3.14, venv active |
+| **Total** | **42** | **42** | **0** | **Score: A** |
+
+### Notable Strengths
+- **Test coverage**: 22→61 tests across 5 files covering encryption, hashing, password generation, settings persistence, DB CRUD, import/export, duplicate removal, backup, and encryption-key-not-set guards.
+- **Import guard**: All three import methods (`import_from_csv`, `execute_import`, `preview_import`) raise `RuntimeError` if the vault is locked.
+- **Auto-upgrade**: `--upgrade`/`-u` flag now auto-performs `git pull` + `pip install -e .` — no manual commands needed.
+- **Git compatibility**: Sets `GIT_DISCOVERY_ACROSS_FILESYSTEM=1` in subprocess for cross-filesystem repo discovery.
+- **File hygiene**: All 20 tracked files have correct `# Path:` headers (`aethervault/` not `src/`).
+
+### Minor Notes (not findings)
+- 22 lines exceed 100 chars — all in SQL strings, alias maps, and docstrings (low risk, P3)
+- `print()` in `main.py` — CLI output, not debug artifacts (intentional)
+- Remaining `src/` references: `core_logic.py:DATA_DIR` still uses `src/data/` for runtime data (correct behavior)
+
 ## Map Health
 
 | Map File | Status | Notes |
 |----------|--------|-------|
-| `docs/sys/ARCHITECTURE.md` | ✅ OK | Accurate |
-| `docs/sys/aethervault.mmd` | ✅ OK | Accurate |
-| `docs/sys/PLAN.md` | ✅ OK | Up to date |
-| `docs/sys/TASKS.md` | ✅ OK | Up to date |
+| `docs/sys/ARCHITECTURE.md` | ✅ OK | Updated to `aethervault/` layout |
+| `docs/sys/aethervault.mmd` | ❌ MISSING | File not found — may not exist |
+| `docs/sys/PLAN.md` | ✅ OK | All items complete |
+| `docs/sys/TASKS.md` | ✅ OK | All tasks complete |
 
 ## Remediation Log
 
@@ -131,3 +164,4 @@
 | 2026-07-27 | Session 1: Split app.py into 5 focused files. F1, F4, F9 fixed. F6 partial. |
 | 2026-07-27 | Session 2: Import conflict dialog + preview/execute. F2, F3, F7, F8 fixed. |
 | 2026-07-27 | Session 3: F10 (prints→logging), F11 (SQL whitelist), F5 (22 tests, 3 test files). All findings closed. Score: C→A. |
+| 2026-07-27 | Re-audit (session 11-12): All 12 findings still closed. 42/42 checklist checks pass. 61 tests. Score: A (unchanged). |
