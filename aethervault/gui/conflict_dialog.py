@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-07-27 16:36 CT (America/Chicago)
+# Last Edited: 2026-07-27 16:51 CT (America/Chicago)
 # Path: aethervault/gui/conflict_dialog.py
 # Purpose: Import conflict review dialog for per-entry resolution.
 
