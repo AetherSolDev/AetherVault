@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-27 16:51 CT (America/Chicago)
+# Last Edited: 2026-07-27 16:59 CT (America/Chicago)
 # Path: aethervault/gui/theme.py
 # Purpose: Unified theme system for AetherVault — dark/light palettes and QSS.
 
