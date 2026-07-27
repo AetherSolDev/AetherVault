@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aethervault"
-version = "6.1.1"
+version = "6.1.2"
 description = "A secure, local-first password manager with AES-256 encryption"
 authors = [
     {name = "AetherVault Team"},
@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.scripts]
-aethervault = "src.main:run"
+aethervault = "aethervault.main:run"
 
 [tool.setuptools.packages.find]
 include = ["aethervault*"]
