@@ -16,8 +16,8 @@ import urllib.error
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
 
-from src import VERSION
-from src.gui.app import PySidePWManager
+from aethervault import VERSION
+from aethervault.gui.app import PySidePWManager
 
 GITHUB_TAGS_API = "https://api.github.com/repos/brandonmunoz1975-ops/AetherVault/tags"
 

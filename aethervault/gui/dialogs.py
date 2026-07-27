@@ -23,8 +23,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src import PROJECT_ROOT
-from src.core_logic import generate_strong_password
+from aethervault import PROJECT_ROOT
+from aethervault.core_logic import generate_strong_password
 
 
 def resource_path(relative_path):
@@ -36,9 +36,9 @@ def resource_path(relative_path):
     candidate = os.path.join(base_path, relative_path)
     if os.path.exists(candidate):
         return candidate
-    src_candidate = os.path.join(base_path, "src", relative_path)
-    if os.path.exists(src_candidate):
-        return src_candidate
+    pkg_candidate = os.path.join(base_path, "aethervault", relative_path)
+    if os.path.exists(pkg_candidate):
+        return pkg_candidate
     return candidate
 
 

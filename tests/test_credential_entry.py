@@ -5,7 +5,7 @@
 
 """Unit tests for the CredentialEntry data model."""
 
-from src.core_logic import CredentialEntry
+from aethervault.core_logic import CredentialEntry
 
 
 class TestCredentialEntry:

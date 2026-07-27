@@ -23,9 +23,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core_logic import CredentialEntry
-from src.gui.click_to_copy_filter import ClickToCopyFilter
-from src.gui.password_strength import PasswordStrengthBar
+from aethervault.core_logic import CredentialEntry
+from aethervault.gui.click_to_copy_filter import ClickToCopyFilter
+from aethervault.gui.password_strength import PasswordStrengthBar
 
 
 class CredentialForm(QWidget):

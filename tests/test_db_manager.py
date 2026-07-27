@@ -7,7 +7,7 @@
 
 import pytest
 
-from src.core_logic import CredentialEntry
+from aethervault.core_logic import CredentialEntry
 
 
 class TestDatabaseManager:

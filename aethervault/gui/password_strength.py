@@ -7,7 +7,7 @@
 
 from PySide6.QtWidgets import QProgressBar
 
-from src.core_logic import score_password
+from aethervault.core_logic import score_password
 
 
 class PasswordStrengthBar(QProgressBar):

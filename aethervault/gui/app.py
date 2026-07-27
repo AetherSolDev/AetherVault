@@ -38,14 +38,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src import (
+from aethervault import (
     PORTABLE_MARKER,
     VERSION,
     disable_portable_mode,
     enable_portable_mode,
     is_portable,
 )
-from src.core_logic import (
+from aethervault.core_logic import (
     DB_BACKUP_PATH,
     DB_PATH,
     DEFAULT_LOCKOUT_MINUTES,
@@ -59,13 +59,13 @@ from src.core_logic import (
     store_master_password,
     verify_password,
 )
-from src.db_manager import DatabaseManager
-from src.gui.credential_form import CredentialForm
-from src.gui.credential_table import CredentialTable
-from src.gui.conflict_dialog import ImportConflictDialog
-from src.gui.dialogs import DocumentationDialog, PasswordGeneratorDialog, resource_path
-from src.gui.theme import DarkThemeColors, ThemeColors
-from src.gui.theme import apply_theme as apply_app_theme
+from aethervault.db_manager import DatabaseManager
+from aethervault.gui.credential_form import CredentialForm
+from aethervault.gui.credential_table import CredentialTable
+from aethervault.gui.conflict_dialog import ImportConflictDialog
+from aethervault.gui.dialogs import DocumentationDialog, PasswordGeneratorDialog, resource_path
+from aethervault.gui.theme import DarkThemeColors, ThemeColors
+from aethervault.gui.theme import apply_theme as apply_app_theme
 
 LOCKOUT_OPTIONS = [1, 3, 5, 10, 30]
 LOCKOUT_NEVER = 0

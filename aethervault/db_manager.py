@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from src.core_logic import (
+from aethervault.core_logic import (
     CredentialEntry,
     decrypt_data,
     derive_encryption_key,

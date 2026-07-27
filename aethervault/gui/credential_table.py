@@ -24,8 +24,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core_logic import CredentialEntry
-from src.gui.theme import DarkThemeColors, ThemeColors
+from aethervault.core_logic import CredentialEntry
+from aethervault.gui.theme import DarkThemeColors, ThemeColors
 
 
 class CredentialTable(QWidget):

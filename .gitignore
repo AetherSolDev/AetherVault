@@ -17,14 +17,14 @@ __pycache__/
 *.jks
 *.keystore
 
-# App data files (runtime-generated in src/data/)
-src/data/*.db
-src/data/*.db-bak
-src/data/*.db.bak
-src/data/*.db-shm
-src/data/*.db-wal
-src/data/.master.key
-src/data/.app_settings.json
+# App data files (runtime-generated in aethervault/data/)
+aethervault/data/*.db
+aethervault/data/*.db-bak
+aethervault/data/*.db.bak
+aethervault/data/*.db-shm
+aethervault/data/*.db-wal
+aethervault/data/.master.key
+aethervault/data/.app_settings.json
 .portable
 
 # Root-level stale database file (pre-refactor artifact)
@@ -60,15 +60,15 @@ New_Project_init/
 
 # Docs/sys individual files (consolidated into REFERENCE.md/html)
 # Keep only the mmd diagram and combined reference
-src/docs/sys/ARCHITECTURE.md
-src/docs/sys/BUGS.md
-src/docs/sys/CHANGELOG.md
-src/docs/sys/COST.md
-src/docs/sys/KNOWLEDGE.md
-src/docs/sys/PLAN.md
-src/docs/sys/TASKS.md
-src/docs/sys/Model_Pricing_Reference.txt
-src/docs/sys/function_inventory.*
+aethervault/docs/sys/ARCHITECTURE.md
+aethervault/docs/sys/BUGS.md
+aethervault/docs/sys/CHANGELOG.md
+aethervault/docs/sys/COST.md
+aethervault/docs/sys/KNOWLEDGE.md
+aethervault/docs/sys/PLAN.md
+aethervault/docs/sys/TASKS.md
+aethervault/docs/sys/Model_Pricing_Reference.txt
+aethervault/docs/sys/function_inventory.*
 
 # Scripts/ Individual scripts for prooduction.
 scripts/

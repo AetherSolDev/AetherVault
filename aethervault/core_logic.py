@@ -22,7 +22,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from src import PROJECT_ROOT
+from aethervault import PROJECT_ROOT
 
 DATA_DIR = os.path.join(PROJECT_ROOT, "src", "data")
 DB_PATH = os.path.join(DATA_DIR, "aethervault.db")
