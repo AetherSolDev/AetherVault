@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-27 16:15 CT (America/Chicago)
+# Last Edited: 2026-07-27 16:20 CT (America/Chicago)
 # Path: aethervault/main.py
 # Purpose: Application entry point with CLI switches (--version, --debug, --upgrade, --foreground).
 
@@ -9,8 +9,8 @@ import argparse
 import json
 import logging
 import os
+import subprocess
 import sys
-import textwrap
 import urllib.request
 import urllib.error
 from typing import Optional
@@ -33,29 +33,12 @@ def _is_git_repo() -> bool:
     return os.path.isdir(os.path.join(PROJECT_ROOT, ".git"))
 
 
-def _print_upgrade_instructions(latest_tag: str):
-    """Print platform-appropriate upgrade instructions."""
-    print(f"\nNew version available: v{latest_tag} (current: v{VERSION})")
-    print()
-
-    if _is_git_repo():
-        print(textwrap.dedent(f"""\
-        You cloned from Git — pull the latest code:
-
-            cd {PROJECT_ROOT}
-            git pull
-            pip install -e .
-
-        """))
-    else:
-        print(textwrap.dedent(f"""\
-        To upgrade via pip:
-
-            pip install --upgrade git+{GIT_REPO_URL}
-
-        """))
-
-    print(f"Or download the latest release from:\n    {RELEASES_URL}\n")
+def _get_pip_command() -> str:
+    """Return the appropriate pip command (venv or system)."""
+    in_venv = sys.prefix != sys.base_prefix
+    if in_venv:
+        return os.path.join(sys.prefix, "bin", "pip")
+    return "pip"
 
 
 def _fetch_latest_tag() -> Optional[str]:
@@ -83,8 +66,60 @@ def _fetch_latest_tag() -> Optional[str]:
     return latest_tag
 
 
+def _perform_upgrade(latest_tag: str) -> bool:
+    """Perform the actual upgrade. Returns True on success."""
+    print(f"Upgrading AetherVault v{VERSION} → v{latest_tag} ...")
+    print()
+
+    try:
+        if _is_git_repo():
+            print("1. Pulling latest code via git ...", end=" ", flush=True)
+            result = subprocess.run(
+                ["git", "pull"],
+                cwd=PROJECT_ROOT,
+                capture_output=True, text=True, timeout=60,
+            )
+            if result.returncode != 0:
+                print("FAILED")
+                print(result.stderr)
+                return False
+            print("done")
+
+            print("2. Reinstalling package ...", end=" ", flush=True)
+            pip_cmd = _get_pip_command()
+            result = subprocess.run(
+                [pip_cmd, "install", "-e", "."],
+                cwd=PROJECT_ROOT,
+                capture_output=True, text=True, timeout=120,
+            )
+            if result.returncode != 0:
+                print("FAILED")
+                print(result.stderr)
+                return False
+            print("done")
+        else:
+            print("1. Upgrading via pip ...", end=" ", flush=True)
+            pip_cmd = _get_pip_command()
+            result = subprocess.run(
+                [pip_cmd, "install", "--upgrade", f"git+{GIT_REPO_URL}"],
+                capture_output=True, text=True, timeout=120,
+            )
+            if result.returncode != 0:
+                print("FAILED")
+                print(result.stderr)
+                return False
+            print("done")
+
+        print(f"\nUpgrade to v{latest_tag} complete!")
+        return True
+
+    except (subprocess.TimeoutExpired, OSError) as e:
+        print(f"FAILED — {e}")
+        return False
+
+
 def check_for_upgrades() -> bool:
-    """Check GitHub tags for a newer version. Returns True if upgrade is available."""
+    """Check GitHub tags for a newer version and upgrade if available. Returns True on success."""
     latest_tag = _fetch_latest_tag()
     if latest_tag is None:
         return False
@@ -100,8 +135,7 @@ def check_for_upgrades() -> bool:
         print(f"You're up to date! (v{VERSION})")
         return False
 
-    _print_upgrade_instructions(latest_tag)
-    return True
+    return _perform_upgrade(latest_tag)
 
 
 def detach_from_terminal():
@@ -136,7 +170,7 @@ def run():
     parser.add_argument(
         "--upgrade", "-u",
         action="store_true",
-        help="Check for updates and show upgrade instructions",
+        help="Check for updates and auto-upgrade (git pull + pip install)",
     )
     parser.add_argument(
         "--foreground", "-f",

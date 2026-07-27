@@ -97,7 +97,7 @@ pyinstaller aethervault.spec
 | `aethervault` | Launch the GUI (auto-detaches from terminal on Unix) |
 | `aethervault --version` | Show installed version |
 | `aethervault --debug` | Launch with debug logging to terminal |
-| `aethervault --upgrade` | Check for updates and show upgrade instructions (git pull or pip) |
+| `aethervault --upgrade` / `-u` | Check for updates and auto-upgrade via git pull or pip |
 | `aethervault --foreground` / `-f` | Keep terminal attached (for debugging) |
 
 ## Usage
