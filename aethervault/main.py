@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-27 16:36 CT (America/Chicago)
+# Last Edited: 2026-07-27 16:40 CT (America/Chicago)
 # Path: aethervault/main.py
 # Purpose: Application entry point with CLI switches (--version, --debug, --upgrade, --foreground).
 
@@ -72,16 +72,21 @@ def _perform_upgrade(latest_tag: str) -> bool:
     print()
 
     try:
+        git_env = os.environ.copy()
+        git_env["GIT_DISCOVERY_ACROSS_FILESYSTEM"] = "1"
+
         if _is_git_repo():
             print("1. Pulling latest code via git ...", end=" ", flush=True)
             result = subprocess.run(
                 ["git", "pull"],
                 cwd=PROJECT_ROOT,
                 capture_output=True, text=True, timeout=60,
+                env=git_env,
             )
             if result.returncode != 0:
                 print("FAILED")
                 print(result.stderr)
+                print("Tip: Set git safe.directory or GIT_DISCOVERY_ACROSS_FILESYSTEM")
                 return False
             print("done")
 
