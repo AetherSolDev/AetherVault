@@ -27,6 +27,15 @@ aethervault/data/.master.key
 aethervault/data/.app_settings.json
 .portable
 
+# Runtime data directory (core_logic.py: DATA_DIR = PROJECT_ROOT/src/data)
+src/data/*.db
+src/data/*.db-bak
+src/data/*.db.bak
+src/data/*.db-shm
+src/data/*.db-wal
+src/data/.master.key
+src/data/.app_settings.json
+
 # Root-level stale database file (pre-refactor artifact)
 password_manager.db
 
