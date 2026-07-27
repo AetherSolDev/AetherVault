@@ -1,13 +1,14 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-27 13:47 CT (America/Chicago)
-# Path: src/main.py
-# Purpose: Application entry point with CLI switches (--version, --debug, --upgrade).
+# Last Edited: 2026-07-27 13:53 CT (America/Chicago)
+# Path: aethervault/main.py
+# Purpose: Application entry point with CLI switches (--version, --debug, --upgrade, --foreground).
 
-"""Application entry point with CLI switches (--version, --debug, --upgrade)."""
+"""Application entry point with CLI switches (--version, --debug, --upgrade, --foreground)."""
 
 import argparse
 import json
 import logging
+import os
 import sys
 import textwrap
 import urllib.request
@@ -66,6 +67,22 @@ def check_for_upgrades() -> bool:
     return True
 
 
+def detach_from_terminal():
+    """Fork and release the terminal (Unix only). Parent exits, child continues."""
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0)
+        os.setsid()
+        devnull = os.open(os.devnull, os.O_RDWR)
+        os.dup2(devnull, 0)
+        os.dup2(devnull, 1)
+        os.dup2(devnull, 2)
+        os.close(devnull)
+    except OSError:
+        pass
+
+
 def run():
     """Parse CLI arguments and run the application."""
     parser = argparse.ArgumentParser(description="AetherVault — secure password manager")
@@ -84,6 +101,11 @@ def run():
         action="store_true",
         help="Check GitHub for a newer release",
     )
+    parser.add_argument(
+        "--foreground", "-f",
+        action="store_true",
+        help="Keep terminal attached (for debugging)",
+    )
     args = parser.parse_args()
 
     if args.version:
@@ -100,6 +122,9 @@ def run():
             stream=sys.stderr,
             format="%(levelname)s:%(name)s:%(message)s",
         )
+
+    if not args.foreground and sys.platform != "win32":
+        detach_from_terminal()
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")

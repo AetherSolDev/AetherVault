@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-26 00:45 CT (America/Chicago)
+# Last Edited: 2026-07-27 15:35 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -44,6 +44,16 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -e .
 aethervault
 ```
+
+### CLI Reference
+
+| Command | Description |
+|---------|-------------|
+| `aethervault` | Launch GUI (auto-detaches from terminal on Unix) |
+| `aethervault --version` | Show installed version |
+| `aethervault --debug` | Launch with debug logging to terminal |
+| `aethervault --upgrade` | Check GitHub for a newer version |
+| `aethervault --foreground` / `-f` | Keep terminal attached (for debugging) |
 
 ### Standalone Executable
 A pre-built executable is available (see Releases). No Python installation required.

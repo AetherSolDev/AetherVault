@@ -94,10 +94,11 @@ pyinstaller aethervault.spec
 
 | Command | Description |
 |---------|-------------|
-| `aethervault` | Launch the GUI |
+| `aethervault` | Launch the GUI (auto-detaches from terminal on Unix) |
 | `aethervault --version` | Show installed version |
 | `aethervault --debug` | Launch with debug logging to terminal |
 | `aethervault --upgrade` | Check GitHub for a newer version |
+| `aethervault --foreground` / `-f` | Keep terminal attached (for debugging) |
 
 ## Usage
 
@@ -140,7 +141,7 @@ AetherVault/
 │   ├── __init__.py          # Version, PROJECT_ROOT, portable mode
 │   ├── core_logic.py        # Encryption, hashing, score_password, data model, settings
 │   ├── db_manager.py        # SQLite CRUD, import/export/preview, backup, WAL
-│   ├── main.py              # Entry point with CLI (--version, --debug, --upgrade)
+│   ├── main.py              # Entry point with CLI (--version, --debug, --upgrade, --foreground, auto-detach)
 │   ├── assets/              # App icon (aethervault.ico) and screenshots
 │   ├── docs/                # User guide (MD + HTML) and system documentation
 │   │   ├── USER_GUIDE.md
