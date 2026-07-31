@@ -40,7 +40,7 @@ AetherVault is a desktop application that stores your credentials in an encrypte
 
 ## Screenshots
 
-![AetherVault Main Screen](src/assets/main.png)
+![AetherVault Main Screen](aethervault/assets/main.png)
 
 ## Installation
 
@@ -143,8 +143,8 @@ pyinstaller aethervault.spec
 
 ## Documentation
 
-Full user guide: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)
-Technical reference: [`docs/sys/REFERENCE.html`](docs/sys/REFERENCE.html)
+Full user guide: [`docs/USER_GUIDE.md`](aethervault/docs/USER_GUIDE.md)
+Technical reference: [`docs/sys/REFERENCE.html`](aethervault/docs/sys/REFERENCE.html)
 
 ## Project Structure
 
@@ -201,5 +201,3 @@ GNU General Public License v3.0 — see [LICENSE](LICENSE)
 ## Contributing
 
 Bug reports and feature requests are welcome via [GitHub Issues](https://github.com/brandonmunoz1975-ops/AetherVault/issues).
-# test
-# test
