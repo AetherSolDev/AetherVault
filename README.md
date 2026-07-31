@@ -52,10 +52,10 @@ No Python or pip needed. Grab the binary for your platform from the
 
 | Platform | Download |
 |----------|----------|
-| Windows (x86_64) | `aethervault-windows-x86_64.exe` |
-| Linux (x86_64) | `aethervault-linux-x86_64` |
-| macOS (Apple Silicon) | `aethervault-macos-arm64` |
-| macOS (Intel) | `aethervault-macos-x86_64` |
+| Windows (x86_64) | [aethervault-windows-x86_64.exe](https://github.com/brandonmunoz1975-ops/AetherVault/releases/latest/download/aethervault-windows-x86_64.exe) |
+| Linux (x86_64) | [aethervault-linux-x86_64](https://github.com/brandonmunoz1975-ops/AetherVault/releases/latest/download/aethervault-linux-x86_64) |
+| macOS (Apple Silicon) | [aethervault-macos-arm64](https://github.com/brandonmunoz1975-ops/AetherVault/releases/latest/download/aethervault-macos-arm64) |
+| macOS (Intel) | [aethervault-macos-x86_64](https://github.com/brandonmunoz1975-ops/AetherVault/releases/latest/download/aethervault-macos-x86_64) |
 
 > **macOS note:** the app is unsigned. On first launch, right-click the
 > binary and select **Open** to bypass Gatekeeper.
