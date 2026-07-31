@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-27 16:59 CT (America/Chicago)
+# Last Edited: 2026-07-30 21:46 CT (America/Chicago)
 # Path: aethervault/db_manager.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
@@ -233,6 +233,7 @@ class DatabaseManager:
             if self.conn:
                 self.conn.close()
             backup_path = get_timestamped_backup_path()
+            os.makedirs(os.path.dirname(backup_path), exist_ok=True)
             shutil.copyfile(self.db_path, backup_path)
             self._connect()
             return backup_path
