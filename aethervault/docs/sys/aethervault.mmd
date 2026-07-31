@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-25 18:12 CT (America/Chicago)
+# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
 # Path: docs/sys/AetherVault.mmd
 # Purpose: Mermaid diagram and ASCII flowchart for AetherVault architecture.
 
@@ -426,4 +426,19 @@ classDiagram
     PySidePWManager --> DatabaseManager
     DatabaseManager --> CredentialEntry
     DatabaseManager ..> core_logic : encrypt/decrypt
+```
+
+## CI/CD Pipeline
+
+```mermaid
+flowchart TD
+    GIT[Push to main or Pull Request] --> CI[pytest on Python 3.9 to 3.12]
+    REL[Publish GitHub Release] --> BUILD[PyInstaller single file per OS]
+    MAN[Manual workflow run] --> BUILD
+    CI -->|must pass| BUILD
+    BUILD --> LIN[aethervault-linux-x86_64]
+    BUILD --> WIN[aethervault-windows-x86_64.exe]
+    BUILD --> MACA[aethervault-macos-arm64]
+    BUILD --> MACX[aethervault-macos-x86_64]
+    BUILD --> ATTACH[Attach binaries to the Release]
 ```

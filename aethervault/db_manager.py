@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-30 21:46 CT (America/Chicago)
+# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
 # Path: aethervault/db_manager.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
