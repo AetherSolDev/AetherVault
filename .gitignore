@@ -55,8 +55,9 @@ repomix-output.*
 .repomixignore
 AetherVault/
 
-# Project template system (scratch directory, not part of app)
+# Project template system (internal kit — local/recovery/NAS only, not on GitHub)
 New_Project_init/
+project_kit/
 
 # Docs/sys individual files (consolidated into REFERENCE.md/html)
 # Keep only the mmd diagram and combined reference
