@@ -6,7 +6,7 @@ A local, portable, encrypted password vault.
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5+-green.svg)](https://pypi.org/project/PySide6/)
 [![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey)]()
-[![Build](https://github.com/brandonmunoz1975-ops/AetherVault/actions/workflows/build.yml/badge.svg)](https://github.com/brandonmunoz1975-ops/AetherVault/actions/workflows/build.yml)
+[![Build](https://github.com/AetherSolDev/AetherVault/actions/workflows/build.yml/badge.svg)](https://github.com/AetherSolDev/AetherVault/actions/workflows/build.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-PEP%208-000000.svg)]()
 
 ---
@@ -47,15 +47,15 @@ AetherVault is a desktop application that stores your credentials in an encrypte
 ### Option 1: Download a Pre-Built Executable (Recommended)
 
 No Python or pip needed. Grab the binary for your platform from the
-[Releases](https://github.com/brandonmunoz1975-ops/AetherVault/releases) page
-(or the latest [Actions build](https://github.com/brandonmunoz1975-ops/AetherVault/actions) artifacts):
+[Releases](https://github.com/AetherSolDev/AetherVault/releases) page
+(or the latest [Actions build](https://github.com/AetherSolDev/AetherVault/actions) artifacts):
 
 | Platform | Download |
 |----------|----------|
-| Windows (x86_64) | [aethervault-windows-x86_64.exe](https://github.com/brandonmunoz1975-ops/AetherVault/releases/latest/download/aethervault-windows-x86_64.exe) |
-| Linux (x86_64) | [aethervault-linux-x86_64](https://github.com/brandonmunoz1975-ops/AetherVault/releases/latest/download/aethervault-linux-x86_64) |
-| macOS (Apple Silicon) | [aethervault-macos-arm64](https://github.com/brandonmunoz1975-ops/AetherVault/releases/latest/download/aethervault-macos-arm64) |
-| macOS (Intel) | [aethervault-macos-x86_64](https://github.com/brandonmunoz1975-ops/AetherVault/releases/latest/download/aethervault-macos-x86_64) |
+| Windows (x86_64) | [aethervault-windows-x86_64.exe](https://github.com/AetherSolDev/AetherVault/releases/latest/download/aethervault-windows-x86_64.exe) |
+| Linux (x86_64) | [aethervault-linux-x86_64](https://github.com/AetherSolDev/AetherVault/releases/latest/download/aethervault-linux-x86_64) |
+| macOS (Apple Silicon) | [aethervault-macos-arm64](https://github.com/AetherSolDev/AetherVault/releases/latest/download/aethervault-macos-arm64) |
+| macOS (Intel) | [aethervault-macos-x86_64](https://github.com/AetherSolDev/AetherVault/releases/latest/download/aethervault-macos-x86_64) |
 
 > **macOS note:** the app is unsigned. On first launch, right-click the
 > binary and select **Open** to bypass Gatekeeper.
@@ -66,7 +66,7 @@ No Python or pip needed. Grab the binary for your platform from the
 Installs the `aethervault` command system-wide. Works in any directory.
 
 ```bash
-git clone https://github.com/brandonmunoz1975-ops/AetherVault.git
+git clone https://github.com/AetherSolDev/AetherVault.git
 cd AetherVault
 
 # Outside any virtual environment:
@@ -79,7 +79,7 @@ aethervault
 ### Option 3: Virtual Environment (Isolated)
 
 ```bash
-git clone https://github.com/brandonmunoz1975-ops/AetherVault.git
+git clone https://github.com/AetherSolDev/AetherVault.git
 cd AetherVault
 
 python -m venv venv
@@ -200,4 +200,4 @@ GNU General Public License v3.0 — see [LICENSE](LICENSE)
 
 ## Contributing
 
-Bug reports and feature requests are welcome via [GitHub Issues](https://github.com/brandonmunoz1975-ops/AetherVault/issues).
+Bug reports and feature requests are welcome via [GitHub Issues](https://github.com/AetherSolDev/AetherVault/issues).

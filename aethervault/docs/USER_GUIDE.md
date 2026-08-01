@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:37 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -37,7 +37,7 @@ AetherVault is a portable, local password vault that stores your credentials in 
 ### Setup from Source
 
 ```bash
-git clone https://github.com/brandonmunoz1975-ops/AetherVault.git
+git clone https://github.com/AetherSolDev/AetherVault.git
 cd AetherVault
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate

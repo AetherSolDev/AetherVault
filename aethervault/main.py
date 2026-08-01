@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:37 CT (America/Chicago)
 # Path: aethervault/main.py
 # Purpose: Application entry point with CLI switches (--version, --debug, --upgrade, --foreground).
 
@@ -21,11 +21,11 @@ from PySide6.QtWidgets import QApplication
 from aethervault import PROJECT_ROOT, VERSION
 from aethervault.gui.app import PySidePWManager
 
-GITHUB_TAGS_API = "https://api.github.com/repos/brandonmunoz1975-ops/AetherVault/tags"
+GITHUB_TAGS_API = "https://api.github.com/repos/AetherSolDev/AetherVault/tags"
 
 
-GIT_REPO_URL = "https://github.com/brandonmunoz1975-ops/AetherVault.git"
-RELEASES_URL = "https://github.com/brandonmunoz1975-ops/AetherVault/releases/latest"
+GIT_REPO_URL = "https://github.com/AetherSolDev/AetherVault.git"
+RELEASES_URL = "https://github.com/AetherSolDev/AetherVault/releases/latest"
 
 
 def _is_git_repo() -> bool:
