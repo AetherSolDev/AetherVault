@@ -1,13 +1,13 @@
 # Created: 2026-07-27
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
 # Path: docs/sys/AUDIT_REPORT.md
 # Purpose: Formal audit findings from alignment_checklist.md evaluation of AetherVault.
 
 # Audit Report: AetherVault
 
-**Date**: 2026-07-27 (re-audit)
+**Date**: 2026-08-01 (re-audit)
 **Files Scanned**: 13 source files (aethervault/), 5 test files, 6 scripts
-**Overall Score**: **A** (all findings resolved, zero new findings)
+**Overall Score**: **A** (all prior findings closed; F12 + F13 remediated)
 
 ## Summary
 
@@ -23,7 +23,9 @@
 | Encryption key guard | 0 | 1 (fixed) | 0 |
 | Git repo detection | 0 | 1 (added) | 0 |
 | Auto-upgrade feat | 0 | 1 (added) | 0 |
-| **Total** | **12** | **3** | **0** |
+| Unused imports | 0 | 1 (fixed) | 0 |
+| Bare-except style | 0 | 1 (fixed) | 0 |
+| **Total** | **14** | **5** | **0** |
 
 ## Priority Definitions
 
@@ -34,112 +36,70 @@
 
 ## Detailed Findings
 
-### P1
-
-1. **F1 — God function: create_main_content() (225 lines)**
-   - **File**: `src/gui/app.py:524`
-   - **Issue**: Single method handles table layout, form layout, signal wiring, filter setup, button creation, and notes editor. Violates 4.1 (one function, one job) and 4.2 (function length > 50 lines).
-   - **Standard**: Alignment checklist 4.1, 4.2
-   - **Fix**: Extract credential form and credential table into separate classes/files.
-
-2. **F2 — God function: show_password_health() (82 lines)**
-   - **File**: `src/gui/app.py:1401`
-   - **Issue**: Generates report HTML, iterates credentials, manages dialog state. Multiple responsibilities.
-   - **Standard**: Alignment checklist 4.1, 4.2
-   - **Fix**: Extract HTML generation into a helper function.
-
-3. **F3 — God function: setup_menu_bar() (70 lines)**
-   - **File**: `src/gui/app.py:1233`
-   - **Issue**: Builds File, Tools, Settings, and Help menus in one monolithic method.
-   - **Standard**: Alignment checklist 4.1, 4.2
-   - **Fix**: Extract each menu into its own builder method.
-
-4. **F4 — God function: update_list_view() (67 lines)**
-   - **File**: `src/gui/app.py:792`
-   - **Issue**: Filtering, column config, row population, and header resize in one method.
-   - **Standard**: Alignment checklist 4.1, 4.2
-   - **Fix**: Extract filtering and row population into helper methods (part of CredentialTable extraction).
-
-5. **F5 — No test suite**
-   - **File**: (entire project)
-   - **Issue**: No `tests/` directory exists. Zero test coverage on encryption, hashing, database CRUD, or UI logic.
-   - **Standard**: Alignment checklist 6.1, 6.2, 6.3
-   - **Fix**: Create `tests/` directory with `pytest` setup, starting with `core_logic.py` unit tests.
-
-6. **F6 — Mixed concerns in app.py**
-   - **File**: `src/gui/app.py`
-   - **Issue**: Business logic (password health scoring, favicon fetching, backup management) lives in the UI file alongside QWidget code.
-   - **Standard**: Alignment checklist 4.5
-   - **Fix**: Extract business operations to `core_logic.py` or a new `engine.py`.
-
-7. **F7 — No DB connection context manager**
-   - **File**: `src/db_manager.py`
-   - **Issue**: Connections are manually opened/closed. No `with` blocks, risk of leaked connections on exception paths.
-   - **Standard**: Alignment checklist 5.3
-   - **Fix**: Add context manager protocol (`__enter__`/`__exit__`) or use `with` blocks in public methods.
-
-8. **F8 — WAL mode not enabled**
-   - **File**: `src/db_manager.py:52`
-   - **Issue**: SQLite defaults to rollback journal, causing read locks during backup/import operations.
-   - **Standard**: Alignment checklist 5.4
-   - **Fix**: Add `PRAGMA journal_mode=WAL;` after connection.
-
-9. **F9 — God function: app.py __init__() (56 lines)**
-   - **File**: `src/gui/app.py:153`
-   - **Issue**: Initializes auth UI, settings, clipboard, timer, and tray in one method.
-   - **Standard**: Alignment checklist 4.1, 4.2
-   - **Fix**: Extract initialization steps into targeted setup methods.
-
 ### P2
 
-10. **F10 — Print() statements in production code (2 instances)**
-    - **File**: `src/core_logic.py:69,178`
-    - **Issue**: `print(f"Encryption failed: {e}")` and `print(f"Error saving settings: {e}")` bypass the user-facing dialog system. Invisible to GUI users.
-    - **Standard**: Alignment checklist 7.5
-    - **Fix**: Replace with structured logging or pass error to handler.
+1. **F12 — Unused imports in 6 source files** `[x] Fixed`
+   - **Files**:
+     - `aethervault/core_logic.py:16,18` — `sys`, `List` (never referenced)
+     - `aethervault/db_manager.py:14` — `Any` (never referenced)
+     - `aethervault/main.py:19` — `QMessageBox` (never referenced)
+     - `aethervault/gui/app.py:8,23,42,66,67` — `json`, `QHBoxLayout`, `PORTABLE_MARKER`, `DocumentationDialog`, `DarkThemeColors`, `ThemeColors` (imported but unused)
+     - `aethervault/gui/conflict_dialog.py:10` — `Qt` (never referenced)
+     - `aethervault/gui/credential_form.py:15` — `QHeaderView` (never referenced)
+     - `aethervault/gui/credential_table.py:11` — `Optional`, `QPainter`, `QFont` (never referenced)
+   - **Issue**: Violates checklist 2.3 (no unused imports).
+   - **Fix**: Removed all unused names. `gui/app.py` additionally gained `import csv` (needed by F13 exception narrowing). AST re-scan confirms zero unused imports.
 
-11. **F11 — F-string in SQL ALTER TABLE**
-    - **File**: `src/db_manager.py:116`
-    - **Issue**: `f"ALTER TABLE credentials ADD COLUMN {col} TEXT DEFAULT ''"` — low risk (hardcoded list), but anti-pattern.
-    - **Standard**: Alignment checklist 5.1
-    - **Fix**: Add whitelist validation before interpolation.
+### P3
 
-## Re-Audit Findings (2026-07-27)
+2. **F13 — Style review: `except Exception` catch-alls (22 instances)** `[x] Fixed`
+   - **Files**: `core_logic.py:71,84,140,172,184`, `db_manager.py:68,152,240,298,357,407,464`, `gui/app.py:447,458,475,496,508,533,563,868`, `gui/dialogs.py:34,171`, `gui/credential_table.py:132,315`
+   - **Issue**: Checklist 3.4 prefers specific exceptions over `except Exception` catch-alls. All 22 instances do handle the error (log, dialog, or safe return), and none are silent `pass` — but they are broad. The bare `except Exception:` at `core_logic.py:140,172,184` and `credential_table.py:132,315` are the most notable (no error surfaced).
+   - **Severity rationale**: No P0/P1 because each block either logs, shows a user dialog, or returns a safe default. No data loss path.
+   - **Fix**: Narrowed all 22 instances to concrete exceptions:
+     - `core_logic.py` — `(TypeError, ValueError)` for Fernet encrypt, `(InvalidToken, TypeError, ValueError)` for decrypt, `(ValueError, TypeError)` for verify, `OSError` for file reads/writes.
+     - `db_manager.py` — `ValueError` for key derivation, `(TypeError, ValueError)` for decryption load, `OSError` for backup, `(OSError, csv.Error, ValueError)` for import/export/preview/execute.
+     - `gui/app.py` — `(OSError, csv.Error, ValueError, RuntimeError)` for import/export handlers, `(OSError, shutil.Error)` for backup/restore/auto-backup.
+     - `gui/dialogs.py` — `AttributeError` for `sys._MEIPASS`, `OSError` for doc read.
+     - `gui/credential_table.py` — `(TypeError, ValueError)` for URL parsing.
 
-All previously identified findings (F1–F11) remain closed. Fresh scan of 13 source
-files + 6 test files + 6 scripts against `alignment_checklist.md`:
+## Re-Audit Findings (2026-08-01)
+
+All prior findings (F1–F11) remain closed. Fresh scan of 13 source files + 5 test
+files + 6 scripts against `alignment_checklist.md`:
 
 | Category | Checks | Pass | Fail | Notes |
 |----------|--------|------|------|-------|
-| 1. File Structure & Headers | 5 | 5 | 0 | All headers updated, paths correct |
-| 2. Imports | 5 | 5 | 0 | Absolute imports, no wildcards |
-| 3. Error Handling | 4 | 4 | 0 | No bare except:, user-facing dialogs |
-| 4. Functions & Structure | 6 | 6 | 0 | No god functions, no circular imports |
+| 1. File Structure & Headers | 5 | 5 | 0 | All headers present, paths correct |
+| 2. Imports | 5 | 5 | 0 | F12 fixed — AST scan: zero unused imports |
+| 3. Error Handling | 4 | 4 | 0 | F13 fixed — no bare `except:`, no `except Exception`; specific types only |
+| 4. Functions & Structure | 6 | 6 | 0 | No god functions >100 lines; no circular imports |
 | 5. Database | 4 | 4 | 0 | Parameterized, WAL, context manager, Row access |
 | 6. Testing | 4 | 4 | 0 | 61 tests, all passing, core logic covered |
-| 7. Project Hygiene | 6 | 6 | 0 | No secrets, .gitignore, venv/, package name |
-| 8. Documentation | 5 | 5 | 0 | All docs present and current |
-| 9. Environment | 3 | 3 | 0 | Python 3.14, venv active |
+| 7. Project Hygiene | 6 | 6 | 0 | No secrets, .gitignore, venv/, unique package name |
+| 8. Documentation | 5 | 5 | 0 | ARCHITECTURE, USER_GUIDE, mmd all current |
+| 9. Environment | 3 | 3 | 0 | Python 3.10+, venv active |
 | **Total** | **42** | **42** | **0** | **Score: A** |
 
 ### Notable Strengths
-- **Test coverage**: 22→61 tests across 5 files covering encryption, hashing, password generation, settings persistence, DB CRUD, import/export, duplicate removal, backup, and encryption-key-not-set guards.
-- **Import guard**: All three import methods (`import_from_csv`, `execute_import`, `preview_import`) raise `RuntimeError` if the vault is locked.
-- **Auto-upgrade**: `--upgrade`/`-u` flag now auto-performs `git pull` + `pip install -e .` — no manual commands needed.
-- **Git compatibility**: Sets `GIT_DISCOVERY_ACROSS_FILESYSTEM=1` in subprocess for cross-filesystem repo discovery.
-- **File hygiene**: All 20 tracked files have correct `# Path:` headers (`aethervault/` not `src/`).
+- **61 tests passing** in 4.39s (encryption, hashing, password gen, settings, DB CRUD, import/export, duplicates, backup, key guards).
+- **No debug artifacts**: zero `print()` in production code (main.py output is CLI by design).
+- **No lines > 100 chars**, no trailing whitespace, all file headers present.
+- **DB discipline intact**: parameterized queries, `PRAGMA journal_mode=WAL`, context manager protocol, `sqlite3.Row` access, whitelist-guarded ALTER TABLE.
+- **No secrets committed**: `.master.key`, DB files, settings all gitignored.
+- **Import guard**: all import methods raise `RuntimeError` if vault is locked.
+- **Zero `except Exception` / bare `except:`** — all error handling narrowed to concrete exception types (OSError, ValueError, TypeError, csv.Error, shutil.Error, sqlite3.Error, InvalidToken, RuntimeError).
 
 ### Minor Notes (not findings)
-- 22 lines exceed 100 chars — all in SQL strings, alias maps, and docstrings (low risk, P3)
-- `print()` in `main.py` — CLI output, not debug artifacts (intentional)
-- Remaining `src/` references: `core_logic.py:DATA_DIR` still uses `src/data/` for runtime data (correct behavior)
+- `aethervault/data/` and `src/data/` both contain runtime backups — both paths are gitignored; consistent with `core_logic.py:DATA_DIR`.
+- `main.py` `print()` calls are CLI output (upgrade/version), intentional per prior audit.
 
 ## Map Health
 
 | Map File | Status | Notes |
 |----------|--------|-------|
-| `docs/sys/ARCHITECTURE.md` | ✅ OK | Updated to `aethervault/` layout |
-| `docs/sys/aethervault.mmd` | ❌ MISSING | File not found — may not exist |
+| `docs/sys/ARCHITECTURE.md` | ✅ OK | Matches current `aethervault/` layout + CI/CD pipeline |
+| `docs/sys/aethervault.mmd` | ✅ OK | Present, describes UI/DB flow accurately |
 | `docs/sys/PLAN.md` | ✅ OK | All items complete |
 | `docs/sys/TASKS.md` | ✅ OK | All tasks complete |
 
@@ -165,3 +125,5 @@ files + 6 test files + 6 scripts against `alignment_checklist.md`:
 | 2026-07-27 | Session 2: Import conflict dialog + preview/execute. F2, F3, F7, F8 fixed. |
 | 2026-07-27 | Session 3: F10 (prints→logging), F11 (SQL whitelist), F5 (22 tests, 3 test files). All findings closed. Score: C→A. |
 | 2026-07-27 | Re-audit (session 11-12): All 12 findings still closed. 42/42 checklist checks pass. 61 tests. Score: A (unchanged). |
+| 2026-08-01 | Re-audit (session 16): All 12 prior findings closed. New: F12 (unused imports, P2), F13 (except Exception style, P3). 41/42 checks pass. Score: A−. |
+| 2026-08-01 | Remediated F12 + F13: removed all unused imports (AST-verified); narrowed all 22 `except Exception` blocks to specific types. Added `import csv` + `InvalidToken` imports. 42/42 checks pass, 61 tests pass. Score: A. |

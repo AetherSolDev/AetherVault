@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
 # Path: aethervault/db_manager.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
@@ -11,7 +11,7 @@ import shutil
 import sqlite3
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from aethervault.core_logic import (
     CredentialEntry,
@@ -65,7 +65,7 @@ class DatabaseManager:
         """Derive and store the encryption key from the master password hash."""
         try:
             self.encryption_key = derive_encryption_key(master_password_hash)
-        except Exception as e:
+        except ValueError as e:
             self.error_handler(
                 "Encryption Error", f"Failed to derive encryption key: {e}"
             )
@@ -149,7 +149,7 @@ class DatabaseManager:
                 credentials.append(CredentialEntry(**entry_data))
         except sqlite3.Error as e:
             self.error_handler("Database Error", f"Error loading credentials: {e}")
-        except Exception as e:
+        except (TypeError, ValueError) as e:
             self.error_handler(
                 "Decryption Error", f"Decryption failed (wrong key?): {e}"
             )
@@ -237,7 +237,7 @@ class DatabaseManager:
             shutil.copyfile(self.db_path, backup_path)
             self._connect()
             return backup_path
-        except Exception as e:
+        except OSError as e:
             self.error_handler(
                 "Backup Error", f"Failed to create pre-{operation} backup: {e}"
             )
@@ -295,7 +295,7 @@ class DatabaseManager:
                     writer.writerow(entry.to_dict())
                     count += 1
             return count
-        except Exception as e:
+        except (OSError, csv.Error, ValueError) as e:
             self.error_handler("Export Error", f"Failed to write to CSV: {e}")
             raise
 
@@ -354,7 +354,7 @@ class DatabaseManager:
         except FileNotFoundError:
             self.error_handler("Import Error", f"File not found: {file_path}")
             raise
-        except Exception as e:
+        except (OSError, csv.Error, ValueError) as e:
             self.error_handler("Import Error", f"Failed to read/parse CSV: {e}")
             raise
 
@@ -404,7 +404,7 @@ class DatabaseManager:
         except FileNotFoundError:
             self.error_handler("Import Error", f"File not found: {file_path}")
             raise
-        except Exception as e:
+        except (OSError, csv.Error, ValueError) as e:
             self.error_handler("Import Error", f"Failed to preview CSV: {e}")
             raise
 
@@ -461,6 +461,6 @@ class DatabaseManager:
         except FileNotFoundError:
             self.error_handler("Import Error", f"File not found: {file_path}")
             raise
-        except Exception as e:
+        except (OSError, csv.Error, ValueError) as e:
             self.error_handler("Import Error", f"Failed to execute import: {e}")
             raise

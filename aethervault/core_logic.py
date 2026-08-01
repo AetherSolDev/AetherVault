@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
 # Path: aethervault/core_logic.py
 # Purpose: Encryption, hashing, data model, and settings management for AetherVault.
 
@@ -13,11 +13,10 @@ import re
 import os
 import random
 import string
-import sys
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -68,7 +67,7 @@ def encrypt_data(data: str, key: bytes) -> str:
         f = Fernet(key)
         encrypted_bytes = f.encrypt(data.encode("utf-8"))
         return encrypted_bytes.decode("utf-8")
-    except Exception as e:
+    except (TypeError, ValueError) as e:
         logger.error("Encryption failed: %s", e)
         return data
 
@@ -81,7 +80,7 @@ def decrypt_data(encrypted_data: str, key: bytes) -> str:
         f = Fernet(key)
         decrypted_bytes = f.decrypt(encrypted_data.encode("utf-8"))
         return decrypted_bytes.decode("utf-8")
-    except Exception as e:
+    except (InvalidToken, TypeError, ValueError):
         return encrypted_data
 
 
@@ -137,7 +136,7 @@ def verify_password(password: str, stored_hash: str) -> bool:
             "sha256", password.encode("utf-8"), salt, 600000
         )
         return new_hash_part == stored_hash_part
-    except Exception:
+    except (ValueError, TypeError):
         return False
 
 
@@ -169,7 +168,7 @@ def load_master_password(file_path: str) -> Optional[str]:
         try:
             with open(file_path, "r") as f:
                 return f.read().strip()
-        except Exception:
+        except OSError:
             return None
     return None
 
@@ -181,7 +180,7 @@ def store_master_password(password: str) -> bool:
         with open(MASTER_KEY_FILE, "w") as f:
             f.write(hashed_pass)
         return True
-    except Exception:
+    except OSError:
         return False
 
 

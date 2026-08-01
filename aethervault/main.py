@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
 # Path: aethervault/main.py
 # Purpose: Application entry point with CLI switches (--version, --debug, --upgrade, --foreground).
 
@@ -16,7 +16,7 @@ import urllib.error
 from typing import Optional
 
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtWidgets import QApplication
 
 from aethervault import PROJECT_ROOT, VERSION
 from aethervault.gui.app import PySidePWManager

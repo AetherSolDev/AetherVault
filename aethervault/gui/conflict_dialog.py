@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
 # Path: aethervault/gui/conflict_dialog.py
 # Purpose: Import conflict review dialog for per-entry resolution.
 
@@ -7,7 +7,6 @@
 
 from typing import Dict, List, Tuple
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QButtonGroup,
     QDialog,

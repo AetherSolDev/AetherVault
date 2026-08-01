@@ -1,11 +1,11 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
 # Path: aethervault/gui/app.py
 # Purpose: Main application window — coordinates auth, menus, CRUD, import/export.
 
 """Main application window — coordinates auth, menus, CRUD, import/export."""
 
-import json
+import csv
 import os
 import shutil
 from typing import List, Optional
@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
     QFrame,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
     QMainWindow,
@@ -39,7 +38,6 @@ from PySide6.QtWidgets import (
 )
 
 from aethervault import (
-    PORTABLE_MARKER,
     VERSION,
     disable_portable_mode,
     enable_portable_mode,
@@ -63,8 +61,7 @@ from aethervault.db_manager import DatabaseManager
 from aethervault.gui.credential_form import CredentialForm
 from aethervault.gui.credential_table import CredentialTable
 from aethervault.gui.conflict_dialog import ImportConflictDialog
-from aethervault.gui.dialogs import DocumentationDialog, PasswordGeneratorDialog, resource_path
-from aethervault.gui.theme import DarkThemeColors, ThemeColors
+from aethervault.gui.dialogs import PasswordGeneratorDialog, resource_path
 from aethervault.gui.theme import apply_theme as apply_app_theme
 
 LOCKOUT_OPTIONS = [1, 3, 5, 10, 30]
@@ -444,7 +441,7 @@ class PySidePWManager(QMainWindow):
                 QMessageBox.information(
                     self, "Exported", f"Exported {n} credentials to:\n{path}"
                 )
-            except Exception as e:
+            except (OSError, csv.Error, ValueError) as e:
                 QMessageBox.critical(self, "Export Failed", str(e))
 
     def handle_import(self):
@@ -455,7 +452,7 @@ class PySidePWManager(QMainWindow):
             return
         try:
             preview = self.db_manager.preview_import(path)
-        except Exception as e:
+        except (OSError, csv.Error, ValueError, RuntimeError) as e:
             QMessageBox.critical(self, "Import Failed", str(e))
             return
 
@@ -472,7 +469,7 @@ class PySidePWManager(QMainWindow):
             try:
                 n = self.db_manager.import_from_csv(path)
                 self._post_import(n)
-            except Exception as e:
+            except (OSError, csv.Error, ValueError, RuntimeError) as e:
                 QMessageBox.critical(self, "Import Failed", str(e))
             return
 
@@ -493,7 +490,7 @@ class PySidePWManager(QMainWindow):
             try:
                 n = self.db_manager.import_from_csv(path)
                 self._post_import(n)
-            except Exception as e:
+            except (OSError, csv.Error, ValueError, RuntimeError) as e:
                 QMessageBox.critical(self, "Import Failed", str(e))
             return
 
@@ -505,7 +502,7 @@ class PySidePWManager(QMainWindow):
         try:
             n = self.db_manager.execute_import(path, decisions)
             self._post_import(n)
-        except Exception as e:
+        except (OSError, csv.Error, ValueError, RuntimeError) as e:
             QMessageBox.critical(self, "Import Failed", str(e))
 
     def _post_import(self, n: int):
@@ -530,7 +527,7 @@ class PySidePWManager(QMainWindow):
             self.status_bar.showMessage(
                 f"Vault backed up → {os.path.basename(backup_path)}", 5000
             )
-        except Exception as e:
+        except (OSError, shutil.Error) as e:
             QMessageBox.critical(self, "Backup Failed", str(e))
         finally:
             self.db_manager._connect()
@@ -560,7 +557,7 @@ class PySidePWManager(QMainWindow):
                     self.current_entry_id = None
                     self.is_editing = False
                     self.status_bar.showMessage("Database restored.", 5000)
-                except Exception as e:
+                except (OSError, shutil.Error) as e:
                     QMessageBox.critical(self, "Restore Failed", str(e))
                 finally:
                     self.db_manager._connect()
@@ -865,7 +862,7 @@ class PySidePWManager(QMainWindow):
             self.db_manager.conn.close()
             shutil.copyfile(DB_PATH, DB_BACKUP_PATH)
             self.db_manager._connect()
-        except Exception as e:
+        except (OSError, shutil.Error) as e:
             QMessageBox.warning(self, "Auto-Backup Failed", str(e))
             self.db_manager._connect()
 

@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
 # Path: aethervault/gui/dialogs.py
 # Purpose: Dialog classes for password generation and documentation viewing.
 
@@ -31,7 +31,7 @@ def resource_path(relative_path):
     """Resolve a file path relative to the application bundle, project root, or package data."""
     try:
         base_path = sys._MEIPASS
-    except Exception:
+    except AttributeError:
         base_path = PROJECT_ROOT
     candidate = os.path.join(base_path, relative_path)
     if os.path.exists(candidate):
@@ -168,5 +168,5 @@ class DocumentationDialog(QDialog):
                 "ERROR: Documentation file (docs/USER_GUIDE.md) not found.\n"
                 "Please ensure the file is bundled correctly with PyInstaller."
             )
-        except Exception as e:
+        except OSError as e:
             self.text_editor.setPlainText(f"ERROR: Failed to load documentation: {e}")

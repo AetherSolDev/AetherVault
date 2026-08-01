@@ -1,14 +1,14 @@
 # Created: 2026-07-27
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
 # Path: aethervault/gui/credential_table.py
 # Purpose: Credential list table widget with search, filter, and context menu.
 
 """Credential list table widget with search, filter, and context menu."""
 
-from typing import List, Optional
+from typing import List
 
 from PySide6.QtCore import Qt, QUrl, Signal
-from PySide6.QtGui import QColor, QIcon, QPixmap, QPainter, QFont
+from PySide6.QtGui import QColor, QIcon, QPixmap
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from PySide6.QtWidgets import (
     QComboBox,
@@ -129,7 +129,7 @@ class CredentialTable(QWidget):
                         domain = QUrl(entry.url).host()
                         if domain and domain in self._favicon_cache:
                             item.setIcon(self._favicon_cache[domain])
-                    except Exception:
+                    except (TypeError, ValueError):
                         pass
                 self.table.setItem(ri, ci, item)
 
@@ -312,7 +312,7 @@ class CredentialTable(QWidget):
                     domain = QUrl(c.url).host()
                     if domain:
                         domains.add(domain)
-                except Exception:
+                except (TypeError, ValueError):
                     pass
         if not domains:
             return
