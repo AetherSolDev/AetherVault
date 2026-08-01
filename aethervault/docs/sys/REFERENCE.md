@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-08-01 02:30 CT from docs/sys/
+> Auto-generated on 2026-08-01 02:56 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -268,6 +268,7 @@ this exact bug. Don't repeat it.
 - **2026-08-01 (session 18)**: **Entry point cleanup** — `aethervault/main.py` → `aethervault/__main__.py` (run via `python -m aethervault`), removed root `aethervault.py` shim, fixed pyproject package-data (`src/` → `aethervault/`), updated MANIFEST.in + spec + global install. Reinstalled system-wide; 61 tests pass.
 - **2026-08-01 (session 19)**: **Removed `src/`** — moved runtime data `src/data/` → root `data/` (`DATA_DIR = PROJECT_ROOT/data`), deleted stale `aethervault/data/`. Updated .gitignore + docs. Live vault preserved (429 creds).
 - **2026-08-01 (session 20)**: **Duress password** (optional) — entered at login → cryptographically wipes vault + backups (`wipe_vault()` in core_logic). Keys deleted first (crypto erasure), then random-overwrite + delete all DB/WAL/SHM/.bak/settings. Fake "Invalid password" dialog then silent exit. Stored as PBKDF2 hash in `data/.duress.key`; checked first with identical cost (no timing tell). Settings → Duress Password to set/clear (needs master pw). Also added `rotate_backups()` (keeps 5 `.bak`). 8 new tests (69 total). Verified live against an isolated copy of the real vault — wipe destroyed all files, real vault (429 creds) untouched. **Released as v6.3.0.**
+- **2026-08-01 (session 21)**: **Bug found in live test** — `QInputDialog.getText()` returns `(text, ok)` in PySide6, duress setup unpacked backwards → silent `AttributeError` after master prompt. Fixed + verified with real dialogs. Live duress wipe test on the real vault: wipe destroyed `data/` completely, manual + NAS backups preserved 429 creds, restore worked, logged back in. **Released as v6.3.1 (fix release).**
 
 ---
 
@@ -518,6 +519,11 @@ this exact bug. Don't repeat it.
 ## Changelog
 
 # Changelog
+
+## [6.3.1] — 2026-08-01
+
+### Fixed
+- **Duress password setup aborted after master prompt** — `QInputDialog.getText()` in PySide6 returns `(text, ok)` (text first, bool second). The duress setup unpacked them as `(ok, text)`, so the master field held a bool and `verify_password()` raised `AttributeError`, silently stopping the flow before the duress prompt. Now the second prompt (or clear) appears correctly. Verified end-to-end with real modal dialogs; live duress wipe test + restore passed.
 
 ## [6.3.0] — 2026-08-01
 
@@ -1465,7 +1471,17 @@ files + 6 scripts against `alignment_checklist.md`:
 | 2026-07-27 | Re-audit (session 11-12): All 12 findings still closed. 42/42 checklist checks pass. 61 tests. Score: A (unchanged). |
 | 2026-08-01 | Re-audit (session 16): All 12 prior findings closed. New: F12 (unused imports, P2), F13 (except Exception style, P3). 41/42 checks pass. Score: A−. |
 | 2026-08-01 | Remediated F12 + F13: removed all unused imports (AST-verified); narrowed all 22 `except Exception` blocks to specific types. Added `import csv` + `InvalidToken` imports. 42/42 checks pass, 61 tests pass. Score: A. |
+| 2026-08-01 | Re-audit (session 20): Post-duress-test pass. 42/42 checklist checks pass. New code clean (no bare except, no f-string SQL, no unused imports, headers OK). 9 functions > 50 lines are pre-existing/UI-builders, none > 75 in logic. 69 tests pass. Score: A. |
+
+## Post-Duress-Test Verification (2026-08-01)
+
+Live test of the duress wipe on a full copy of the real vault (429 creds):
+- Duress password set → entered at login → vault + backups + keys destroyed (data/ → 0 files), fake "Invalid password" dialog + silent exit.
+- Manual backup (`~/aethervault-backup-2026-08-01/`) + NAS copy both preserved 429 creds.
+- Restore from manual backup → 429 creds, logged in successfully.
+- Fixed a real bug found during testing: `QInputDialog.getText()` returns `(text, ok)` in PySide6; the duress setup unpacked them backwards, causing a silent `AttributeError` after the master prompt. Swap fixed + verified with real modal dialogs.
+- Cleanup: test dirs removed; manual backup removed after successful restore (NAS remains as long-term copy).
 
 ---
 
-*Generated on 2026-08-01 02:30 CT by `scripts/build_reference.py`*
+*Generated on 2026-08-01 02:56 CT by `scripts/build_reference.py`*

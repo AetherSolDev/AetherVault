@@ -41,7 +41,7 @@
 <body>
 <h1 id="docs-technical-reference">docs — Technical Reference</h1>
 <blockquote>
-<p>Auto-generated on 2026-08-01 02:30 CT from docs/sys/
+<p>Auto-generated on 2026-08-01 02:56 CT from docs/sys/
 Source: <code>scripts/build_reference.py</code></p>
 </blockquote>
 <h2 id="table-of-contents">Table of Contents</h2>
@@ -406,6 +406,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong>2026-08-01 (session 18)</strong>: <strong>Entry point cleanup</strong> — <code>aethervault/main.py</code> → <code>aethervault/__main__.py</code> (run via <code>python -m aethervault</code>), removed root <code>aethervault.py</code> shim, fixed pyproject package-data (<code>src/</code> → <code>aethervault/</code>), updated MANIFEST.in + spec + global install. Reinstalled system-wide; 61 tests pass.</li>
 <li><strong>2026-08-01 (session 19)</strong>: <strong>Removed <code>src/</code></strong> — moved runtime data <code>src/data/</code> → root <code>data/</code> (<code>DATA_DIR = PROJECT_ROOT/data</code>), deleted stale <code>aethervault/data/</code>. Updated .gitignore + docs. Live vault preserved (429 creds).</li>
 <li><strong>2026-08-01 (session 20)</strong>: <strong>Duress password</strong> (optional) — entered at login → cryptographically wipes vault + backups (<code>wipe_vault()</code> in core_logic). Keys deleted first (crypto erasure), then random-overwrite + delete all DB/WAL/SHM/.bak/settings. Fake "Invalid password" dialog then silent exit. Stored as PBKDF2 hash in <code>data/.duress.key</code>; checked first with identical cost (no timing tell). Settings → Duress Password to set/clear (needs master pw). Also added <code>rotate_backups()</code> (keeps 5 <code>.bak</code>). 8 new tests (69 total). Verified live against an isolated copy of the real vault — wipe destroyed all files, real vault (429 creds) untouched. <strong>Released as v6.3.0.</strong></li>
+<li><strong>2026-08-01 (session 21)</strong>: <strong>Bug found in live test</strong> — <code>QInputDialog.getText()</code> returns <code>(text, ok)</code> in PySide6, duress setup unpacked backwards → silent <code>AttributeError</code> after master prompt. Fixed + verified with real dialogs. Live duress wipe test on the real vault: wipe destroyed <code>data/</code> completely, manual + NAS backups preserved 429 creds, restore worked, logged back in. <strong>Released as v6.3.1 (fix release).</strong></li>
 </ul>
 <hr />
 <h2 id="project-plan">Project Plan</h2>
@@ -714,6 +715,11 @@ this exact bug. Don't repeat it.</p>
 <hr />
 <h2 id="changelog">Changelog</h2>
 <h1 id="changelog_1">Changelog</h1>
+<h2 id="631-2026-08-01">[6.3.1] — 2026-08-01</h2>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li><strong>Duress password setup aborted after master prompt</strong> — <code>QInputDialog.getText()</code> in PySide6 returns <code>(text, ok)</code> (text first, bool second). The duress setup unpacked them as <code>(ok, text)</code>, so the master field held a bool and <code>verify_password()</code> raised <code>AttributeError</code>, silently stopping the flow before the duress prompt. Now the second prompt (or clear) appears correctly. Verified end-to-end with real modal dialogs; live duress wipe test + restore passed.</li>
+</ul>
 <h2 id="630-2026-08-01">[6.3.0] — 2026-08-01</h2>
 <h3 id="added">Added</h3>
 <ul>
@@ -757,7 +763,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong>README quick-download table</strong> — one-click links to the latest binaries via <code>/releases/latest/download/...</code>, plus a Build status badge.</li>
 <li><strong>First release with binaries</strong> — <code>v6.2.1</code> published with 4 pre-built executables (Linux 86MB, Windows 54MB, macOS Intel 43MB, macOS ARM 40MB).</li>
 </ul>
-<h3 id="fixed">Fixed</h3>
+<h3 id="fixed_1">Fixed</h3>
 <ul>
 <li><strong><code>create_pre_op_backup()</code> on fresh checkouts</strong> — now creates the backup directory (<code>os.makedirs</code>) before <code>copyfile</code>. Previously the write to <code>src/data/</code> raised <code>FileNotFoundError</code> when that dir was absent (e.g., CI checkout), which the test error-handler lambda swallowed → <code>test_create_pre_op_backup_creates_file</code> failed on CI only.</li>
 <li><strong><code>build.yml</code> Linux system deps</strong> — <code>libgl1-mesa-glx</code> no longer exists on Ubuntu 24.04 runners; replaced with <code>libgl1</code> + <code>libxkbcommon-x11-0</code> and added <code>libxcb-icccm4</code> / <code>libxcb-keysyms1</code> / <code>libxcb-shape0</code> so the Qt xcb libraries bundle into the onefile.</li>
@@ -776,7 +782,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong><code>ci.yml</code></strong> — green across Python 3.9–3.12 (61 tests) after the backup-dir fix.</li>
 </ul>
 <h2 id="621-2026-07-27">[6.2.1] — 2026-07-27</h2>
-<h3 id="fixed_1">Fixed</h3>
+<h3 id="fixed_2">Fixed</h3>
 <ul>
 <li><strong>Encryption key guard</strong> — <code>import_from_csv()</code>, <code>execute_import()</code>, and <code>preview_import()</code> now raise <code>RuntimeError</code> upfront if the vault is locked (no encryption key set), instead of firing a flood of per-row error dialogs from <code>save_credential()</code> / <code>update_credential()</code>.</li>
 <li><strong><code>find_and_remove_duplicates()</code> SQL</strong> — simplified to a single <code>DELETE ... WHERE db_id NOT IN (SELECT MIN(db_id)...)</code> query, fixing a "SQL statements in progress" transaction error on Python 3.14.</li>
@@ -829,7 +835,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong><code>CredentialTable</code></strong> — added <code>time_last_used</code> and <code>time_password_changed</code> columns</li>
 <li><strong><code>New_Project_init/AGENTS.md</code></strong> — added versioning section, updated safety.md with NAS mount check and trash directory</li>
 </ul>
-<h3 id="fixed_2">Fixed</h3>
+<h3 id="fixed_3">Fixed</h3>
 <ul>
 <li><strong>All 12 audit findings</strong> resolved (score C→A)</li>
 <li>Duplicate password scoring logic eliminated (was in 2 places, now one <code>score_password()</code>)</li>
@@ -869,7 +875,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong>A3</strong>: Portable mode detection and config — <code>.portable</code> marker file, toggle in Settings menu, status bar indicator</li>
 <li><strong>A2</strong>: System tray icon with quick-lock — tray menu (Show Window, Lock Vault, Quit), minimize-to-tray on close</li>
 </ul>
-<h3 id="fixed_3">Fixed</h3>
+<h3 id="fixed_4">Fixed</h3>
 <ul>
 <li><strong>F0</strong>: <code>resource_path()</code> missing <code>sys</code> import — added <code>import sys</code> at module level</li>
 <li><strong>F1</strong>: <code>find_and_remove_duplicates()</code> backup call ordering — moved <code>create_pre_op_backup()</code> after docstring</li>
@@ -901,7 +907,7 @@ this exact bug. Don't repeat it.</p>
 <li>Custom fields table: removed max-height cap, added stretch factor (1:2 with form grid)</li>
 <li>Sort signal moved to <code>create_main_content</code> (connected once, not on every refresh)</li>
 </ul>
-<h3 id="fixed_4">Fixed</h3>
+<h3 id="fixed_5">Fixed</h3>
 <ul>
 <li>Password strength bar: hidden by Email QLineEdit in same grid cell — fixed with independent row counter</li>
 <li>File → Quit minimized to tray instead of quitting — now calls <code>_quit_application()</code> directly</li>
@@ -1993,9 +1999,20 @@ files + 6 scripts against <code>alignment_checklist.md</code>:</p>
 <td>2026-08-01</td>
 <td>Remediated F12 + F13: removed all unused imports (AST-verified); narrowed all 22 <code>except Exception</code> blocks to specific types. Added <code>import csv</code> + <code>InvalidToken</code> imports. 42/42 checks pass, 61 tests pass. Score: A.</td>
 </tr>
+<tr>
+<td>2026-08-01</td>
+<td>Re-audit (session 20): Post-duress-test pass. 42/42 checklist checks pass. New code clean (no bare except, no f-string SQL, no unused imports, headers OK). 9 functions &gt; 50 lines are pre-existing/UI-builders, none &gt; 75 in logic. 69 tests pass. Score: A.</td>
+</tr>
 </tbody>
 </table>
+<h2 id="post-duress-test-verification-2026-08-01">Post-Duress-Test Verification (2026-08-01)</h2>
+<p>Live test of the duress wipe on a full copy of the real vault (429 creds):
+- Duress password set → entered at login → vault + backups + keys destroyed (data/ → 0 files), fake "Invalid password" dialog + silent exit.
+- Manual backup (<code>~/aethervault-backup-2026-08-01/</code>) + NAS copy both preserved 429 creds.
+- Restore from manual backup → 429 creds, logged in successfully.
+- Fixed a real bug found during testing: <code>QInputDialog.getText()</code> returns <code>(text, ok)</code> in PySide6; the duress setup unpacked them backwards, causing a silent <code>AttributeError</code> after the master prompt. Swap fixed + verified with real modal dialogs.
+- Cleanup: test dirs removed; manual backup removed after successful restore (NAS remains as long-term copy).</p>
 <hr />
-<p><em>Generated on 2026-08-01 02:30 CT by <code>scripts/build_reference.py</code></em></p>
+<p><em>Generated on 2026-08-01 02:56 CT by <code>scripts/build_reference.py</code></em></p>
 </body>
 </html>
