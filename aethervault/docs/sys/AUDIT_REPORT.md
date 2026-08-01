@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-01 01:55 CT (America/Chicago)
+# Last Edited: 2026-08-01 03:02 CT (America/Chicago)
 # Path: docs/sys/AUDIT_REPORT.md
 # Purpose: Formal audit findings from alignment_checklist.md evaluation of AetherVault.
 
@@ -127,3 +127,13 @@ files + 6 scripts against `alignment_checklist.md`:
 | 2026-07-27 | Re-audit (session 11-12): All 12 findings still closed. 42/42 checklist checks pass. 61 tests. Score: A (unchanged). |
 | 2026-08-01 | Re-audit (session 16): All 12 prior findings closed. New: F12 (unused imports, P2), F13 (except Exception style, P3). 41/42 checks pass. Score: A−. |
 | 2026-08-01 | Remediated F12 + F13: removed all unused imports (AST-verified); narrowed all 22 `except Exception` blocks to specific types. Added `import csv` + `InvalidToken` imports. 42/42 checks pass, 61 tests pass. Score: A. |
+| 2026-08-01 | Re-audit (session 20): Post-duress-test pass. 42/42 checklist checks pass. New code clean (no bare except, no f-string SQL, no unused imports, headers OK). 9 functions > 50 lines are pre-existing/UI-builders, none > 75 in logic. 69 tests pass. Score: A. |
+
+## Post-Duress-Test Verification (2026-08-01)
+
+Live test of the duress wipe on a full copy of the real vault (429 creds):
+- Duress password set → entered at login → vault + backups + keys destroyed (data/ → 0 files), fake "Invalid password" dialog + silent exit.
+- Manual backup (`~/aethervault-backup-2026-08-01/`) + NAS copy both preserved 429 creds.
+- Restore from manual backup → 429 creds, logged in successfully.
+- Fixed a real bug found during testing: `QInputDialog.getText()` returns `(text, ok)` in PySide6; the duress setup unpacked them backwards, causing a silent `AttributeError` after the master prompt. Swap fixed + verified with real modal dialogs.
+- Cleanup: test dirs removed; manual backup removed after successful restore (NAS remains as long-term copy).
