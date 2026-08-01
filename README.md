@@ -30,6 +30,7 @@ AetherVault is a desktop application that stores your credentials in an encrypte
 - **System tray** — minimize to tray, quick-lock from tray menu
 - **Dark/light theme** — toggle in Settings, persistent across sessions
 - **Auto-lock** — configurable 1/3/5/10/30 minutes or never
+- **Duress password** *(optional)* — entering it at login permanently destroys the vault and all backups, indistinguishable from a failed login
 - **Clipboard auto-clear** — copied passwords clear after 15 seconds
 - **One-click backup** — timestamped filenames, no confirmation dialog
 - **CSV import/export** — bulk add or migrate data
@@ -169,7 +170,7 @@ AetherVault/
 │       ├── dialogs.py           # Password generator, documentation viewer
 │       ├── password_strength.py # Strength bar widget
 │       └── theme.py             # Dark/light mode stylesheets
-├── tests/                       # pytest test suite (61 tests)
+├── tests/                       # pytest test suite (69 tests)
 │   ├── test_core_logic.py       # encryption, hashing, password gen, settings
 │   ├── test_score_password.py   # password strength scoring
 │   ├── test_credential_entry.py # data model

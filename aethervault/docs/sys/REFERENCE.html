@@ -41,7 +41,7 @@
 <body>
 <h1 id="docs-technical-reference">docs — Technical Reference</h1>
 <blockquote>
-<p>Auto-generated on 2026-08-01 02:23 CT from docs/sys/
+<p>Auto-generated on 2026-08-01 02:30 CT from docs/sys/
 Source: <code>scripts/build_reference.py</code></p>
 </blockquote>
 <h2 id="table-of-contents">Table of Contents</h2>
@@ -229,7 +229,7 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 </tr>
 <tr>
 <td><code>tests/</code></td>
-<td>61 pytest tests across 4 files + shared fixtures</td>
+<td>69 pytest tests across 5 files + shared fixtures</td>
 </tr>
 <tr>
 <td><code>docs/USER_GUIDE.md</code></td>
@@ -405,7 +405,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong>2026-08-01 (session 17)</strong>: <strong>Repo moved</strong> to <code>git@github.com:AetherSolDev/AetherVault.git</code>. Updated remote + all URL refs (<code>__main__.py</code> GITHUB_TAGS_API/GIT_REPO_URL/RELEASES_URL, README badges/links, USER_GUIDE.md/html). Workflows already cover all platforms. Marked transfer done in PRE_PUBLIC_CLEANUP.md.</li>
 <li><strong>2026-08-01 (session 18)</strong>: <strong>Entry point cleanup</strong> — <code>aethervault/main.py</code> → <code>aethervault/__main__.py</code> (run via <code>python -m aethervault</code>), removed root <code>aethervault.py</code> shim, fixed pyproject package-data (<code>src/</code> → <code>aethervault/</code>), updated MANIFEST.in + spec + global install. Reinstalled system-wide; 61 tests pass.</li>
 <li><strong>2026-08-01 (session 19)</strong>: <strong>Removed <code>src/</code></strong> — moved runtime data <code>src/data/</code> → root <code>data/</code> (<code>DATA_DIR = PROJECT_ROOT/data</code>), deleted stale <code>aethervault/data/</code>. Updated .gitignore + docs. Live vault preserved (429 creds).</li>
-<li><strong>2026-08-01 (session 20)</strong>: <strong>Duress password</strong> (optional) — entered at login → cryptographically wipes vault + backups (<code>wipe_vault()</code> in core_logic). Keys deleted first (crypto erasure), then random-overwrite + delete all DB/WAL/SHM/.bak/settings. Fake "Invalid password" dialog then silent exit. Stored as PBKDF2 hash in <code>data/.duress.key</code>; checked first with identical cost (no timing tell). Settings → Duress Password to set/clear (needs master pw). Also added <code>rotate_backups()</code> (keeps 5 <code>.bak</code>). 8 new tests (69 total).</li>
+<li><strong>2026-08-01 (session 20)</strong>: <strong>Duress password</strong> (optional) — entered at login → cryptographically wipes vault + backups (<code>wipe_vault()</code> in core_logic). Keys deleted first (crypto erasure), then random-overwrite + delete all DB/WAL/SHM/.bak/settings. Fake "Invalid password" dialog then silent exit. Stored as PBKDF2 hash in <code>data/.duress.key</code>; checked first with identical cost (no timing tell). Settings → Duress Password to set/clear (needs master pw). Also added <code>rotate_backups()</code> (keeps 5 <code>.bak</code>). 8 new tests (69 total). Verified live against an isolated copy of the real vault — wipe destroyed all files, real vault (429 creds) untouched. <strong>Released as v6.3.0.</strong></li>
 </ul>
 <hr />
 <h2 id="project-plan">Project Plan</h2>
@@ -714,7 +714,7 @@ this exact bug. Don't repeat it.</p>
 <hr />
 <h2 id="changelog">Changelog</h2>
 <h1 id="changelog_1">Changelog</h1>
-<h2 id="unreleased-2026-08-01-session-20">[Unreleased] — 2026-08-01 (session 20)</h2>
+<h2 id="630-2026-08-01">[6.3.0] — 2026-08-01</h2>
 <h3 id="added">Added</h3>
 <ul>
 <li><strong>Duress password (optional)</strong> — if entered at the login screen, cryptographically destroys the vault and all backups (<code>wipe_vault()</code>): master/duress key files are deleted FIRST (crypto erasure), then all <code>.db</code>, <code>.db-wal</code>, <code>.db-shm</code>, <code>.db.bak</code>, <code>aethervault_*.db.bak</code>, and <code>.app_settings.json</code> are overwritten with random data and removed. After wiping it shows a fake "Invalid password" dialog and exits — indistinguishable from a failed login. Configured via Settings → Duress Password (requires the master password to set/clear). Stored as a PBKDF2 hash in <code>data/.duress.key</code>; checked before the master password with identical PBKDF2 cost so timing is indistinguishable.</li>
@@ -722,7 +722,7 @@ this exact bug. Don't repeat it.</p>
 </ul>
 <h3 id="tests">Tests</h3>
 <ul>
-<li>8 new tests (<code>tests/test_duress.py</code>): duress hash roundtrip/clear/absent, backup rotation keep/prune, wipe destroys all files including keys, wipe idempotent. Suite now 69 tests.</li>
+<li>8 new tests (<code>tests/test_duress.py</code>): duress hash roundtrip/clear/absent, backup rotation keep/prune, wipe destroys all files including keys, wipe idempotent. Suite now 69 tests. Verified live against an isolated copy of the real vault — wipe destroyed all files, real vault untouched.</li>
 </ul>
 <h2 id="unreleased-2026-08-01-session-19">[Unreleased] — 2026-08-01 (session 19)</h2>
 <h3 id="changed">Changed</h3>
@@ -1996,6 +1996,6 @@ files + 6 scripts against <code>alignment_checklist.md</code>:</p>
 </tbody>
 </table>
 <hr />
-<p><em>Generated on 2026-08-01 02:23 CT by <code>scripts/build_reference.py</code></em></p>
+<p><em>Generated on 2026-08-01 02:30 CT by <code>scripts/build_reference.py</code></em></p>
 </body>
 </html>

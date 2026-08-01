@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aethervault"
-version = "6.2.1"
+version = "6.3.0"
 description = "A secure, local-first password manager with AES-256 encryption"
 authors = [
     {name = "AetherVault Team"},
