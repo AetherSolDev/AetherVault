@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-01 02:00 CT (America/Chicago)
+# Last Edited: 2026-08-01 02:23 CT (America/Chicago)
 # Path: aethervault/core_logic.py
 # Purpose: Encryption, hashing, data model, and settings management for AetherVault.
 
@@ -26,7 +26,9 @@ from aethervault import PROJECT_ROOT
 DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 DB_PATH = os.path.join(DATA_DIR, "aethervault.db")
 MASTER_KEY_FILE = os.path.join(DATA_DIR, ".master.key")
+DURESS_KEY_FILE = os.path.join(DATA_DIR, ".duress.key")
 DB_BACKUP_PATH = f"{DB_PATH}.bak"
+BACKUP_MAX_FILES = 5
 JOURNAL_FILE = os.path.join(PROJECT_ROOT, "journal.md")
 APP_SETTINGS_FILE = os.path.join(DATA_DIR, ".app_settings.json")
 
@@ -182,6 +184,88 @@ def store_master_password(password: str) -> bool:
         return True
     except OSError:
         return False
+
+
+def load_duress_password() -> Optional[str]:
+    """Read the stored duress password hash from disk, or return None."""
+    return load_master_password(DURESS_KEY_FILE)
+
+
+def store_duress_password(password: str) -> bool:
+    """Hash and persist the duress password to the duress key file."""
+    hashed_pass = hash_password(password)
+    try:
+        with open(DURESS_KEY_FILE, "w") as f:
+            f.write(hashed_pass)
+        return True
+    except OSError:
+        return False
+
+
+def clear_duress_password() -> bool:
+    """Delete the duress key file. Returns True if removed (or absent)."""
+    try:
+        if os.path.exists(DURESS_KEY_FILE):
+            os.remove(DURESS_KEY_FILE)
+        return True
+    except OSError:
+        return False
+
+
+def rotate_backups(max_files: int = BACKUP_MAX_FILES) -> int:
+    """Prune timestamped .bak files in DATA_DIR, keeping the max_files most recent.
+    Returns the number of files removed."""
+    if max_files <= 0:
+        return 0
+    backups = sorted(
+        f for f in os.listdir(DATA_DIR)
+        if f.startswith("aethervault_") and f.endswith(".db.bak")
+    )
+    stale = backups[:-max_files]
+    for f in stale:
+        try:
+            os.remove(os.path.join(DATA_DIR, f))
+        except OSError:
+            pass
+    return len(stale)
+
+
+def _overwrite_and_remove(path: str):
+    """Overwrite a file with random bytes then delete it (defense-in-depth wipe)."""
+    try:
+        size = os.path.getsize(path)
+        if size > 0:
+            with open(path, "r+b") as f:
+                remaining = size
+                chunk = 65536
+                while remaining > 0:
+                    n = min(chunk, remaining)
+                    f.write(os.urandom(n))
+                    remaining -= n
+                f.flush()
+                os.fsync(f.fileno())
+        os.remove(path)
+    except OSError:
+        pass
+
+
+def wipe_vault() -> bool:
+    """Destroy the vault and all backups, making the data unrecoverable.
+
+    Order matters: the master/duress key files are deleted FIRST so the AES
+    ciphertext becomes cryptographically unrecoverable even if a later step
+    is interrupted. Remaining files are then overwritten with random data
+    and removed as defense-in-depth."""
+    for key_file in (MASTER_KEY_FILE, DURESS_KEY_FILE):
+        _overwrite_and_remove(key_file)
+    for name in os.listdir(DATA_DIR):
+        path = os.path.join(DATA_DIR, name)
+        if not os.path.isfile(path):
+            continue
+        if name == ".portable":
+            continue
+        _overwrite_and_remove(path)
+    return True
 
 
 def load_settings() -> dict:

@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-01 02:00 CT (America/Chicago)
+# Last Edited: 2026-08-01 02:23 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -116,6 +116,14 @@ A pre-built executable is available (see Releases). No Python installation requi
 - Options: After 1, 3, 5, 10, 30 minutes, or Never
 - Setting persists across sessions in `.app_settings.json`
 
+### Duress Password (optional)
+- Configured via `Settings > Duress Password...` (requires your master password)
+- If the duress password is entered at the login screen, the vault **and all
+  backups are permanently destroyed** and the app exits.
+- From an observer's point of view it looks like a normal failed login.
+- **Warning:** there is no recovery — data is gone for good. Use only under
+  physical coercion.
+
 ### Data File Locations
 All files are stored in the application directory:
 
@@ -124,6 +132,7 @@ All files are stored in the application directory:
 | `data/aethervault.db` | Encrypted vault (SQLite) |
 | `data/aethervault.db.bak` | Auto-generated backup files |
 | `data/.master.key` | Master password hash (PBKDF2) |
+| `data/.duress.key` | Duress password hash (PBKDF2, optional) |
 | `data/.app_settings.json` | Application settings (unencrypted) |
 
 ## Troubleshooting

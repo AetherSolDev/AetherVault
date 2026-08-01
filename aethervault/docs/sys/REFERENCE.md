@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-08-01 02:00 CT from docs/sys/
+> Auto-generated on 2026-08-01 02:23 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -267,6 +267,7 @@ this exact bug. Don't repeat it.
 - **2026-08-01 (session 17)**: **Repo moved** to `git@github.com:AetherSolDev/AetherVault.git`. Updated remote + all URL refs (`__main__.py` GITHUB_TAGS_API/GIT_REPO_URL/RELEASES_URL, README badges/links, USER_GUIDE.md/html). Workflows already cover all platforms. Marked transfer done in PRE_PUBLIC_CLEANUP.md.
 - **2026-08-01 (session 18)**: **Entry point cleanup** — `aethervault/main.py` → `aethervault/__main__.py` (run via `python -m aethervault`), removed root `aethervault.py` shim, fixed pyproject package-data (`src/` → `aethervault/`), updated MANIFEST.in + spec + global install. Reinstalled system-wide; 61 tests pass.
 - **2026-08-01 (session 19)**: **Removed `src/`** — moved runtime data `src/data/` → root `data/` (`DATA_DIR = PROJECT_ROOT/data`), deleted stale `aethervault/data/`. Updated .gitignore + docs. Live vault preserved (429 creds).
+- **2026-08-01 (session 20)**: **Duress password** (optional) — entered at login → cryptographically wipes vault + backups (`wipe_vault()` in core_logic). Keys deleted first (crypto erasure), then random-overwrite + delete all DB/WAL/SHM/.bak/settings. Fake "Invalid password" dialog then silent exit. Stored as PBKDF2 hash in `data/.duress.key`; checked first with identical cost (no timing tell). Settings → Duress Password to set/clear (needs master pw). Also added `rotate_backups()` (keeps 5 `.bak`). 8 new tests (69 total).
 
 ---
 
@@ -318,6 +319,15 @@ this exact bug. Don't repeat it.
 - [x] C6 — QComboBox styling: 30px height matching QLineEdit in both themes
 - [x] C7 — Splitter: equal initial sizes, form panel capped at 700px
 - [x] C8 — Remove `safety.md` from repository (was NAS-backup strategy doc) — 2026-07-30
+
+## ADDITIONS (session 20) — Duress Password (Option A)
+- [x] A16 — Duress password (optional): if entered at login, cryptographically wipes the vault
+  - `data/.duress.key` — PBKDF2 hash of duress password (same scheme as master)
+  - Checked FIRST in `attempt_login()` (identical PBKDF2 cost ⇒ no timing tell)
+  - On match: close DB → delete `.master.key`/`.duress.key` first (crypto erasure) → overwrite+delete `.db`, `.db-wal`, `.db-shm`, `.db.bak`, `aethervault_*.db.bak`, `.app_settings.json`
+  - Then show a fake "Invalid password" dialog and exit — indistinguishable from a failed login
+  - Settings → Duress Password dialog to set/clear it (requires current master password)
+- [x] C9 — Cap `.bak` rotation (keep N most recent, prune the rest) so wipe time stays bounded
 
 ---
 
@@ -508,6 +518,15 @@ this exact bug. Don't repeat it.
 ## Changelog
 
 # Changelog
+
+## [Unreleased] — 2026-08-01 (session 20)
+
+### Added
+- **Duress password (optional)** — if entered at the login screen, cryptographically destroys the vault and all backups (`wipe_vault()`): master/duress key files are deleted FIRST (crypto erasure), then all `.db`, `.db-wal`, `.db-shm`, `.db.bak`, `aethervault_*.db.bak`, and `.app_settings.json` are overwritten with random data and removed. After wiping it shows a fake "Invalid password" dialog and exits — indistinguishable from a failed login. Configured via Settings → Duress Password (requires the master password to set/clear). Stored as a PBKDF2 hash in `data/.duress.key`; checked before the master password with identical PBKDF2 cost so timing is indistinguishable.
+- **Backup rotation** — `rotate_backups()` keeps the 5 most recent timestamped backups and prunes the rest (pre-op + manual backup paths), keeping wipe time bounded.
+
+### Tests
+- 8 new tests (`tests/test_duress.py`): duress hash roundtrip/clear/absent, backup rotation keep/prune, wipe destroys all files including keys, wipe idempotent. Suite now 69 tests.
 
 ## [Unreleased] — 2026-08-01 (session 19)
 
@@ -1449,4 +1468,4 @@ files + 6 scripts against `alignment_checklist.md`:
 
 ---
 
-*Generated on 2026-08-01 02:00 CT by `scripts/build_reference.py`*
+*Generated on 2026-08-01 02:23 CT by `scripts/build_reference.py`*

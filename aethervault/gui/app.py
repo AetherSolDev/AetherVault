@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
+# Last Edited: 2026-08-01 02:25 CT (America/Chicago)
 # Path: aethervault/gui/app.py
 # Purpose: Main application window — coordinates auth, menus, CRUD, import/export.
 
@@ -8,6 +8,7 @@
 import csv
 import os
 import shutil
+import sqlite3
 from typing import List, Optional
 
 from PySide6.QtCore import QEvent, QObject, Qt, QTimer, QUrl
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
     QFrame,
+    QInputDialog,
     QLabel,
     QLineEdit,
     QMainWindow,
@@ -49,13 +51,18 @@ from aethervault.core_logic import (
     DEFAULT_LOCKOUT_MINUTES,
     MASTER_KEY_FILE,
     CredentialEntry,
+    clear_duress_password,
     get_timestamped_backup_path,
+    load_duress_password,
     load_master_password,
     load_settings,
+    rotate_backups,
     save_settings,
     score_password,
+    store_duress_password,
     store_master_password,
     verify_password,
+    wipe_vault,
 )
 from aethervault.db_manager import DatabaseManager
 from aethervault.gui.credential_form import CredentialForm
@@ -85,6 +92,7 @@ class PySidePWManager(QMainWindow):
         self.is_authenticated = False
         self.is_editing = False
         self.master_password_hash = load_master_password(MASTER_KEY_FILE)
+        self.duress_password_hash = load_duress_password()
         self.current_entry_id: Optional[int] = None
         self.previous_entry_id: Optional[int] = None
         self.credentials: List[CredentialEntry] = []
@@ -235,6 +243,10 @@ class PySidePWManager(QMainWindow):
             self.status_bar.showMessage("Please enter a password.", 3000)
             return
         stored = self.master_password_hash
+        duress = self.duress_password_hash
+        if duress and verify_password(pw, duress):
+            self._trigger_duress_wipe()
+            return
         if verify_password(pw, stored):
             self.is_authenticated = True
             self._update_tray_lock_action()
@@ -244,6 +256,22 @@ class PySidePWManager(QMainWindow):
         else:
             QMessageBox.critical(self, "Login Failed", "Invalid master password.")
             self.status_bar.showMessage("Login failed.", 3000)
+
+    def _trigger_duress_wipe(self):
+        """Handle a duress password match: wipe the vault, then exit silently.
+
+        The wipe is cryptographically ordered (keys first) and effectively
+        instant at vault scale, so this is indistinguishable from a failed
+        login to an observer."""
+        try:
+            if self.db_manager and self.db_manager.conn:
+                self.db_manager.conn.close()
+        except (sqlite3.Error, AttributeError, OSError):
+            pass
+        wipe_vault()
+        QMessageBox.critical(self, "Login Failed", "Invalid master password.")
+        self.tray_icon.hide()
+        QApplication.quit()
 
     def show_main_app(self):
         self.stacked_widget.setCurrentIndex(self.main_index)
@@ -524,6 +552,7 @@ class PySidePWManager(QMainWindow):
         try:
             self.db_manager.conn.close()
             shutil.copyfile(DB_PATH, backup_path)
+            rotate_backups()
             self.status_bar.showMessage(
                 f"Vault backed up → {os.path.basename(backup_path)}", 5000
             )
@@ -650,6 +679,10 @@ class PySidePWManager(QMainWindow):
         self.portable_action.setChecked(is_portable())
         self.portable_action.triggered.connect(self.toggle_portable_mode)
         sm.addAction(self.portable_action)
+        sm.addSeparator()
+        self.duress_action = QAction("&Duress Password...", self)
+        self.duress_action.triggered.connect(self.setup_duress_password)
+        sm.addAction(self.duress_action)
 
     def _build_help_menu(self, mb: QMenuBar):
         hm = mb.addMenu("&Help")
@@ -892,6 +925,70 @@ class PySidePWManager(QMainWindow):
                     QMessageBox.critical(
                         self, "Error", "Failed to enable portable mode."
                     )
+
+    # --- Duress Password ---
+
+    def setup_duress_password(self):
+        """Dialog to set or clear the optional duress password. Requires the master password."""
+        if not self.is_authenticated:
+            QMessageBox.information(
+                self, "Duress Password",
+                "Please log in to the vault first, then use Settings → Duress Password.",
+            )
+            return
+        msg = (
+            "Duress Password (optional)\n\n"
+            "If this password is entered at the login screen, the vault and all "
+            "backups are permanently destroyed.\n\n"
+            "To set or change it, enter your current master password, then the "
+            "new duress password.\nLeave the duress field empty to CLEAR it."
+        )
+        QMessageBox.information(self, "Duress Password", msg)
+
+        master_ok, master_pw = QInputDialog.getText(
+            self, "Confirm Master Password",
+            "Enter your current master password:",
+            QLineEdit.Password,
+        )
+        if not master_ok or not master_pw:
+            return
+        if not verify_password(master_pw, self.master_password_hash):
+            QMessageBox.warning(self, "Error", "Incorrect master password.")
+            return
+
+        ok, duress_pw = QInputDialog.getText(
+            self, "Duress Password",
+            "Enter new duress password (leave empty to clear):",
+            QLineEdit.Password,
+        )
+        if not ok:
+            return
+
+        if duress_pw == master_pw:
+            QMessageBox.warning(
+                self, "Error", "Duress password must differ from the master password."
+            )
+            return
+
+        if not duress_pw:
+            if clear_duress_password():
+                self.duress_password_hash = None
+                self.status_bar.showMessage("Duress password cleared.", 5000)
+            else:
+                QMessageBox.critical(self, "Error", "Failed to clear duress password.")
+            return
+
+        if len(duress_pw) < 8:
+            QMessageBox.warning(
+                self, "Password Too Short",
+                "Duress password must be at least 8 characters.",
+            )
+            return
+        if store_duress_password(duress_pw):
+            self.duress_password_hash = load_duress_password()
+            self.status_bar.showMessage("Duress password set.", 5000)
+        else:
+            QMessageBox.critical(self, "Error", "Failed to save duress password.")
 
     # --- System Tray ---
 

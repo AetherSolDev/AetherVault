@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
+# Last Edited: 2026-08-01 02:23 CT (America/Chicago)
 # Path: aethervault/db_manager.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
@@ -19,6 +19,7 @@ from aethervault.core_logic import (
     derive_encryption_key,
     encrypt_data,
     get_timestamped_backup_path,
+    rotate_backups,
 )
 
 COLUMN_ALIASES = {
@@ -235,6 +236,7 @@ class DatabaseManager:
             backup_path = get_timestamped_backup_path()
             os.makedirs(os.path.dirname(backup_path), exist_ok=True)
             shutil.copyfile(self.db_path, backup_path)
+            rotate_backups()
             self._connect()
             return backup_path
         except OSError as e:
