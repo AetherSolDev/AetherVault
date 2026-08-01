@@ -41,7 +41,7 @@
 <body>
 <h1 id="docs-technical-reference">docs — Technical Reference</h1>
 <blockquote>
-<p>Auto-generated on 2026-08-01 01:54 CT from docs/sys/
+<p>Auto-generated on 2026-08-01 02:00 CT from docs/sys/
 Source: <code>scripts/build_reference.py</code></p>
 </blockquote>
 <h2 id="table-of-contents">Table of Contents</h2>
@@ -93,12 +93,11 @@ Source: <code>scripts/build_reference.py</code></p>
 │   ├── test_score_password.py # score_password unit tests (10 tests)
 │   ├── test_credential_entry.py # CredentialEntry model (5 tests)
 │   └── test_db_manager.py     # CRUD, import/export, duplicates, backup, key guards (22 tests)
-├── src/
-│   └── data/                  # Runtime data (gitignored)
-│       ├── aethervault.db     # Encrypted vault (SQLite)
-│       ├── aethervault.db.bak # Auto-backup
-│       ├── .master.key        # Master password hash (PBKDF2)
-│       └── .app_settings.json # App settings (lockout, theme, etc.)
+├── data/                      # Runtime data (gitignored)
+│   ├── aethervault.db         # Encrypted vault (SQLite)
+│   ├── aethervault.db.bak     # Auto-backup
+│   ├── .master.key            # Master password hash (PBKDF2)
+│   └── .app_settings.json     # App settings (lockout, theme, etc.)
 ├── .gitignore
 ├── .repomixignore
 ├── pyproject.toml
@@ -295,7 +294,7 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li>System tray: close minimizes to tray; use File → Quit or tray → Quit to fully exit</li>
 <li>Auto-detach: <code>main.py</code> forks on Unix — parent exits, child runs GUI. Debug output goes to <code>/dev/null</code>. Use <code>--foreground</code> / <code>-f</code> to keep terminal attached</li>
 <li>Tag reminder: after bumping version in code, always <code>git tag -a vX.Y.Z &amp;&amp; git push origin vX.Y.Z</code> — the upgrade check (<code>--upgrade</code>) reads GitHub tags, not committed code</li>
-<li><strong>Pre-op backups write to <code>src/data/</code></strong> (from <code>get_timestamped_backup_path()</code>), which is gitignored and empty on CI. <code>create_pre_op_backup()</code> now <code>os.makedirs()</code>es the dir first — don't "optimize" it back out</li>
+<li><strong>Pre-op backups write to <code>data/</code></strong> (from <code>get_timestamped_backup_path()</code>), which is gitignored and empty on CI. <code>create_pre_op_backup()</code> now <code>os.makedirs()</code>es the dir first — don't "optimize" it back out</li>
 <li><strong><code>aethervault.spec</code> must stay tracked</strong> — it was gitignored and CI builds failed with "Spec file not found". If a PyInstaller spec is ever needed, commit it</li>
 <li><strong><code>gh release create vX.Y.Z</code> reuses an existing local tag</strong> — if a tag already exists (e.g., created days earlier), the release points at that old commit and the release build uses the OLD workflow/spec. Always verify <code>git rev-parse vX.Y.Z^{commit}</code> matches intended HEAD before releasing</li>
 <li><strong>macOS runners (2026-07)</strong>: <code>macos-13</code> is retired (jobs queue forever). Use <code>macos-15-intel</code> (x86_64) and <code>macos-latest</code> (arm64). <code>universal2</code> builds fail because <code>cffi</code> has no fat wheel — build separate arch binaries instead</li>
@@ -356,7 +355,7 @@ this exact bug. Don't repeat it.</p>
 </tr>
 </tbody>
 </table>
-<p><strong>Key rule:</strong> Data files must live inside <code>src/</code> to survive a non-editable pip install.</p>
+<p><strong>Key rule:</strong> Data files must live inside <code>aethervault/</code> to survive a non-editable pip install.</p>
 <h2 id="navigation-hints">Navigation Hints</h2>
 <ul>
 <li><strong>Need to change encryption?</strong> → <code>core_logic.py</code> (encrypt_data, decrypt_data, derive_encryption_key, score_password)</li>
@@ -403,7 +402,9 @@ this exact bug. Don't repeat it.</p>
 <li><strong>2026-07-27 (session 14)</strong>: Fixed <code>build.yml</code> workflow (stale <code>src/main.py</code> → <code>aethervault.spec</code>, added Linux build target). Created <code>ci.yml</code> — runs 61 pytest tests on push/PR across Python 3.9-3.12.</li>
 <li><strong>2026-07-30 (session 15)</strong>: Cross-platform CI/CD delivery. Fixed CI failure (pre-op backup now creates <code>src/data/</code> dir). Committed <code>aethervault.spec</code> (was gitignored). Reworked <code>build.yml</code> — Ubuntu 24.04 Qt/xcb deps, <code>macos-13</code>→<code>macos-15-intel</code>, separate arm64+x86_64 macOS builds (cffi has no fat wheel), release asset upload. Published v6.2.1 release with 4 binaries; moved stale v6.2.1 tag to current HEAD. README: download table + build badge, fixed image/docs links, removed stray <code># test</code> lines. Removed <code>safety.md</code>. Cleaned 9 stale Actions runs. 10 commits, no version bump.</li>
 <li><strong>2026-08-01 (session 16)</strong>: Audit re-run (score A− → A). Removed all unused imports (AST-verified, zero remaining). Narrowed all 22 <code>except Exception</code> blocks to specific types (OSError, ValueError, TypeError, csv.Error, shutil.Error, sqlite3.Error, InvalidToken, RuntimeError). Added <code>InvalidToken</code> import to <code>core_logic.py</code>, <code>csv</code> import to <code>gui/app.py</code>. 61 tests pass, no version bump.</li>
-<li><strong>2026-08-01 (session 17)</strong>: <strong>Repo moved</strong> to <code>git@github.com:AetherSolDev/AetherVault.git</code>. Updated remote + all URL refs (<code>main.py</code> GITHUB_TAGS_API/GIT_REPO_URL/RELEASES_URL, README badges/links, USER_GUIDE.md/html). Workflows already cover all platforms. Marked transfer done in PRE_PUBLIC_CLEANUP.md.</li>
+<li><strong>2026-08-01 (session 17)</strong>: <strong>Repo moved</strong> to <code>git@github.com:AetherSolDev/AetherVault.git</code>. Updated remote + all URL refs (<code>__main__.py</code> GITHUB_TAGS_API/GIT_REPO_URL/RELEASES_URL, README badges/links, USER_GUIDE.md/html). Workflows already cover all platforms. Marked transfer done in PRE_PUBLIC_CLEANUP.md.</li>
+<li><strong>2026-08-01 (session 18)</strong>: <strong>Entry point cleanup</strong> — <code>aethervault/main.py</code> → <code>aethervault/__main__.py</code> (run via <code>python -m aethervault</code>), removed root <code>aethervault.py</code> shim, fixed pyproject package-data (<code>src/</code> → <code>aethervault/</code>), updated MANIFEST.in + spec + global install. Reinstalled system-wide; 61 tests pass.</li>
+<li><strong>2026-08-01 (session 19)</strong>: <strong>Removed <code>src/</code></strong> — moved runtime data <code>src/data/</code> → root <code>data/</code> (<code>DATA_DIR = PROJECT_ROOT/data</code>), deleted stale <code>aethervault/data/</code>. Updated .gitignore + docs. Live vault preserved (429 creds).</li>
 </ul>
 <hr />
 <h2 id="project-plan">Project Plan</h2>
@@ -702,14 +703,27 @@ this exact bug. Don't repeat it.</p>
 <hr />
 <h2 id="changelog">Changelog</h2>
 <h1 id="changelog_1">Changelog</h1>
-<h2 id="unreleased-2026-08-01-session-17">[Unreleased] — 2026-08-01 (session 17)</h2>
+<h2 id="unreleased-2026-08-01-session-19">[Unreleased] — 2026-08-01 (session 19)</h2>
 <h3 id="changed">Changed</h3>
+<ul>
+<li><strong>Removed <code>src/</code> package dir</strong> — runtime data moved from <code>src/data/</code> → root <code>data/</code> (<code>DATA_DIR = PROJECT_ROOT/data</code>). Deleted stale <code>aethervault/data/</code> (old backups + <code>.gitkeep</code>). Updated <code>.gitignore</code> (data/* entries), README, ARCHITECTURE, USER_GUIDE.</li>
+</ul>
+<h2 id="unreleased-2026-08-01-session-18">[Unreleased] — 2026-08-01 (session 18)</h2>
+<h3 id="changed_1">Changed</h3>
+<ul>
+<li><strong>Entry point cleanup</strong> — renamed <code>aethervault/main.py</code> → <code>aethervault/__main__.py</code> so the app runs via <code>python -m aethervault</code>; updated <code>[project.scripts]</code> (<code>aethervault.__main__:run</code>), <code>aethervault.spec</code>, and the global install.</li>
+<li><strong>Removed root <code>aethervault.py</code> shim</strong> — legacy pre-package wrapper deleted; single entry point.</li>
+<li><strong>Fixed package-data bug</strong> — <code>pyproject.toml</code> <code>[tool.setuptools.data-files]</code> pointed at non-existent <code>src/docs</code>/<code>src/assets</code>; replaced with correct <code>aethervault/assets/</code> + <code>aethervault/docs/</code> package-data globs. <code>MANIFEST.in</code> paths updated from <code>src/</code> → <code>aethervault/</code>.</li>
+<li><strong><code>build_reference.py</code></strong> — fixed stale <code>docs/</code> root path → <code>aethervault/docs/</code>; regenerated <code>REFERENCE.md</code>/<code>.html</code>/<code>USER_GUIDE.html</code>.</li>
+</ul>
+<h2 id="unreleased-2026-08-01-session-17">[Unreleased] — 2026-08-01 (session 17)</h2>
+<h3 id="changed_2">Changed</h3>
 <ul>
 <li><strong>Repo moved to <code>AetherSolDev/AetherVault</code></strong> — updated git remote and all URL references in <code>main.py</code> (upgrade/tags/releases), <code>README.md</code> (badges, release links, clone URLs), and <code>USER_GUIDE.md</code>/<code>.html</code>. Marked transfer checklist complete in <code>instructions/PRE_PUBLIC_CLEANUP.md</code>.</li>
 <li>Workflows (<code>build.yml</code> + <code>ci.yml</code>) already cover Linux, Windows, macOS Intel + ARM — no changes needed.</li>
 </ul>
 <h2 id="unreleased-2026-08-01-session-16">[Unreleased] — 2026-08-01 (session 16)</h2>
-<h3 id="changed_1">Changed</h3>
+<h3 id="changed_3">Changed</h3>
 <ul>
 <li><strong>Unused imports removed</strong> (F12) — <code>sys</code>/<code>List</code> in <code>core_logic.py</code>, <code>Any</code> in <code>db_manager.py</code>, <code>QMessageBox</code> in <code>main.py</code>, <code>json</code>/<code>QHBoxLayout</code>/<code>PORTABLE_MARKER</code>/<code>DocumentationDialog</code>/<code>DarkThemeColors</code>/<code>ThemeColors</code> in <code>gui/app.py</code>, <code>Qt</code> in <code>conflict_dialog.py</code>, <code>QHeaderView</code> in <code>credential_form.py</code>, <code>Optional</code>/<code>QPainter</code>/<code>QFont</code> in <code>credential_table.py</code>. AST scan confirms zero unused imports.</li>
 <li><strong><code>except Exception</code> catch-alls narrowed</strong> (F13) — all 22 instances replaced with specific exception types: <code>OSError</code>, <code>ValueError</code>, <code>TypeError</code>, <code>csv.Error</code>, <code>shutil.Error</code>, <code>sqlite3.Error</code>, <code>InvalidToken</code>, <code>RuntimeError</code>. Added <code>InvalidToken</code> import in <code>core_logic.py</code> and <code>csv</code> import in <code>gui/app.py</code>.</li>
@@ -728,7 +742,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong><code>build.yml</code> Linux system deps</strong> — <code>libgl1-mesa-glx</code> no longer exists on Ubuntu 24.04 runners; replaced with <code>libgl1</code> + <code>libxkbcommon-x11-0</code> and added <code>libxcb-icccm4</code> / <code>libxcb-keysyms1</code> / <code>libxcb-shape0</code> so the Qt xcb libraries bundle into the onefile.</li>
 <li><strong>macOS build matrix</strong> — <code>macos-13</code> runner retired by GitHub (jobs queued forever); switched Intel build to <code>macos-15-intel</code>. Dropped the universal2 attempt (cffi ships no fat wheel, PyInstaller refuses single-arch deps) in favor of separate <code>macos-latest</code> (arm64) + <code>macos-15-intel</code> (x86_64) binaries.</li>
 </ul>
-<h3 id="changed_2">Changed</h3>
+<h3 id="changed_4">Changed</h3>
 <ul>
 <li><strong><code>aethervault.spec</code></strong> — removed from <code>.gitignore</code> and committed so CI builds can use it (was untracked, breaking <code>pyinstaller aethervault.spec</code> in CI).</li>
 <li><strong>Removed <code>safety.md</code></strong> from the repository.</li>
@@ -750,7 +764,7 @@ this exact bug. Don't repeat it.</p>
 <ul>
 <li><strong>Test suite expansion</strong> — 39 new tests across <code>test_core_logic.py</code> (24 tests: encryption roundtrip, key derivation, password hashing, password generation, settings persistence) and <code>test_db_manager.py</code> (15 tests: <code>import_from_csv</code>, export, duplicate removal, backup, and encryption-key-not-set guards for all import methods).</li>
 </ul>
-<h3 id="changed_3">Changed</h3>
+<h3 id="changed_5">Changed</h3>
 <ul>
 <li><strong>Documentation</strong> — README tests badge 22→61, project tree paths corrected; KNOWLEDGE.md session history and test count updated; ARCHITECTURE.md paths aligned with <code>aethervault/</code> package layout.</li>
 <li><strong><code>--upgrade</code> / <code>-u</code></strong> — now auto-performs the upgrade (git pull + pip install -e . for cloned repos, pip install --upgrade for pip installs) instead of printing manual instructions. Uses <code>subprocess.run()</code> with helpful status output.</li>
@@ -767,7 +781,7 @@ this exact bug. Don't repeat it.</p>
 <ul>
 <li><strong>Auto-detach from terminal</strong> — <code>main.py</code> forks on Unix to release the terminal so users don't need <code>aethervault &amp;</code>. <code>--foreground</code> / <code>-f</code> flag keeps terminal attached for debugging.</li>
 </ul>
-<h3 id="changed_4">Changed</h3>
+<h3 id="changed_6">Changed</h3>
 <ul>
 <li><strong>CLI reference</strong> updated in README and USER_GUIDE with <code>--foreground</code> flag</li>
 </ul>
@@ -781,7 +795,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong><code>tests/conftest.py</code></strong> — shared temp database and sample entry fixtures</li>
 <li><strong><code>docs/sys/AUDIT_REPORT.md</code></strong> — formal audit trail with 12 findings, all resolved</li>
 </ul>
-<h3 id="changed_5">Changed</h3>
+<h3 id="changed_7">Changed</h3>
 <ul>
 <li><strong>God file split</strong>: <code>app.py</code> 1627→968 lines. Extracted <code>CredentialForm</code> (344), <code>CredentialTable</code> (334), <code>ClickToCopyFilter</code> (24), <code>PasswordStrengthBar</code> (46)</li>
 <li><strong><code>setup_menu_bar()</code></strong> 70→6 lines — extracted into 4 builder methods</li>
@@ -818,7 +832,7 @@ this exact bug. Don't repeat it.</p>
 <li>Dark/light theme toggle in Settings menu (persistent across sessions)</li>
 <li>In-app help now loads from consolidated <code>docs/USER_GUIDE.md</code></li>
 </ul>
-<h3 id="changed_6">Changed</h3>
+<h3 id="changed_8">Changed</h3>
 <ul>
 <li>Customized AGENTS.md for AetherLock (paths, critical files, database schema)</li>
 <li>Updated USER_GUIDE.md with actual application features and documentation</li>
@@ -856,7 +870,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong>Rich text notes</strong> — B/I/U formatting toolbar, stored as HTML</li>
 <li><strong>One-click backup</strong> — status bar message instead of modal dialog, timestamped filenames</li>
 </ul>
-<h3 id="changed_7">Changed</h3>
+<h3 id="changed_9">Changed</h3>
 <ul>
 <li>Auto-lock: <code>WindowDeactivate</code> now resets activity timer instead of immediately locking</li>
 <li>Table columns: increased default sizes (Title 220, Username 160, Category 140), minimum section 100px</li>
@@ -874,7 +888,7 @@ this exact bug. Don't repeat it.</p>
 <li><code>sectionClicked.disconnect()</code> RuntimeWarning — moved connection to table creation</li>
 </ul>
 <h2 id="2026-07-25-session-6">2026-07-25 (session 6)</h2>
-<h3 id="changed_8">Changed</h3>
+<h3 id="changed_10">Changed</h3>
 <ul>
 <li><strong>Rebrand</strong>: Renamed project from <code>AetherLock</code> to <code>AetherVault</code> to align with GitHub repo name <code>brandonmunoz1975-ops/AetherVault</code></li>
 <li><strong>Package</strong>: Created <code>pyproject.toml</code> for <code>pip install -e .</code> with CLI entry point <code>aethervault</code></li>
@@ -883,7 +897,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong>Rebuilt</strong> REFERENCE.md, REFERENCE.html, and USER_GUIDE.html from updated sources</li>
 </ul>
 <h2 id="2026-07-26-session-7">2026-07-26 (session 7)</h2>
-<h3 id="changed_9">Changed</h3>
+<h3 id="changed_11">Changed</h3>
 <ul>
 <li><strong>Cleanup</strong>: Removed <code>docs/sys/COST.md</code> and <code>docs/sys/KNOWLEDGE.md</code> from git tracking (keep local only)</li>
 <li><strong>Docs</strong>: Updated all documentation to reference <code>src/data/aethervault.db</code> instead of <code>password_manager.db</code></li>
@@ -902,7 +916,7 @@ this exact bug. Don't repeat it.</p>
 <li>GitHub Actions CI workflow (<code>.github/workflows/build.yml</code>) — builds Windows + macOS executables on release</li>
 <li>Help menu now opens <code>USER_GUIDE.html</code> in system browser via <code>QDesktopServices</code></li>
 </ul>
-<h3 id="changed_10">Changed</h3>
+<h3 id="changed_12">Changed</h3>
 <ul>
 <li>Cleaned up <code>.gitignore</code>: added <code>.repomixignore</code>, <code>aetherlock.spec</code>, <code>AetherVault/</code></li>
 <li>Removed from tracking: <code>AGENTS.md</code>, <code>aetherlock.spec</code>, <code>.repomixignore</code>, <code>venv</code> symlink</li>
@@ -1961,6 +1975,6 @@ files + 6 scripts against <code>alignment_checklist.md</code>:</p>
 </tbody>
 </table>
 <hr />
-<p><em>Generated on 2026-08-01 01:54 CT by <code>scripts/build_reference.py</code></em></p>
+<p><em>Generated on 2026-08-01 02:00 CT by <code>scripts/build_reference.py</code></em></p>
 </body>
 </html>

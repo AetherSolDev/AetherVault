@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-08-01 01:54 CT from docs/sys/
+> Auto-generated on 2026-08-01 02:00 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -56,12 +56,11 @@ AetherVault/
 │   ├── test_score_password.py # score_password unit tests (10 tests)
 │   ├── test_credential_entry.py # CredentialEntry model (5 tests)
 │   └── test_db_manager.py     # CRUD, import/export, duplicates, backup, key guards (22 tests)
-├── src/
-│   └── data/                  # Runtime data (gitignored)
-│       ├── aethervault.db     # Encrypted vault (SQLite)
-│       ├── aethervault.db.bak # Auto-backup
-│       ├── .master.key        # Master password hash (PBKDF2)
-│       └── .app_settings.json # App settings (lockout, theme, etc.)
+├── data/                      # Runtime data (gitignored)
+│   ├── aethervault.db         # Encrypted vault (SQLite)
+│   ├── aethervault.db.bak     # Auto-backup
+│   ├── .master.key            # Master password hash (PBKDF2)
+│   └── .app_settings.json     # App settings (lockout, theme, etc.)
 ├── .gitignore
 ├── .repomixignore
 ├── pyproject.toml
@@ -190,7 +189,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 - System tray: close minimizes to tray; use File → Quit or tray → Quit to fully exit
 - Auto-detach: `main.py` forks on Unix — parent exits, child runs GUI. Debug output goes to `/dev/null`. Use `--foreground` / `-f` to keep terminal attached
 - Tag reminder: after bumping version in code, always `git tag -a vX.Y.Z && git push origin vX.Y.Z` — the upgrade check (`--upgrade`) reads GitHub tags, not committed code
-- **Pre-op backups write to `src/data/`** (from `get_timestamped_backup_path()`), which is gitignored and empty on CI. `create_pre_op_backup()` now `os.makedirs()`es the dir first — don't "optimize" it back out
+- **Pre-op backups write to `data/`** (from `get_timestamped_backup_path()`), which is gitignored and empty on CI. `create_pre_op_backup()` now `os.makedirs()`es the dir first — don't "optimize" it back out
 - **`aethervault.spec` must stay tracked** — it was gitignored and CI builds failed with "Spec file not found". If a PyInstaller spec is ever needed, commit it
 - **`gh release create vX.Y.Z` reuses an existing local tag** — if a tag already exists (e.g., created days earlier), the release points at that old commit and the release build uses the OLD workflow/spec. Always verify `git rev-parse vX.Y.Z^{commit}` matches intended HEAD before releasing
 - **macOS runners (2026-07)**: `macos-13` is retired (jobs queue forever). Use `macos-15-intel` (x86_64) and `macos-latest` (arm64). `universal2` builds fail because `cffi` has no fat wheel — build separate arch binaries instead
@@ -228,7 +227,7 @@ this exact bug. Don't repeat it.
 | Publish a Release with binaries | `gh release create vX.Y.Z --generate-notes` → `build.yml` auto-attaches 4 executables on `release: published` |
 | Data files location | `aethervault/docs/`, `aethervault/assets/` (inside package for pip compat) |
 
-**Key rule:** Data files must live inside `src/` to survive a non-editable pip install.
+**Key rule:** Data files must live inside `aethervault/` to survive a non-editable pip install.
 
 ## Navigation Hints
 
@@ -265,7 +264,9 @@ this exact bug. Don't repeat it.
 - **2026-07-27 (session 14)**: Fixed `build.yml` workflow (stale `src/main.py` → `aethervault.spec`, added Linux build target). Created `ci.yml` — runs 61 pytest tests on push/PR across Python 3.9-3.12.
 - **2026-07-30 (session 15)**: Cross-platform CI/CD delivery. Fixed CI failure (pre-op backup now creates `src/data/` dir). Committed `aethervault.spec` (was gitignored). Reworked `build.yml` — Ubuntu 24.04 Qt/xcb deps, `macos-13`→`macos-15-intel`, separate arm64+x86_64 macOS builds (cffi has no fat wheel), release asset upload. Published v6.2.1 release with 4 binaries; moved stale v6.2.1 tag to current HEAD. README: download table + build badge, fixed image/docs links, removed stray `# test` lines. Removed `safety.md`. Cleaned 9 stale Actions runs. 10 commits, no version bump.
 - **2026-08-01 (session 16)**: Audit re-run (score A− → A). Removed all unused imports (AST-verified, zero remaining). Narrowed all 22 `except Exception` blocks to specific types (OSError, ValueError, TypeError, csv.Error, shutil.Error, sqlite3.Error, InvalidToken, RuntimeError). Added `InvalidToken` import to `core_logic.py`, `csv` import to `gui/app.py`. 61 tests pass, no version bump.
-- **2026-08-01 (session 17)**: **Repo moved** to `git@github.com:AetherSolDev/AetherVault.git`. Updated remote + all URL refs (`main.py` GITHUB_TAGS_API/GIT_REPO_URL/RELEASES_URL, README badges/links, USER_GUIDE.md/html). Workflows already cover all platforms. Marked transfer done in PRE_PUBLIC_CLEANUP.md.
+- **2026-08-01 (session 17)**: **Repo moved** to `git@github.com:AetherSolDev/AetherVault.git`. Updated remote + all URL refs (`__main__.py` GITHUB_TAGS_API/GIT_REPO_URL/RELEASES_URL, README badges/links, USER_GUIDE.md/html). Workflows already cover all platforms. Marked transfer done in PRE_PUBLIC_CLEANUP.md.
+- **2026-08-01 (session 18)**: **Entry point cleanup** — `aethervault/main.py` → `aethervault/__main__.py` (run via `python -m aethervault`), removed root `aethervault.py` shim, fixed pyproject package-data (`src/` → `aethervault/`), updated MANIFEST.in + spec + global install. Reinstalled system-wide; 61 tests pass.
+- **2026-08-01 (session 19)**: **Removed `src/`** — moved runtime data `src/data/` → root `data/` (`DATA_DIR = PROJECT_ROOT/data`), deleted stale `aethervault/data/`. Updated .gitignore + docs. Live vault preserved (429 creds).
 
 ---
 
@@ -507,6 +508,19 @@ this exact bug. Don't repeat it.
 ## Changelog
 
 # Changelog
+
+## [Unreleased] — 2026-08-01 (session 19)
+
+### Changed
+- **Removed `src/` package dir** — runtime data moved from `src/data/` → root `data/` (`DATA_DIR = PROJECT_ROOT/data`). Deleted stale `aethervault/data/` (old backups + `.gitkeep`). Updated `.gitignore` (data/* entries), README, ARCHITECTURE, USER_GUIDE.
+
+## [Unreleased] — 2026-08-01 (session 18)
+
+### Changed
+- **Entry point cleanup** — renamed `aethervault/main.py` → `aethervault/__main__.py` so the app runs via `python -m aethervault`; updated `[project.scripts]` (`aethervault.__main__:run`), `aethervault.spec`, and the global install.
+- **Removed root `aethervault.py` shim** — legacy pre-package wrapper deleted; single entry point.
+- **Fixed package-data bug** — `pyproject.toml` `[tool.setuptools.data-files]` pointed at non-existent `src/docs`/`src/assets`; replaced with correct `aethervault/assets/` + `aethervault/docs/` package-data globs. `MANIFEST.in` paths updated from `src/` → `aethervault/`.
+- **`build_reference.py`** — fixed stale `docs/` root path → `aethervault/docs/`; regenerated `REFERENCE.md`/`.html`/`USER_GUIDE.html`.
 
 ## [Unreleased] — 2026-08-01 (session 17)
 
@@ -1435,4 +1449,4 @@ files + 6 scripts against `alignment_checklist.md`:
 
 ---
 
-*Generated on 2026-08-01 01:54 CT by `scripts/build_reference.py`*
+*Generated on 2026-08-01 02:00 CT by `scripts/build_reference.py`*

@@ -127,9 +127,9 @@ pyinstaller aethervault.spec
 
 | File | Purpose |
 |------|---------|
-| `src/data/aethervault.db` | Encrypted SQLite vault |
-| `src/data/.master.key` | PBKDF2 hash of master password |
-| `src/data/.app_settings.json` | Theme, auto-lock, and app preferences |
+| `data/aethervault.db` | Encrypted SQLite vault |
+| `data/.master.key` | PBKDF2 hash of master password |
+| `data/.app_settings.json` | Theme, auto-lock, and app preferences |
 | `.portable` | Marker file for portable mode |
 
 ## Security
@@ -175,11 +175,10 @@ AetherVault/
 │   ├── test_credential_entry.py # data model
 │   ├── test_db_manager.py       # CRUD, import/export, duplicates, backup, key guards
 │   └── conftest.py
-├── src/
-│   └── data/                    # Runtime data (gitignored)
-│       ├── aethervault.db
-│       ├── .master.key
-│       └── .app_settings.json
+├── data/                        # Runtime data (gitignored)
+│   ├── aethervault.db
+│   ├── .master.key
+│   └── .app_settings.json
 ├── MANIFEST.in                  # Package data for pip non-editable installs
 ├── pyproject.toml               # Package build config & CLI entry point
 ├── requirements.txt

@@ -40,7 +40,7 @@
 </head>
 <body>
 <h1 id="created-2026-07-24">Created: 2026-07-24</h1>
-<h1 id="last-edited-2026-08-01-0137-ct-americachicago">Last Edited: 2026-08-01 01:37 CT (America/Chicago)</h1>
+<h1 id="last-edited-2026-08-01-0155-ct-americachicago">Last Edited: 2026-08-01 01:55 CT (America/Chicago)</h1>
 <h1 id="path-docsuser_guidemd">Path: docs/USER_GUIDE.md</h1>
 <h1 id="purpose-user-facing-handbook-for-aethervault">Purpose: User-facing handbook for AetherVault.</h1>
 <h1 id="aethervault-user-guide">AetherVault — User Guide</h1>
@@ -185,19 +185,19 @@ aethervault
 </thead>
 <tbody>
 <tr>
-<td><code>src/data/aethervault.db</code></td>
+<td><code>data/aethervault.db</code></td>
 <td>Encrypted vault (SQLite)</td>
 </tr>
 <tr>
-<td><code>src/data/aethervault.db.bak</code></td>
+<td><code>data/aethervault.db.bak</code></td>
 <td>Auto-generated backup files</td>
 </tr>
 <tr>
-<td><code>src/data/.master.key</code></td>
+<td><code>data/.master.key</code></td>
 <td>Master password hash (PBKDF2)</td>
 </tr>
 <tr>
-<td><code>src/data/.app_settings.json</code></td>
+<td><code>data/.app_settings.json</code></td>
 <td>Application settings (unencrypted)</td>
 </tr>
 </tbody>
@@ -213,7 +213,7 @@ aethervault
 <ul>
 <li><strong>Can I recover a forgotten master password?</strong> No. The master password is not stored; only a one-way hash is saved. Without the original password, your vault is permanently inaccessible.</li>
 <li><strong>Is my data secure?</strong> Yes. All passwords are encrypted with AES-256 (Fernet). The encryption key is derived from your master password using PBKDF2 with 600,000 iterations.</li>
-<li><strong>Can I use the same database on multiple computers?</strong> Yes. Copy the <code>src/data/aethervault.db</code> file to another computer with the application installed. Use the same master password to unlock it.</li>
+<li><strong>Can I use the same database on multiple computers?</strong> Yes. Copy the <code>data/aethervault.db</code> file to another computer with the application installed. Use the same master password to unlock it.</li>
 <li><strong>How do I migrate from another password manager?</strong> Export your data to CSV and import it via <code>File &gt; Import Vault (CSV)</code>. The CSV must have columns: title, username, password, url, email, phone, address, category, notes.</li>
 </ul>
 </body>

@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
+# Last Edited: 2026-08-01 02:00 CT (America/Chicago)
 # Path: aethervault/core_logic.py
 # Purpose: Encryption, hashing, data model, and settings management for AetherVault.
 
@@ -23,7 +23,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from aethervault import PROJECT_ROOT
 
-DATA_DIR = os.path.join(PROJECT_ROOT, "src", "data")
+DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 DB_PATH = os.path.join(DATA_DIR, "aethervault.db")
 MASTER_KEY_FILE = os.path.join(DATA_DIR, ".master.key")
 DB_BACKUP_PATH = f"{DB_PATH}.bak"

@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-01 01:55 CT (America/Chicago)
+# Last Edited: 2026-08-01 02:00 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -121,10 +121,10 @@ All files are stored in the application directory:
 
 | File | Purpose |
 |------|---------|
-| `src/data/aethervault.db` | Encrypted vault (SQLite) |
-| `src/data/aethervault.db.bak` | Auto-generated backup files |
-| `src/data/.master.key` | Master password hash (PBKDF2) |
-| `src/data/.app_settings.json` | Application settings (unencrypted) |
+| `data/aethervault.db` | Encrypted vault (SQLite) |
+| `data/aethervault.db.bak` | Auto-generated backup files |
+| `data/.master.key` | Master password hash (PBKDF2) |
+| `data/.app_settings.json` | Application settings (unencrypted) |
 
 ## Troubleshooting
 
@@ -141,5 +141,5 @@ Adjust the auto-lock timeout in `Settings > Auto-Lock`. The default is 3 minutes
 
 - **Can I recover a forgotten master password?** No. The master password is not stored; only a one-way hash is saved. Without the original password, your vault is permanently inaccessible.
 - **Is my data secure?** Yes. All passwords are encrypted with AES-256 (Fernet). The encryption key is derived from your master password using PBKDF2 with 600,000 iterations.
-- **Can I use the same database on multiple computers?** Yes. Copy the `src/data/aethervault.db` file to another computer with the application installed. Use the same master password to unlock it.
+- **Can I use the same database on multiple computers?** Yes. Copy the `data/aethervault.db` file to another computer with the application installed. Use the same master password to unlock it.
 - **How do I migrate from another password manager?** Export your data to CSV and import it via `File > Import Vault (CSV)`. The CSV must have columns: title, username, password, url, email, phone, address, category, notes.
