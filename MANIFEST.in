@@ -1,10 +1,10 @@
 # Created: 2026-07-27
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:55 CT (America/Chicago)
 # Path: MANIFEST.in
 # Purpose: Include package data files in the source distribution for pip builds.
 
-include src/docs/USER_GUIDE.md
-include src/docs/USER_GUIDE.html
-include src/assets/aethervault.ico
-include src/assets/main.png
-recursive-include src/docs/sys *.md
+include aethervault/docs/USER_GUIDE.md
+include aethervault/docs/USER_GUIDE.html
+include aethervault/assets/aethervault.ico
+include aethervault/assets/main.png
+recursive-include aethervault/docs/sys *.md

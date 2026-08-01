@@ -1,6 +1,6 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-01 01:37 CT (America/Chicago)
-# Path: aethervault/main.py
+# Last Edited: 2026-08-01 01:55 CT (America/Chicago)
+# Path: aethervault/__main__.py
 # Purpose: Application entry point with CLI switches (--version, --debug, --upgrade, --foreground).
 
 """Application entry point with CLI switches (--version, --debug, --upgrade, --foreground)."""

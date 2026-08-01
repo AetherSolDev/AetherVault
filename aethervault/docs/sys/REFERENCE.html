@@ -41,7 +41,7 @@
 <body>
 <h1 id="docs-technical-reference">docs — Technical Reference</h1>
 <blockquote>
-<p>Auto-generated on 2026-07-25 18:14 CT from docs/sys/
+<p>Auto-generated on 2026-08-01 01:54 CT from docs/sys/
 Source: <code>scripts/build_reference.py</code></p>
 </blockquote>
 <h2 id="table-of-contents">Table of Contents</h2>
@@ -55,81 +55,115 @@ Source: <code>scripts/build_reference.py</code></p>
 <li><a href="#development-costs">Development Costs</a></li>
 <li><a href="#model-pricing-reference">Model Pricing Reference</a></li>
 <li><a href="#diagram-(aethervault)">Diagram (aethervault)</a></li>
+<li><a href="#audit-report">Audit Report</a></li>
 </ul>
 <hr />
 <hr />
 <h2 id="architecture">Architecture</h2>
 <h2 id="directory-structure">Directory Structure</h2>
 <pre><code>AetherVault/
-├── src/
-│   ├── __init__.py            # Package init, PROJECT_ROOT constant
-│   ├── core_logic.py          # Encryption, hashing, data model, settings
-│   ├── db_manager.py          # SQLite CRUD, import/export, backup
-│   ├── main.py                # Application entry point (QApplication setup)
+├── .github/
+│   └── workflows/
+│       ├── build.yml            # Cross-platform exe builds + release asset upload
+│       └── ci.yml               # pytest on push/PR (Python 3.9–3.12)
+├── aethervault/
+│   ├── __init__.py            # Package init, PROJECT_ROOT, VERSION, portable mode
+│   ├── core_logic.py          # Encryption, hashing, score_password, CredentialEntry model, settings
+│   ├── db_manager.py          # SQLite CRUD, import/export/preview/execute, backup, WAL mode
+│   ├── __main__.py            # Application entry point (QApplication setup, auto-detach on Unix, --foreground)
+│   ├── assets/                # App icon and screenshots
+│   ├── docs/
+│   │   ├── USER_GUIDE.md      # User-facing documentation
+│   │   ├── USER_GUIDE.html
+│   │   └── sys/               # System documentation
 │   └── gui/
 │       ├── __init__.py
-│       ├── app.py             # PySidePWManager — main window and UI logic
+│       ├── app.py             # PySidePWManager — coordinator (auth, menus, CRUD, import/export, tray)
+│       ├── click_to_copy_filter.py  # ClickToCopyFilter event filter
+│       ├── conflict_dialog.py       # ImportConflictDialog for per-entry conflict resolution
+│       ├── credential_form.py       # CredentialForm — right panel (fields, notes, custom fields, save/cancel)
+│       ├── credential_table.py      # CredentialTable — left panel (search, filters, table, context menu)
 │       ├── dialogs.py         # PasswordGeneratorDialog, DocumentationDialog
+│       ├── password_strength.py     # PasswordStrengthBar widget
 │       └── theme.py           # Dark and light theme stylesheets
-├── main_app_pyside.py         # Thin entry point (delegates to src.main.run)
-├── help_doc.md                # Legacy user documentation
-├── docs/
-│   ├── USER_GUIDE.md          # Consolidated user documentation
-│   └── sys/                   # System documentation (PLAN, ARCHITECTURE, etc.)
-├── instructions/              # Prompt templates for AI workflow
-├── scripts/                   # Utility scripts (build_reference, cost, etc.)
-├── assets/                    # Application icon resources
-├── .portable                  # Portable mode marker (created at runtime)
-├── AGENTS.md                  # Agent instructions (READ ONLY)
-├── aetherlock.spec           # PyInstaller build spec
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py            # Shared fixtures (temp_db, temp_db_no_key, sample_entry)
+│   ├── test_core_logic.py     # Encryption, hashing, password gen, settings (24 tests)
+│   ├── test_score_password.py # score_password unit tests (10 tests)
+│   ├── test_credential_entry.py # CredentialEntry model (5 tests)
+│   └── test_db_manager.py     # CRUD, import/export, duplicates, backup, key guards (22 tests)
+├── src/
+│   └── data/                  # Runtime data (gitignored)
+│       ├── aethervault.db     # Encrypted vault (SQLite)
+│       ├── aethervault.db.bak # Auto-backup
+│       ├── .master.key        # Master password hash (PBKDF2)
+│       └── .app_settings.json # App settings (lockout, theme, etc.)
 ├── .gitignore
 ├── .repomixignore
+├── pyproject.toml
 ├── requirements.txt
-├── src/data/                  # Runtime data (gitignored)
-│   ├── aethervault.db         # Encrypted vault (SQLite)
-│   ├── aethervault.db.bak     # Auto-backup
-│   ├── .master.key            # Master password hash (PBKDF2)
-│   └── .app_settings.json     # App settings (lockout, theme, etc.)
+├── MANIFEST.in
+└── aethervault.spec           # PyInstaller build spec
 </code></pre>
 <h2 id="architecture-layers">Architecture Layers</h2>
-<h3 id="1-data-layer-srccore_logicpy-srcdb_managerpy">1. Data Layer (<code>src/core_logic.py</code>, <code>src/db_manager.py</code>)</h3>
+<h3 id="1-data-layer-aethervaultcore_logicpy-aethervaultdb_managerpy">1. Data Layer (<code>aethervault/core_logic.py</code>, <code>aethervault/db_manager.py</code>)</h3>
 <ul>
-<li>SQLite database with AES-256 encrypted credential storage</li>
+<li>SQLite database with AES-256 encrypted credential storage, WAL journal mode</li>
 <li>PBKDF2 key derivation from master password (600K iterations)</li>
-<li>Automatic versioned backups</li>
-<li>CSV import/export with encryption</li>
+<li>Automatic timestamped backups + pre-op backups (backup before import/duplicate removal)</li>
+<li>CSV import with column alias mapping (73 aliases across 17 fields) + conflict preview/execute</li>
+<li><code>__enter__</code>/<code>__exit__</code> context manager protocol</li>
 </ul>
-<h3 id="2-business-logic-srcguiapppy">2. Business Logic (<code>src/gui/app.py</code>)</h3>
+<h3 id="2-coordinator-aethervaultguiapppy">2. Coordinator (<code>aethervault/gui/app.py</code>)</h3>
 <ul>
 <li>Authentication flow (setup master password → login → encryption key derivation)</li>
-<li>Clipboard management with auto-clear timer (15s)</li>
+<li>Clipboard management with auto-clear timer (15s) and form auto-clear on password copy</li>
 <li>Auto-lock on inactivity (configurable 1-30 min)</li>
-<li>Password generation (via dialogs.py)</li>
-<li>Duplicate detection and removal</li>
+<li>Password generation (via PasswordGeneratorDialog)</li>
+<li>Duplicate detection via <code>db_manager.find_and_remove_duplicates()</code></li>
 <li>System tray icon with quick-lock and minimize-to-tray</li>
-<li>Portable mode detection (.portable marker file)</li>
-<li>Category + tag filtering with dynamic dropdowns</li>
+<li>Import/export/backup/restore with conflict resolution workflow</li>
 <li>Password health report (weak/reused/short scan)</li>
-<li>Entry tags (comma-separated) and custom fields (JSON key/value pairs)</li>
-<li>Sort toggle on table columns (Title, Username, Category)</li>
-<li>Double-click to copy, right-click context menu</li>
-<li>Category click-to-filter from table cells</li>
-<li>Favicon auto-fetch from Google service</li>
-<li>Rich text notes with B/I/U formatting toolbar</li>
-<li>One-click timestamped backup</li>
+<li>Theme toggle (light/dark)</li>
+<li>Portable mode detection</li>
 </ul>
-<h3 id="3-presentation-layer-srcguiapppy-srcguidialogspy">3. Presentation Layer (<code>src/gui/app.py</code>, <code>src/gui/dialogs.py</code>)</h3>
+<h3 id="3-presentation-layer-aethervaultgui">3. Presentation Layer (<code>aethervault/gui/</code>)</h3>
 <ul>
+<li><strong>CredentialTable</strong> — left panel: search, category/tag filters, sortable table, right-click context menu, favicon fetch</li>
+<li><strong>CredentialForm</strong> — right panel: 8 editable fields, rich text notes, custom fields table, strength bar, save/cancel</li>
+<li><strong>ImportConflictDialog</strong> — conflict review with per-entry radio buttons, bulk actions</li>
 <li>PySide6 (Qt) GUI with QStackedWidget for auth/main views</li>
-<li>QSplitter with credential list (left) and edit form (right)</li>
-<li>Menu bar: File (export/import/backup/restore), Tools (duplicates), Settings (auto-lock, theme), Help</li>
-<li>Dark/light theme toggle in Settings menu</li>
+<li>QSplitter layout for list + form</li>
+<li>Dark/light themes</li>
 </ul>
 <h2 id="data-flow">Data Flow</h2>
-<pre><code>User Input → PySidePWManager (app.py) → DatabaseManager (db_manager.py) → SQLite
-                                                ↓
-                                        core_logic.py (AES-256 encrypt/decrypt)
+<pre><code>User Input → PySidePWManager (app.py) → CredentialTable / CredentialForm
+                                            ↓ signals
+                                    PySidePWManager (coordinator)
+                                            ↓
+                                    DatabaseManager (db_manager.py) → SQLite
+                                            ↓
+                                    core_logic.py (AES-256 encrypt/decrypt)
 </code></pre>
+<h2 id="cicd-pipeline">CI/CD Pipeline</h2>
+<pre><code>Push to main / PR            → ci.yml → pytest (Python 3.9–3.12)     → gate
+Publish Release / manual run → build.yml → PyInstaller onefile per OS →
+    ├── ubuntu-latest   → aethervault-linux-x86_64
+    ├── windows-latest  → aethervault-windows-x86_64.exe
+    ├── macos-15-intel  → aethervault-macos-x86_64
+    └── macos-latest    → aethervault-macos-arm64
+                                            ↓ (on release: published)
+                                    softprops/action-gh-release
+                                            ↓
+                        Assets attached to Release → /releases/latest/download
+</code></pre>
+<ul>
+<li><code>build.yml</code> requires <code>permissions: contents: write</code> so the <code>GITHUB_TOKEN</code> can upload release assets.</li>
+<li>The spec (<code>aethervault.spec</code>) is a shared single-file EXE build (no <code>COLLECT</code>); each OS produces one binary.</li>
+<li>Linux builds install Qt/X11 system deps (<code>libegl1</code>, <code>libgl1</code>, <code>libxcb-*</code>) so the xcb platform plugin is self-contained.</li>
+<li>macOS ships two binaries (arm64 + x86_64) because <code>cffi</code> has no universal2 wheel; the retired <code>macos-13</code> runner is replaced by <code>macos-15-intel</code>.</li>
+</ul>
 <hr />
 <h2 id="project-knowledge">Project Knowledge</h2>
 <blockquote>
@@ -152,35 +186,67 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <tbody>
 <tr>
 <td><code>core_logic.py</code></td>
-<td>Encryption (Fernet/AES-256), password hashing, <code>CredentialEntry</code> model, settings JSON I/O</td>
+<td>Encryption (Fernet/AES-256), password hashing, <code>score_password()</code>, <code>CredentialEntry</code> model, settings JSON I/O</td>
 </tr>
 <tr>
 <td><code>db_manager.py</code></td>
-<td>SQLite CRUD for credentials, CSV import/export, duplicate removal, pre-op backup</td>
+<td>SQLite CRUD, CSV import/export/preview/execute, column alias mapping (73 aliases), <code>preview_import()</code>/<code>execute_import()</code>, duplicate removal, pre-op backup, WAL mode, context manager</td>
 </tr>
 <tr>
-<td><code>src/gui/app.py</code></td>
-<td>PySide6 GUI — auth flow, credential list/edit, clipboard mgmt, auto-lock, menus, system tray, health report, favicon fetch</td>
+<td><code>aethervault/gui/app.py</code></td>
+<td>PySidePWManager coordinator — auth flow, menus, CRUD orchestration, import/export/backup, system tray, auto-lock, clipboard, theme toggle, health report</td>
 </tr>
 <tr>
-<td><code>src/gui/dialogs.py</code></td>
+<td><code>aethervault/gui/credential_table.py</code></td>
+<td>CredentialTable — left panel: search, category/tag filters, sortable table, double-click copy, context menu, favicon fetch</td>
+</tr>
+<tr>
+<td><code>aethervault/gui/credential_form.py</code></td>
+<td>CredentialForm — right panel: 8 editable fields, rich text notes, custom fields table, password strength bar, save/cancel</td>
+</tr>
+<tr>
+<td><code>aethervault/gui/conflict_dialog.py</code></td>
+<td>ImportConflictDialog — conflict review with per-entry radio buttons, bulk actions</td>
+</tr>
+<tr>
+<td><code>aethervault/gui/click_to_copy_filter.py</code></td>
+<td>ClickToCopyFilter event filter</td>
+</tr>
+<tr>
+<td><code>aethervault/gui/password_strength.py</code></td>
+<td>PasswordStrengthBar widget (uses <code>score_password()</code>)</td>
+</tr>
+<tr>
+<td><code>aethervault/gui/dialogs.py</code></td>
 <td>PasswordGeneratorDialog, DocumentationDialog</td>
 </tr>
 <tr>
-<td><code>src/gui/theme.py</code></td>
+<td><code>aethervault/gui/theme.py</code></td>
 <td>Dark/light mode stylesheets, QPalette</td>
 </tr>
 <tr>
-<td><code>src/main.py</code></td>
-<td>QApplication entry point</td>
+<td><code>aethervault/main.py</code></td>
+<td>QApplication entry point (auto-detach, --foreground flag)</td>
+</tr>
+<tr>
+<td><code>tests/</code></td>
+<td>61 pytest tests across 4 files + shared fixtures</td>
 </tr>
 <tr>
 <td><code>docs/USER_GUIDE.md</code></td>
 <td>User-facing documentation (opened from Help menu)</td>
 </tr>
 <tr>
-<td><code>aetherlock.spec</code></td>
-<td>PyInstaller spec for building standalone <code>.exe</code></td>
+<td><code>aethervault.spec</code></td>
+<td>PyInstaller spec for building standalone executables</td>
+</tr>
+<tr>
+<td><code>.github/workflows/build.yml</code></td>
+<td>CI builds + release-uploads single-file exe for Win/Linux/macOS (Intel + ARM)</td>
+</tr>
+<tr>
+<td><code>.github/workflows/ci.yml</code></td>
+<td>Runs 61 pytest tests on push/PR across Python 3.9–3.12</td>
 </tr>
 </tbody>
 </table>
@@ -227,6 +293,13 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li>Virtual env: <code>venv/</code> is a symlink → <code>kiss/</code>; both names resolve</li>
 <li>Portable mode: create <code>.portable</code> file in app directory to keep all data local</li>
 <li>System tray: close minimizes to tray; use File → Quit or tray → Quit to fully exit</li>
+<li>Auto-detach: <code>main.py</code> forks on Unix — parent exits, child runs GUI. Debug output goes to <code>/dev/null</code>. Use <code>--foreground</code> / <code>-f</code> to keep terminal attached</li>
+<li>Tag reminder: after bumping version in code, always <code>git tag -a vX.Y.Z &amp;&amp; git push origin vX.Y.Z</code> — the upgrade check (<code>--upgrade</code>) reads GitHub tags, not committed code</li>
+<li><strong>Pre-op backups write to <code>src/data/</code></strong> (from <code>get_timestamped_backup_path()</code>), which is gitignored and empty on CI. <code>create_pre_op_backup()</code> now <code>os.makedirs()</code>es the dir first — don't "optimize" it back out</li>
+<li><strong><code>aethervault.spec</code> must stay tracked</strong> — it was gitignored and CI builds failed with "Spec file not found". If a PyInstaller spec is ever needed, commit it</li>
+<li><strong><code>gh release create vX.Y.Z</code> reuses an existing local tag</strong> — if a tag already exists (e.g., created days earlier), the release points at that old commit and the release build uses the OLD workflow/spec. Always verify <code>git rev-parse vX.Y.Z^{commit}</code> matches intended HEAD before releasing</li>
+<li><strong>macOS runners (2026-07)</strong>: <code>macos-13</code> is retired (jobs queue forever). Use <code>macos-15-intel</code> (x86_64) and <code>macos-latest</code> (arm64). <code>universal2</code> builds fail because <code>cffi</code> has no fat wheel — build separate arch binaries instead</li>
+<li><strong>Ubuntu 24.04 runners</strong>: <code>libgl1-mesa-glx</code> no longer exists; use <code>libgl1</code> + <code>libxkbcommon-x11-0</code> and bundle <code>libxcb-icccm4</code>/<code>libxcb-keysyms1</code>/<code>libxcb-shape0</code> so Qt's xcb platform plugin is self-contained</li>
 </ul>
 <h2 id="code-patterns">Code Patterns</h2>
 <ul>
@@ -236,21 +309,101 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li><code>row_factory = sqlite3.Row</code> for named column access</li>
 <li>Lambda closures with default args for button callbacks: <code>lambda checked, entry=line_edit: ...</code></li>
 </ul>
+<h2 id="namespace-collision-lesson">Namespace Collision Lesson</h2>
+<p><strong>Never name your top-level package <code>src/</code>.</strong> If you have multiple projects on
+the same machine (AetherVault + AetherPod), their editable installs all register
+<code>src</code> as a Python package — whichever was installed last wins.</p>
+<p><strong>Fix:</strong> Rename <code>src/</code> → <code>{project_name}/</code> from the start. Update all imports
+from <code>from src.xxx</code> → <code>from aethervault.xxx</code>.</p>
+<p>AetherVault was renamed from <code>src/</code> → <code>aethervault/</code> in v6.1.2 after hitting
+this exact bug. Don't repeat it.</p>
+<h2 id="deployment-packaging">Deployment &amp; Packaging</h2>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Global install</td>
+<td><code>pip install --user --break-system-packages -e .</code></td>
+</tr>
+<tr>
+<td>Version bump</td>
+<td><code>aethervault/__init__.py</code> + <code>pyproject.toml</code> → <code>git tag -a vX.Y.Z</code> → <code>git push --tags</code></td>
+</tr>
+<tr>
+<td>Upgrade check</td>
+<td><code>aethervault/main.py</code> fetches latest tag from GitHub API</td>
+</tr>
+<tr>
+<td>PyInstaller build (local)</td>
+<td><code>pyinstaller aethervault.spec</code> → <code>dist/aethervault</code> (single file)</td>
+</tr>
+<tr>
+<td>CI build (all platforms)</td>
+<td>Push to <code>main</code>, then Actions → Build → "Run workflow" (<code>workflow_dispatch</code>), or publish a Release</td>
+</tr>
+<tr>
+<td>Publish a Release with binaries</td>
+<td><code>gh release create vX.Y.Z --generate-notes</code> → <code>build.yml</code> auto-attaches 4 executables on <code>release: published</code></td>
+</tr>
+<tr>
+<td>Data files location</td>
+<td><code>aethervault/docs/</code>, <code>aethervault/assets/</code> (inside package for pip compat)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key rule:</strong> Data files must live inside <code>src/</code> to survive a non-editable pip install.</p>
 <h2 id="navigation-hints">Navigation Hints</h2>
 <ul>
-<li><strong>Need to change encryption?</strong> → <code>core_logic.py</code> (encrypt_data, decrypt_data, derive_encryption_key)</li>
+<li><strong>Need to change encryption?</strong> → <code>core_logic.py</code> (encrypt_data, decrypt_data, derive_encryption_key, score_password)</li>
 <li><strong>Need to add a DB operation?</strong> → <code>db_manager.py</code> (DatabaseManager class)</li>
-<li><strong>Need to change UI layout?</strong> → <code>src/gui/app.py</code> (PySidePWManager class)</li>
-<li><strong>Need to add a menu item?</strong> → <code>src/gui/app.py</code> (setup_menu_bar method)</li>
+<li><strong>Need to change the credential table?</strong> → <code>aethervault/gui/credential_table.py</code> (CredentialTable class)</li>
+<li><strong>Need to change the edit form?</strong> → <code>aethervault/gui/credential_form.py</code> (CredentialForm class)</li>
+<li><strong>Need to change import conflict behavior?</strong> → <code>aethervault/gui/conflict_dialog.py</code>, <code>db_manager.py</code> (preview_import, execute_import)</li>
+<li><strong>Need to add a menu item?</strong> → <code>aethervault/gui/app.py</code> (_build_file_menu, _build_tools_menu, etc.)</li>
 <li><strong>Need to change backup behavior?</strong> → <code>db_manager.py</code> (create_pre_op_backup, _auto_backup_db)</li>
+<li><strong>Need to run tests?</strong> → <code>venv/bin/python -m pytest tests/ -v</code></li>
 </ul>
+<h2 id="future-features">Future Features</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>vCard export</strong></td>
+<td>planned</td>
+<td><code>File &gt; Export Contacts (vCard)</code> — filter entries with non-empty phone/address, write <code>.vcf</code> (vCard 3.0). Covers 99% of real use. hCard/meCard not worth implementing. See session 2026-07-27 for full analysis.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="session-history-summary">Session History Summary</h2>
 <ul>
 <li><strong>2026-07-24 (session 1)</strong>: Initial project audit. Set up project scaffolding with New_Project_init template system. Created AGENTS.md, docs/sys/, USER_GUIDE.md, instructions/, scripts/, .repomixignore. Identified 3 bugs and 5 planned changes.</li>
 <li><strong>2026-07-24 (session 2)</strong>: Fixed F0 (missing sys import), F1 (backup call order), F2 (assets dir). Refactored monolithic main_app_pyside.py (~1250 lines) into src/ package (7 files). Added dark/light theme support. Updated PyInstaller spec, .gitignore, requirements.txt.</li>
 <li><strong>2026-07-24 (session 3)</strong>: Added system tray icon with quick-lock (A2). Added portable mode detection (A3). Created venv/ symlink (C3).</li>
 <li><strong>2026-07-24 (session 4)</strong>: Category+tag filters, password health report, entry tags, custom fields, sort toggle, double-click copy, context menu, click-to-filter, favicon fetch, rich text notes, one-click backup. Fixed auto-lock timer bypass, strength bar grid collision, quit-to-tray bug, header clipping, RuntimeWarning. UI polish: QComboBox height matching, right-aligned labels, proportional form stretching, splitter sizing.</li>
-<li><strong>2026-07-24 (session 5)</strong>: Added docstrings to all 129 modules/classes/functions. GitHub Actions CI for Win+macOS builds. Help opens in browser. Cleaned up <code>.gitignore</code> and untracked <code>AGENTS.md</code>, <code>aetherlock.spec</code>, <code>.repomixignore</code>, <code>venv</code>. Updated all doc references from <code>main_app_pyside.py</code> to <code>aetherlock.py</code>.</li>
+<li><strong>2026-07-24 (session 5)</strong>: Added docstrings to all 129 modules/classes/functions. GitHub Actions CI for Win+macOS builds. Help opens in browser. Cleaned up <code>.gitignore</code> and untracked <code>AGENTS.md</code>, <code>aetherlock.spec</code>, <code>.repomixignore</code>, <code>venv</code>.</li>
+<li><strong>2026-07-25 (session 6)</strong>: Renamed project from AetherLock to AetherVault to align with GitHub repo name. Created <code>pyproject.toml</code> for <code>pip install -e .</code> with CLI entry point <code>aethervault</code>. Updated all 30+ files with correct naming. Rebuilt REFERENCE docs. Installed system-wide via <code>pip install --user --break-system-packages -e .</code>.</li>
+<li><strong>2026-07-26 (session 7)</strong>: Removed COST.md and KNOWLEDGE.md from git tracking (local-only). Updated all docs to reference <code>src/data/aethervault.db</code>. Added README screenshot <code>assets/main.png</code>. Cleaned stale files. Pushed to GitHub.</li>
+<li><strong>2026-07-27 (session 8)</strong>: God file split — <code>app.py</code> 1627→968 lines, 4 new extracted files. Version 6.0.0→6.1.0. Added <code>time_last_used</code>/<code>time_password_changed</code> columns. CSV import with column alias system (73 aliases). Full audit (12/12 findings resolved). <code>score_password()</code> extracted, test suite (22 tests). WAL mode, context manager, conflict import dialog, logging instead of print. Documentation: AUDIT_REPORT.md, versioning criteria in AGENTS.md, safety.md fixes (NAS mount check, trash dir, .zshrc guards).</li>
+<li><strong>2026-07-27 (session 9)</strong>: Import conflict resolution dialog + preview/execute workflow. <code>src/</code>→<code>aethervault/</code> rename to fix namespace collision between sibling projects. Packaging: docs/assets into <code>aethervault/</code>, MANIFEST.in, data-files, README updates. CLI switches (<code>--version</code>, <code>--debug</code>, <code>--upgrade</code>). Template updates to <code>New_Project_init</code> (packaging.md, namespace rule in audit checklist and cleanup patterns). Version 6.1.2. Cost: ~$0.35 for this session.</li>
+<li><strong>2026-07-27 (session 10)</strong>: Auto-detach from terminal on Unix (<code>os.fork()</code> + <code>os.setsid()</code>). Added <code>--foreground</code> / <code>-f</code> flag to keep terminal attached for debugging. Updated CLI reference in README and USER_GUIDE. Version 6.2.0.</li>
+<li><strong>2026-07-27 (session 11)</strong>: Encryption key guard on all import methods (<code>import_from_csv</code>, <code>execute_import</code>, <code>preview_import</code>). Simplified duplicate removal SQL to fix Python 3.14 transaction error. Added 39 tests: <code>test_core_logic.py</code> (encryption, hashing, password generation, settings) + extended <code>test_db_manager.py</code> (import/export, duplicates, backup, key guards). Updated README, ARCHITECTURE, KNOWLEDGE, USER_GUIDE paths. Test suite: 22→61. Version 6.2.1.</li>
+<li><strong>2026-07-27 (session 12)</strong>: <code>--upgrade</code>/<code>-u</code> now auto-performs the upgrade (subprocess git pull + pip install -e . for cloned repos, pip install --upgrade for pip installs). Removed <code>_print_upgrade_instructions()</code>, added <code>_perform_upgrade()</code> and <code>_get_pip_command()</code>. Set <code>GIT_DISCOVERY_ACROSS_FILESYSTEM=1</code> in subprocess env for cross-filesystem git discovery. Fixed <code>.gitignore</code> to cover <code>src/data/</code>. No version bump.</li>
+<li><strong>2026-07-27 (session 13)</strong>: Re-audit against alignment checklist — 42/42 checks pass, score A. All 12 prior findings still closed. No new issues. Reinstalled package system-wide. Updated all file timestamps to 16:51 CT.</li>
+<li><strong>2026-07-27 (session 14)</strong>: Fixed <code>build.yml</code> workflow (stale <code>src/main.py</code> → <code>aethervault.spec</code>, added Linux build target). Created <code>ci.yml</code> — runs 61 pytest tests on push/PR across Python 3.9-3.12.</li>
+<li><strong>2026-07-30 (session 15)</strong>: Cross-platform CI/CD delivery. Fixed CI failure (pre-op backup now creates <code>src/data/</code> dir). Committed <code>aethervault.spec</code> (was gitignored). Reworked <code>build.yml</code> — Ubuntu 24.04 Qt/xcb deps, <code>macos-13</code>→<code>macos-15-intel</code>, separate arm64+x86_64 macOS builds (cffi has no fat wheel), release asset upload. Published v6.2.1 release with 4 binaries; moved stale v6.2.1 tag to current HEAD. README: download table + build badge, fixed image/docs links, removed stray <code># test</code> lines. Removed <code>safety.md</code>. Cleaned 9 stale Actions runs. 10 commits, no version bump.</li>
+<li><strong>2026-08-01 (session 16)</strong>: Audit re-run (score A− → A). Removed all unused imports (AST-verified, zero remaining). Narrowed all 22 <code>except Exception</code> blocks to specific types (OSError, ValueError, TypeError, csv.Error, shutil.Error, sqlite3.Error, InvalidToken, RuntimeError). Added <code>InvalidToken</code> import to <code>core_logic.py</code>, <code>csv</code> import to <code>gui/app.py</code>. 61 tests pass, no version bump.</li>
+<li><strong>2026-08-01 (session 17)</strong>: <strong>Repo moved</strong> to <code>git@github.com:AetherSolDev/AetherVault.git</code>. Updated remote + all URL refs (<code>main.py</code> GITHUB_TAGS_API/GIT_REPO_URL/RELEASES_URL, README badges/links, USER_GUIDE.md/html). Workflows already cover all platforms. Marked transfer done in PRE_PUBLIC_CLEANUP.md.</li>
 </ul>
 <hr />
 <h2 id="project-plan">Project Plan</h2>
@@ -278,6 +431,7 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li>[x] A12 — Favicon auto-fetch (Google service)</li>
 <li>[x] A13 — Rich text notes with formatting toolbar</li>
 <li>[x] A14 — One-click timestamped backup</li>
+<li>[x] A15 — CI/CD build &amp; release pipeline (GitHub Actions)</li>
 </ul>
 <h2 id="bugs">BUGS</h2>
 <ul>
@@ -289,6 +443,7 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li>[x] F5 — File → Quit minimizes to tray instead of quitting</li>
 <li>[x] F6 — Header text clipped in credential table</li>
 <li>[x] F7 — <code>sectionClicked.disconnect()</code> RuntimeWarning on every table refresh</li>
+<li>[x] F8 — <code>create_pre_op_backup()</code> fails on fresh checkouts when <code>src/data/</code> is absent</li>
 </ul>
 <h2 id="changes">CHANGES</h2>
 <ul>
@@ -300,6 +455,7 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li>[x] C5 — Form layout: right-aligned labels, 4px vertical spacing, proportional stretching</li>
 <li>[x] C6 — QComboBox styling: 30px height matching QLineEdit in both themes</li>
 <li>[x] C7 — Splitter: equal initial sizes, form panel capped at 700px</li>
+<li>[x] C8 — Remove <code>safety.md</code> from repository (was NAS-backup strategy doc) — 2026-07-30</li>
 </ul>
 <hr />
 <h2 id="tasks">Tasks</h2>
@@ -347,7 +503,17 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li><strong>Tags</strong>: chore, documentation</li>
 <li><strong>Details</strong>: Add <code># Created</code>, <code># Last Edited</code>, <code># Path</code>, <code># Purpose</code> headers to all Python files</li>
 <li><strong>Files</strong>: <code>core_logic.py</code>, <code>db_manager.py</code>, <code>main_app_pyside.py</code></li>
-<li><strong>Acceptance</strong>: Every source file has proper header matching AGENTS.md standard</li>
+<li>
+<p><strong>Acceptance</strong>: Every source file has proper header matching AGENTS.md standard</p>
+</li>
+<li>
+<p>[x] F8 — Fix <code>create_pre_op_backup()</code> failure on fresh checkouts</p>
+</li>
+<li><strong>ID</strong>: fix-preop-backup-dir</li>
+<li><strong>Tags</strong>: bug, database, ci</li>
+<li><strong>Details</strong>: <code>create_pre_op_backup()</code> wrote to <code>get_timestamped_backup_path()</code> (inside <code>src/data/</code>), but that dir has no tracked files and is absent in a fresh CI checkout → <code>shutil.copyfile</code> raised <code>FileNotFoundError</code>, swallowed by the test's error-handler lambda → <code>assert result is not None</code> failed on CI (Python 3.10) while passing locally.</li>
+<li><strong>Files</strong>: <code>aethervault/db_manager.py</code></li>
+<li><strong>Acceptance</strong>: <code>os.makedirs(os.path.dirname(backup_path), exist_ok=True)</code> added before <code>copyfile</code>; CI green on 3.9–3.12.</li>
 </ul>
 <h2 id="p1-important-uxpolish">P1 — Important (UX/Polish)</h2>
 <ul>
@@ -515,7 +681,17 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li><strong>Tags</strong>: feature, ui</li>
 <li><strong>Details</strong>: Status bar message instead of modal dialog, unique filenames with timestamps</li>
 <li><strong>Files</strong>: <code>src/gui/app.py</code></li>
-<li><strong>Acceptance</strong>: File → Backup saves to <code>kiss_vault_YYYY.MM.DD_HHMMSS.db.bak</code></li>
+<li>
+<p><strong>Acceptance</strong>: File → Backup saves to <code>kiss_vault_YYYY.MM.DD_HHMMSS.db.bak</code></p>
+</li>
+<li>
+<p>[x] A15 — CI/CD build &amp; release pipeline for pre-built executables</p>
+</li>
+<li><strong>ID</strong>: ci-cd-binaries</li>
+<li><strong>Tags</strong>: feature, ci, packaging, devx</li>
+<li><strong>Details</strong>: <code>build.yml</code> builds single-file executables on <code>ubuntu-latest</code>, <code>windows-latest</code>, <code>macos-15-intel</code> (x86_64), and <code>macos-latest</code> (arm64), then attaches them to a GitHub Release on <code>release: published</code>. Committed <code>aethervault.spec</code> (was gitignored). Fixed Ubuntu 24.04 Qt/xcb system deps. Published v6.2.1 with 4 binaries; README download table + build badge.</li>
+<li><strong>Files</strong>: <code>.github/workflows/build.yml</code>, <code>aethervault.spec</code>, <code>README.md</code>, <code>.gitignore</code></li>
+<li><strong>Acceptance</strong>: All 4 executables build green; release assets downloadable at <code>/releases/latest/download/</code>.</li>
 </ul>
 <h2 id="p3-future">P3 — Future</h2>
 <ul>
@@ -526,8 +702,108 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <hr />
 <h2 id="changelog">Changelog</h2>
 <h1 id="changelog_1">Changelog</h1>
-<h2 id="2026-07-24-session-3">2026-07-24 (session 3)</h2>
+<h2 id="unreleased-2026-08-01-session-17">[Unreleased] — 2026-08-01 (session 17)</h2>
+<h3 id="changed">Changed</h3>
+<ul>
+<li><strong>Repo moved to <code>AetherSolDev/AetherVault</code></strong> — updated git remote and all URL references in <code>main.py</code> (upgrade/tags/releases), <code>README.md</code> (badges, release links, clone URLs), and <code>USER_GUIDE.md</code>/<code>.html</code>. Marked transfer checklist complete in <code>instructions/PRE_PUBLIC_CLEANUP.md</code>.</li>
+<li>Workflows (<code>build.yml</code> + <code>ci.yml</code>) already cover Linux, Windows, macOS Intel + ARM — no changes needed.</li>
+</ul>
+<h2 id="unreleased-2026-08-01-session-16">[Unreleased] — 2026-08-01 (session 16)</h2>
+<h3 id="changed_1">Changed</h3>
+<ul>
+<li><strong>Unused imports removed</strong> (F12) — <code>sys</code>/<code>List</code> in <code>core_logic.py</code>, <code>Any</code> in <code>db_manager.py</code>, <code>QMessageBox</code> in <code>main.py</code>, <code>json</code>/<code>QHBoxLayout</code>/<code>PORTABLE_MARKER</code>/<code>DocumentationDialog</code>/<code>DarkThemeColors</code>/<code>ThemeColors</code> in <code>gui/app.py</code>, <code>Qt</code> in <code>conflict_dialog.py</code>, <code>QHeaderView</code> in <code>credential_form.py</code>, <code>Optional</code>/<code>QPainter</code>/<code>QFont</code> in <code>credential_table.py</code>. AST scan confirms zero unused imports.</li>
+<li><strong><code>except Exception</code> catch-alls narrowed</strong> (F13) — all 22 instances replaced with specific exception types: <code>OSError</code>, <code>ValueError</code>, <code>TypeError</code>, <code>csv.Error</code>, <code>shutil.Error</code>, <code>sqlite3.Error</code>, <code>InvalidToken</code>, <code>RuntimeError</code>. Added <code>InvalidToken</code> import in <code>core_logic.py</code> and <code>csv</code> import in <code>gui/app.py</code>.</li>
+<li><strong>Re-audit</strong> — 42/42 checklist checks pass, score back to A. 61 tests pass.</li>
+</ul>
+<h2 id="unreleased-2026-07-30-session-15">[Unreleased] — 2026-07-30 (session 15)</h2>
 <h3 id="added">Added</h3>
+<ul>
+<li><strong>GitHub Releases delivery</strong> — <code>build.yml</code> builds single-file executables for Windows, Linux, and macOS (Intel + Apple Silicon) and auto-attaches them to the Release on <code>release: published</code> (<code>softprops/action-gh-release</code>). Manual runs via <code>workflow_dispatch</code> still upload workflow artifacts.</li>
+<li><strong>README quick-download table</strong> — one-click links to the latest binaries via <code>/releases/latest/download/...</code>, plus a Build status badge.</li>
+<li><strong>First release with binaries</strong> — <code>v6.2.1</code> published with 4 pre-built executables (Linux 86MB, Windows 54MB, macOS Intel 43MB, macOS ARM 40MB).</li>
+</ul>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li><strong><code>create_pre_op_backup()</code> on fresh checkouts</strong> — now creates the backup directory (<code>os.makedirs</code>) before <code>copyfile</code>. Previously the write to <code>src/data/</code> raised <code>FileNotFoundError</code> when that dir was absent (e.g., CI checkout), which the test error-handler lambda swallowed → <code>test_create_pre_op_backup_creates_file</code> failed on CI only.</li>
+<li><strong><code>build.yml</code> Linux system deps</strong> — <code>libgl1-mesa-glx</code> no longer exists on Ubuntu 24.04 runners; replaced with <code>libgl1</code> + <code>libxkbcommon-x11-0</code> and added <code>libxcb-icccm4</code> / <code>libxcb-keysyms1</code> / <code>libxcb-shape0</code> so the Qt xcb libraries bundle into the onefile.</li>
+<li><strong>macOS build matrix</strong> — <code>macos-13</code> runner retired by GitHub (jobs queued forever); switched Intel build to <code>macos-15-intel</code>. Dropped the universal2 attempt (cffi ships no fat wheel, PyInstaller refuses single-arch deps) in favor of separate <code>macos-latest</code> (arm64) + <code>macos-15-intel</code> (x86_64) binaries.</li>
+</ul>
+<h3 id="changed_2">Changed</h3>
+<ul>
+<li><strong><code>aethervault.spec</code></strong> — removed from <code>.gitignore</code> and committed so CI builds can use it (was untracked, breaking <code>pyinstaller aethervault.spec</code> in CI).</li>
+<li><strong>Removed <code>safety.md</code></strong> from the repository.</li>
+<li><strong>README</strong> — fixed broken <code>main.png</code> path (<code>src/assets/</code> → <code>aethervault/assets/</code>), corrected USER_GUIDE/REFERENCE links, removed stray <code># test</code> footer lines.</li>
+<li><strong>Actions hygiene</strong> — deleted 9 stale failed/cancelled workflow runs.</li>
+</ul>
+<h3 id="cicd">CI/CD</h3>
+<ul>
+<li><strong><code>build.yml</code></strong> — matrix: <code>ubuntu-latest</code>, <code>windows-latest</code>, <code>macos-15-intel</code>, <code>macos-latest</code>; <code>contents: write</code> permission; per-OS asset names (<code>.exe</code> on Windows); release upload step.</li>
+<li><strong><code>ci.yml</code></strong> — green across Python 3.9–3.12 (61 tests) after the backup-dir fix.</li>
+</ul>
+<h2 id="621-2026-07-27">[6.2.1] — 2026-07-27</h2>
+<h3 id="fixed_1">Fixed</h3>
+<ul>
+<li><strong>Encryption key guard</strong> — <code>import_from_csv()</code>, <code>execute_import()</code>, and <code>preview_import()</code> now raise <code>RuntimeError</code> upfront if the vault is locked (no encryption key set), instead of firing a flood of per-row error dialogs from <code>save_credential()</code> / <code>update_credential()</code>.</li>
+<li><strong><code>find_and_remove_duplicates()</code> SQL</strong> — simplified to a single <code>DELETE ... WHERE db_id NOT IN (SELECT MIN(db_id)...)</code> query, fixing a "SQL statements in progress" transaction error on Python 3.14.</li>
+</ul>
+<h3 id="added_1">Added</h3>
+<ul>
+<li><strong>Test suite expansion</strong> — 39 new tests across <code>test_core_logic.py</code> (24 tests: encryption roundtrip, key derivation, password hashing, password generation, settings persistence) and <code>test_db_manager.py</code> (15 tests: <code>import_from_csv</code>, export, duplicate removal, backup, and encryption-key-not-set guards for all import methods).</li>
+</ul>
+<h3 id="changed_3">Changed</h3>
+<ul>
+<li><strong>Documentation</strong> — README tests badge 22→61, project tree paths corrected; KNOWLEDGE.md session history and test count updated; ARCHITECTURE.md paths aligned with <code>aethervault/</code> package layout.</li>
+<li><strong><code>--upgrade</code> / <code>-u</code></strong> — now auto-performs the upgrade (git pull + pip install -e . for cloned repos, pip install --upgrade for pip installs) instead of printing manual instructions. Uses <code>subprocess.run()</code> with helpful status output.</li>
+<li><strong><code>GIT_DISCOVERY_ACROSS_FILESYSTEM=1</code></strong> — set in subprocess environment to allow git repo discovery across filesystem mounts (FUSE, NFS, etc.).</li>
+<li><strong>Re-audit</strong> — full alignment checklist pass: 42/42 checks, score A (unchanged). All 12 prior findings remain closed.</li>
+</ul>
+<h3 id="cicd_1">CI/CD</h3>
+<ul>
+<li><strong><code>ci.yml</code></strong> — new GitHub Actions workflow runs <code>pytest</code> on push/PR to <code>main</code> across Python 3.9–3.12.</li>
+<li><strong><code>build.yml</code></strong> — fixed stale <code>src/main.py</code> entry point → uses <code>aethervault.spec</code>; added Linux (<code>ubuntu-latest</code>) build target.</li>
+</ul>
+<h2 id="620-2026-07-27">[6.2.0] — 2026-07-27</h2>
+<h3 id="added_2">Added</h3>
+<ul>
+<li><strong>Auto-detach from terminal</strong> — <code>main.py</code> forks on Unix to release the terminal so users don't need <code>aethervault &amp;</code>. <code>--foreground</code> / <code>-f</code> flag keeps terminal attached for debugging.</li>
+</ul>
+<h3 id="changed_4">Changed</h3>
+<ul>
+<li><strong>CLI reference</strong> updated in README and USER_GUIDE with <code>--foreground</code> flag</li>
+</ul>
+<h2 id="610-2026-07-27">[6.1.0] — 2026-07-27</h2>
+<h3 id="added_3">Added</h3>
+<ul>
+<li><strong>Version bump criteria</strong> documented in AGENTS.md — SemVer from conventional commit types</li>
+<li><strong>Import conflict system</strong> — <code>preview_import()</code> scans for title+username collisions; <code>execute_import()</code> with per-entry resolution (Keep Vault / Use Import) or bulk import and review later</li>
+<li><strong><code>score_password()</code></strong> extracted to <code>core_logic.py</code> — single source of truth for password strength scoring</li>
+<li><strong>Test suite</strong> — 22 tests across 3 files (<code>test_score_password</code>, <code>test_credential_entry</code>, <code>test_db_manager</code>) with pytest fixtures</li>
+<li><strong><code>tests/conftest.py</code></strong> — shared temp database and sample entry fixtures</li>
+<li><strong><code>docs/sys/AUDIT_REPORT.md</code></strong> — formal audit trail with 12 findings, all resolved</li>
+</ul>
+<h3 id="changed_5">Changed</h3>
+<ul>
+<li><strong>God file split</strong>: <code>app.py</code> 1627→968 lines. Extracted <code>CredentialForm</code> (344), <code>CredentialTable</code> (334), <code>ClickToCopyFilter</code> (24), <code>PasswordStrengthBar</code> (46)</li>
+<li><strong><code>setup_menu_bar()</code></strong> 70→6 lines — extracted into 4 builder methods</li>
+<li><strong><code>CredentialEntry.__init__()</code></strong> — all string fields default to <code>""</code> instead of <code>None</code></li>
+<li><strong><code>import_from_csv()</code></strong> — now uses column alias mapping for browser CSV compatibility (73 aliases, 17 fields)</li>
+<li><strong><code>handle_import()</code></strong> — preview-first flow with conflict detection</li>
+<li><strong><code>_connect()</code></strong> — added <code>PRAGMA journal_mode=WAL</code></li>
+<li><strong><code>DatabaseManager</code></strong> — added <code>__enter__</code>/<code>__exit__</code> context manager protocol</li>
+<li><strong><code>resource_path()</code></strong> — uses <code>PROJECT_ROOT</code> instead of <code>os.path.abspath(".")</code></li>
+<li><strong><code>CredentialTable</code></strong> — added <code>time_last_used</code> and <code>time_password_changed</code> columns</li>
+<li><strong><code>New_Project_init/AGENTS.md</code></strong> — added versioning section, updated safety.md with NAS mount check and trash directory</li>
+</ul>
+<h3 id="fixed_2">Fixed</h3>
+<ul>
+<li><strong>All 12 audit findings</strong> resolved (score C→A)</li>
+<li>Duplicate password scoring logic eliminated (was in 2 places, now one <code>score_password()</code>)</li>
+<li><code>print()</code> calls in <code>core_logic.py</code> replaced with <code>logging</code></li>
+<li>ALTER TABLE SQL now uses whitelist guard instead of raw f-string</li>
+<li><code>show_password_health()</code> reduced 82→64 lines via <code>score_password()</code> reuse</li>
+</ul>
+<h2 id="2026-07-24-session-3">2026-07-24 (session 3)</h2>
+<h3 id="added_4">Added</h3>
 <ul>
 <li>Project scaffolding with template system (AGENTS.md, docs/, instructions/, scripts/)</li>
 <li>System documentation: PLAN, ARCHITECTURE, KNOWLEDGE, TASKS, BUGS, COST, mermaid diagram</li>
@@ -542,7 +818,7 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li>Dark/light theme toggle in Settings menu (persistent across sessions)</li>
 <li>In-app help now loads from consolidated <code>docs/USER_GUIDE.md</code></li>
 </ul>
-<h3 id="changed">Changed</h3>
+<h3 id="changed_6">Changed</h3>
 <ul>
 <li>Customized AGENTS.md for AetherLock (paths, critical files, database schema)</li>
 <li>Updated USER_GUIDE.md with actual application features and documentation</li>
@@ -553,19 +829,19 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li>Updated <code>requirements.txt</code> with actual runtime dependencies</li>
 <li><strong>C3</strong>: Created <code>venv/</code> symlink → <code>kiss/</code> for standardized virtual env name</li>
 </ul>
-<h3 id="added_1">Added</h3>
+<h3 id="added_5">Added</h3>
 <ul>
 <li><strong>A3</strong>: Portable mode detection and config — <code>.portable</code> marker file, toggle in Settings menu, status bar indicator</li>
 <li><strong>A2</strong>: System tray icon with quick-lock — tray menu (Show Window, Lock Vault, Quit), minimize-to-tray on close</li>
 </ul>
-<h3 id="fixed">Fixed</h3>
+<h3 id="fixed_3">Fixed</h3>
 <ul>
 <li><strong>F0</strong>: <code>resource_path()</code> missing <code>sys</code> import — added <code>import sys</code> at module level</li>
 <li><strong>F1</strong>: <code>find_and_remove_duplicates()</code> backup call ordering — moved <code>create_pre_op_backup()</code> after docstring</li>
 <li><strong>F2</strong>: Created <code>assets/</code> directory (icon optionally placed there, gracefully handled)</li>
 </ul>
 <h2 id="2026-07-24-session-4">2026-07-24 (session 4)</h2>
-<h3 id="added_2">Added</h3>
+<h3 id="added_6">Added</h3>
 <ul>
 <li><strong>Category filter</strong> dropdown (QComboBox next to search) with dynamic population from credentials</li>
 <li><strong>Tag filter</strong> dropdown — parses comma-separated tags, filters entries</li>
@@ -580,7 +856,7 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li><strong>Rich text notes</strong> — B/I/U formatting toolbar, stored as HTML</li>
 <li><strong>One-click backup</strong> — status bar message instead of modal dialog, timestamped filenames</li>
 </ul>
-<h3 id="changed_1">Changed</h3>
+<h3 id="changed_7">Changed</h3>
 <ul>
 <li>Auto-lock: <code>WindowDeactivate</code> now resets activity timer instead of immediately locking</li>
 <li>Table columns: increased default sizes (Title 220, Username 160, Category 140), minimum section 100px</li>
@@ -590,21 +866,43 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li>Custom fields table: removed max-height cap, added stretch factor (1:2 with form grid)</li>
 <li>Sort signal moved to <code>create_main_content</code> (connected once, not on every refresh)</li>
 </ul>
-<h3 id="fixed_1">Fixed</h3>
+<h3 id="fixed_4">Fixed</h3>
 <ul>
 <li>Password strength bar: hidden by Email QLineEdit in same grid cell — fixed with independent row counter</li>
 <li>File → Quit minimized to tray instead of quitting — now calls <code>_quit_application()</code> directly</li>
 <li>Header text clipping in credential table — added <code>setFixedHeight(50)</code> on horizontal header</li>
 <li><code>sectionClicked.disconnect()</code> RuntimeWarning — moved connection to table creation</li>
 </ul>
+<h2 id="2026-07-25-session-6">2026-07-25 (session 6)</h2>
+<h3 id="changed_8">Changed</h3>
+<ul>
+<li><strong>Rebrand</strong>: Renamed project from <code>AetherLock</code> to <code>AetherVault</code> to align with GitHub repo name <code>brandonmunoz1975-ops/AetherVault</code></li>
+<li><strong>Package</strong>: Created <code>pyproject.toml</code> for <code>pip install -e .</code> with CLI entry point <code>aethervault</code></li>
+<li><strong>Renamed files</strong>: <code>aetherlock.py</code> → <code>aethervault.py</code>, <code>aetherlock.spec</code> → <code>aethervault.spec</code>, <code>assets/aetherlock.ico</code> → <code>assets/aethervault.ico</code>, <code>docs/sys/aetherlock.mmd</code> → <code>docs/sys/aethervault.mmd</code></li>
+<li><strong>Updated</strong> all 30+ source files, docs, and config to use <code>AetherVault</code> naming</li>
+<li><strong>Rebuilt</strong> REFERENCE.md, REFERENCE.html, and USER_GUIDE.html from updated sources</li>
+</ul>
+<h2 id="2026-07-26-session-7">2026-07-26 (session 7)</h2>
+<h3 id="changed_9">Changed</h3>
+<ul>
+<li><strong>Cleanup</strong>: Removed <code>docs/sys/COST.md</code> and <code>docs/sys/KNOWLEDGE.md</code> from git tracking (keep local only)</li>
+<li><strong>Docs</strong>: Updated all documentation to reference <code>src/data/aethervault.db</code> instead of <code>password_manager.db</code></li>
+<li><strong>README</strong>: Added <code>assets/main.png</code> screenshot, updated project tree and data storage table</li>
+<li><strong>USER_GUIDE</strong>: Rebranded from "KISS Python Password Manager" to "AetherVault", fixed install instructions</li>
+<li><strong>Git</strong>: Added <code>password_manager.db</code> to <code>.gitignore</code></li>
+</ul>
+<h3 id="removed">Removed</h3>
+<ul>
+<li>Deleted stale files: root <code>password_manager.db</code>, <code>src/data/aetherlock.db</code>, <code>src/data/aetherlock.db.bak</code>, <code>src/data/kiss_vault_*.db.bak</code></li>
+</ul>
 <h2 id="2026-07-24-session-5">2026-07-24 (session 5)</h2>
-<h3 id="added_3">Added</h3>
+<h3 id="added_7">Added</h3>
 <ul>
 <li>Docstrings added to all modules, classes, and functions across 9 source files (~129 items)</li>
 <li>GitHub Actions CI workflow (<code>.github/workflows/build.yml</code>) — builds Windows + macOS executables on release</li>
 <li>Help menu now opens <code>USER_GUIDE.html</code> in system browser via <code>QDesktopServices</code></li>
 </ul>
-<h3 id="changed_2">Changed</h3>
+<h3 id="changed_10">Changed</h3>
 <ul>
 <li>Cleaned up <code>.gitignore</code>: added <code>.repomixignore</code>, <code>aetherlock.spec</code>, <code>AetherVault/</code></li>
 <li>Removed from tracking: <code>AGENTS.md</code>, <code>aetherlock.spec</code>, <code>.repomixignore</code>, <code>venv</code> symlink</li>
@@ -701,6 +999,17 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <li><strong>Fix</strong>: Moved <code>h.sectionClicked.connect(self._handle_sort)</code> to <code>create_main_content</code> where the table is created once.</li>
 <li><strong>Files</strong>: <code>src/gui/app.py</code></li>
 </ul>
+<h2 id="f8-create_pre_op_backup-fails-on-fresh-checkouts-when-srcdata-is-absent">F8 — <code>create_pre_op_backup()</code> fails on fresh checkouts when <code>src/data/</code> is absent</h2>
+<ul>
+<li><strong>Status</strong>: Fixed</li>
+<li><strong>Found</strong>: 2026-07-30</li>
+<li><strong>Fixed</strong>: 2026-07-30</li>
+<li><strong>Tags</strong>: bug, database, ci</li>
+<li><strong>Description</strong>: <code>test_create_pre_op_backup_creates_file</code> failed only on CI (Python 3.9–3.12 matrix). The test called <code>create_pre_op_backup("TestOp")</code>, which copies the DB to <code>get_timestamped_backup_path()</code> — inside <code>src/data/</code>. That directory contains no tracked files (gitignored), so the CI checkout lacks it and <code>shutil.copyfile</code> raised <code>FileNotFoundError</code>. The exception was swallowed by the fixture's <code>error_handler</code> lambda (<code>lambda t, m: None</code>), so the method returned <code>None</code> and <code>assert result is not None</code> failed. Locally the dir exists (runtime <code>.bak</code> files), which is why it only reproduced on CI.</li>
+<li><strong>Root Cause</strong>: <code>create_pre_op_backup()</code> assumed the backup directory already existed and relied on the global <code>DATA_DIR</code> path, not the instance DB path.</li>
+<li><strong>Fix</strong>: Added <code>os.makedirs(os.path.dirname(backup_path), exist_ok=True)</code> before <code>shutil.copyfile</code> in <code>create_pre_op_backup()</code>.</li>
+<li><strong>Files</strong>: <code>aethervault/db_manager.py</code></li>
+</ul>
 <hr />
 <h2 id="development-costs">Development Costs</h2>
 <blockquote>
@@ -718,22 +1027,16 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 </thead>
 <tbody>
 <tr>
-<td>2026-07-24</td>
-<td>2026-07-24 (1 day)</td>
-<td>DeepSeek V4 Flash</td>
-<td>$0.00</td>
+<td>2026-07-26</td>
+<td>2026-07-24 – 07-26 (3 days)</td>
+<td>multi-model</td>
+<td>$0.13</td>
 </tr>
 <tr>
-<td>2026-07-24</td>
-<td>2026-07-24 (session 2-4)</td>
-<td>DeepSeek V4 Flash</td>
-<td>~$0.15</td>
-</tr>
-<tr>
-<td>2026-07-24</td>
-<td>2026-07-24 (session 5)</td>
-<td>DeepSeek V4 Flash</td>
-<td>~$0.03</td>
+<td>2026-07-30</td>
+<td>2026-07-27 – 07-30 (4 days)</td>
+<td>deepseek-v4-flash</td>
+<td>~$0.16</td>
 </tr>
 </tbody>
 </table>
@@ -752,17 +1055,101 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <tbody>
 <tr>
 <td>2026-07-24</td>
-<td>Project scaffolding &amp; audit</td>
-<td>DeepSeek V4 Flash</td>
-<td>~15,000</td>
+<td>Session recall</td>
+<td>deepseek-v4-flash</td>
+<td>98,723</td>
+<td>18,097</td>
+<td>$0.04</td>
+</tr>
+<tr>
+<td>2026-07-24</td>
+<td>Audit docstring coverage (@explore subagent)</td>
+<td>deepseek-v4-flash</td>
+<td>34,727</td>
+<td>3,778</td>
+<td>$0.01</td>
+</tr>
+<tr>
+<td>2026-07-24</td>
+<td>Add docstrings to app.py (@general subagent)</td>
+<td>deepseek-v4-flash</td>
+<td>25,118</td>
+<td>15,237</td>
+<td>$0.01</td>
+</tr>
+<tr>
+<td>2026-07-24</td>
+<td>Add docstrings to core_logic (@general subagent)</td>
+<td>deepseek-v4-flash</td>
+<td>7,317</td>
+<td>2,464</td>
+<td>$0.00</td>
+</tr>
+<tr>
+<td>2026-07-24</td>
+<td>Add docstrings to db_manager (@general subagent)</td>
+<td>deepseek-v4-flash</td>
+<td>7,860</td>
+<td>2,007</td>
+<td>$0.00</td>
+</tr>
+<tr>
+<td>2026-07-24</td>
+<td>Add docstrings to dialogs+theme (@general subagent)</td>
+<td>deepseek-v4-flash</td>
+<td>6,009</td>
+<td>2,305</td>
+<td>$0.00</td>
+</tr>
+<tr>
+<td>2026-07-24</td>
+<td>Add docstrings to small files (@general subagent)</td>
+<td>deepseek-v4-flash</td>
+<td>1,587</td>
+<td>1,758</td>
+<td>$0.00</td>
+</tr>
+<tr>
+<td>2026-07-25</td>
+<td>Recall request</td>
+<td>deepseek-v4-flash</td>
+<td>22,988</td>
+<td>3,831</td>
+<td>$0.01</td>
+</tr>
+<tr>
+<td>2026-07-25</td>
+<td>Recall query</td>
+<td>deepseek-v4-flash</td>
+<td>126,654</td>
+<td>17,150</td>
+<td>$0.03</td>
+</tr>
+<tr>
+<td>2026-07-26</td>
+<td>Session 7 — docs cleanup, git cleanup, push</td>
+<td>deepseek-v4-flash</td>
+<td>~70,000</td>
 <td>~8,000</td>
-<td>~$0.004</td>
+<td>~$0.02</td>
+</tr>
+<tr>
+<td>2026-07-30</td>
+<td>Session 15 — CI/CD pipeline, release v6.2.1, doc sync</td>
+<td>deepseek-v4-flash</td>
+<td>~450,000</td>
+<td>~55,000</td>
+<td>~$0.16</td>
 </tr>
 </tbody>
 </table>
 <hr />
 <h2 id="model-pricing-reference">Model Pricing Reference</h2>
-<pre><code>## Model Pricing Reference (as of 2026-07-24)
+<pre><code>## Model Pricing Reference (as of 2026-07-30)
+
+&gt; DeepSeek prices verified 2026-07-30 against api-docs.deepseek.com
+&gt; (deepseek-v4-flash: $0.14 input / $0.28 output per 1M tokens). Gemini
+&gt; values are from the Google Vertex AI model pricing table.
 
 | Model | Input ($/M tokens) | Output ($/M tokens) |
 |---|---|---|
@@ -1200,8 +1587,380 @@ flowchart TD
     DatabaseManager --&gt; CredentialEntry
     DatabaseManager ..&gt; core_logic : encrypt/decrypt
 </code></pre>
+<h2 id="cicd-pipeline_1">CI/CD Pipeline</h2>
+<pre><code class="language-mermaid">flowchart TD
+    GIT[Push to main or Pull Request] --&gt; CI[pytest on Python 3.9 to 3.12]
+    REL[Publish GitHub Release] --&gt; BUILD[PyInstaller single file per OS]
+    MAN[Manual workflow run] --&gt; BUILD
+    CI --&gt;|must pass| BUILD
+    BUILD --&gt; LIN[aethervault-linux-x86_64]
+    BUILD --&gt; WIN[aethervault-windows-x86_64.exe]
+    BUILD --&gt; MACA[aethervault-macos-arm64]
+    BUILD --&gt; MACX[aethervault-macos-x86_64]
+    BUILD --&gt; ATTACH[Attach binaries to the Release]
+</code></pre>
 <p>```</p>
 <hr />
-<p><em>Generated on 2026-07-25 18:14 CT by <code>scripts/build_reference.py</code></em></p>
+<h2 id="audit-report">Audit Report</h2>
+<h1 id="audit-report-aethervault">Audit Report: AetherVault</h1>
+<p><strong>Date</strong>: 2026-08-01 (re-audit)
+<strong>Files Scanned</strong>: 13 source files (aethervault/), 5 test files, 6 scripts
+<strong>Overall Score</strong>: <strong>A</strong> (all prior findings closed; F12 + F13 remediated)</p>
+<h2 id="summary">Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Finding Type</th>
+<th>Resolved</th>
+<th>New This Audit</th>
+<th>Remaining</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>God functions</td>
+<td>5</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Test gaps</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Mixed concerns</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>DB connection pattern</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Missing WAL mode</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Debug artifacts</td>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>SQL f-string (low risk)</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Encryption key guard</td>
+<td>0</td>
+<td>1 (fixed)</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Git repo detection</td>
+<td>0</td>
+<td>1 (added)</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Auto-upgrade feat</td>
+<td>0</td>
+<td>1 (added)</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Unused imports</td>
+<td>0</td>
+<td>1 (fixed)</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Bare-except style</td>
+<td>0</td>
+<td>1 (fixed)</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>14</strong></td>
+<td><strong>5</strong></td>
+<td><strong>0</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="priority-definitions">Priority Definitions</h2>
+<ul>
+<li><strong>P0</strong>: Fix immediately (security, data loss, production breakage)</li>
+<li><strong>P1</strong>: Fix this session (major standard violation, missing critical tests)</li>
+<li><strong>P2</strong>: Fix when convenient (minor violations, documentation gaps)</li>
+<li><strong>P3</strong>: Enhancement for future (nice-to-have, cosmetic)</li>
+</ul>
+<h2 id="detailed-findings">Detailed Findings</h2>
+<h3 id="p2">P2</h3>
+<ol>
+<li><strong>F12 — Unused imports in 6 source files</strong> <code>[x] Fixed</code></li>
+<li><strong>Files</strong>:<ul>
+<li><code>aethervault/core_logic.py:16,18</code> — <code>sys</code>, <code>List</code> (never referenced)</li>
+<li><code>aethervault/db_manager.py:14</code> — <code>Any</code> (never referenced)</li>
+<li><code>aethervault/main.py:19</code> — <code>QMessageBox</code> (never referenced)</li>
+<li><code>aethervault/gui/app.py:8,23,42,66,67</code> — <code>json</code>, <code>QHBoxLayout</code>, <code>PORTABLE_MARKER</code>, <code>DocumentationDialog</code>, <code>DarkThemeColors</code>, <code>ThemeColors</code> (imported but unused)</li>
+<li><code>aethervault/gui/conflict_dialog.py:10</code> — <code>Qt</code> (never referenced)</li>
+<li><code>aethervault/gui/credential_form.py:15</code> — <code>QHeaderView</code> (never referenced)</li>
+<li><code>aethervault/gui/credential_table.py:11</code> — <code>Optional</code>, <code>QPainter</code>, <code>QFont</code> (never referenced)</li>
+</ul>
+</li>
+<li><strong>Issue</strong>: Violates checklist 2.3 (no unused imports).</li>
+<li><strong>Fix</strong>: Removed all unused names. <code>gui/app.py</code> additionally gained <code>import csv</code> (needed by F13 exception narrowing). AST re-scan confirms zero unused imports.</li>
+</ol>
+<h3 id="p3">P3</h3>
+<ol>
+<li><strong>F13 — Style review: <code>except Exception</code> catch-alls (22 instances)</strong> <code>[x] Fixed</code></li>
+<li><strong>Files</strong>: <code>core_logic.py:71,84,140,172,184</code>, <code>db_manager.py:68,152,240,298,357,407,464</code>, <code>gui/app.py:447,458,475,496,508,533,563,868</code>, <code>gui/dialogs.py:34,171</code>, <code>gui/credential_table.py:132,315</code></li>
+<li><strong>Issue</strong>: Checklist 3.4 prefers specific exceptions over <code>except Exception</code> catch-alls. All 22 instances do handle the error (log, dialog, or safe return), and none are silent <code>pass</code> — but they are broad. The bare <code>except Exception:</code> at <code>core_logic.py:140,172,184</code> and <code>credential_table.py:132,315</code> are the most notable (no error surfaced).</li>
+<li><strong>Severity rationale</strong>: No P0/P1 because each block either logs, shows a user dialog, or returns a safe default. No data loss path.</li>
+<li><strong>Fix</strong>: Narrowed all 22 instances to concrete exceptions:<ul>
+<li><code>core_logic.py</code> — <code>(TypeError, ValueError)</code> for Fernet encrypt, <code>(InvalidToken, TypeError, ValueError)</code> for decrypt, <code>(ValueError, TypeError)</code> for verify, <code>OSError</code> for file reads/writes.</li>
+<li><code>db_manager.py</code> — <code>ValueError</code> for key derivation, <code>(TypeError, ValueError)</code> for decryption load, <code>OSError</code> for backup, <code>(OSError, csv.Error, ValueError)</code> for import/export/preview/execute.</li>
+<li><code>gui/app.py</code> — <code>(OSError, csv.Error, ValueError, RuntimeError)</code> for import/export handlers, <code>(OSError, shutil.Error)</code> for backup/restore/auto-backup.</li>
+<li><code>gui/dialogs.py</code> — <code>AttributeError</code> for <code>sys._MEIPASS</code>, <code>OSError</code> for doc read.</li>
+<li><code>gui/credential_table.py</code> — <code>(TypeError, ValueError)</code> for URL parsing.</li>
+</ul>
+</li>
+</ol>
+<h2 id="re-audit-findings-2026-08-01">Re-Audit Findings (2026-08-01)</h2>
+<p>All prior findings (F1–F11) remain closed. Fresh scan of 13 source files + 5 test
+files + 6 scripts against <code>alignment_checklist.md</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Checks</th>
+<th>Pass</th>
+<th>Fail</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. File Structure &amp; Headers</td>
+<td>5</td>
+<td>5</td>
+<td>0</td>
+<td>All headers present, paths correct</td>
+</tr>
+<tr>
+<td>2. Imports</td>
+<td>5</td>
+<td>5</td>
+<td>0</td>
+<td>F12 fixed — AST scan: zero unused imports</td>
+</tr>
+<tr>
+<td>3. Error Handling</td>
+<td>4</td>
+<td>4</td>
+<td>0</td>
+<td>F13 fixed — no bare <code>except:</code>, no <code>except Exception</code>; specific types only</td>
+</tr>
+<tr>
+<td>4. Functions &amp; Structure</td>
+<td>6</td>
+<td>6</td>
+<td>0</td>
+<td>No god functions &gt;100 lines; no circular imports</td>
+</tr>
+<tr>
+<td>5. Database</td>
+<td>4</td>
+<td>4</td>
+<td>0</td>
+<td>Parameterized, WAL, context manager, Row access</td>
+</tr>
+<tr>
+<td>6. Testing</td>
+<td>4</td>
+<td>4</td>
+<td>0</td>
+<td>61 tests, all passing, core logic covered</td>
+</tr>
+<tr>
+<td>7. Project Hygiene</td>
+<td>6</td>
+<td>6</td>
+<td>0</td>
+<td>No secrets, .gitignore, venv/, unique package name</td>
+</tr>
+<tr>
+<td>8. Documentation</td>
+<td>5</td>
+<td>5</td>
+<td>0</td>
+<td>ARCHITECTURE, USER_GUIDE, mmd all current</td>
+</tr>
+<tr>
+<td>9. Environment</td>
+<td>3</td>
+<td>3</td>
+<td>0</td>
+<td>Python 3.10+, venv active</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>42</strong></td>
+<td><strong>42</strong></td>
+<td><strong>0</strong></td>
+<td><strong>Score: A</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="notable-strengths">Notable Strengths</h3>
+<ul>
+<li><strong>61 tests passing</strong> in 4.39s (encryption, hashing, password gen, settings, DB CRUD, import/export, duplicates, backup, key guards).</li>
+<li><strong>No debug artifacts</strong>: zero <code>print()</code> in production code (main.py output is CLI by design).</li>
+<li><strong>No lines &gt; 100 chars</strong>, no trailing whitespace, all file headers present.</li>
+<li><strong>DB discipline intact</strong>: parameterized queries, <code>PRAGMA journal_mode=WAL</code>, context manager protocol, <code>sqlite3.Row</code> access, whitelist-guarded ALTER TABLE.</li>
+<li><strong>No secrets committed</strong>: <code>.master.key</code>, DB files, settings all gitignored.</li>
+<li><strong>Import guard</strong>: all import methods raise <code>RuntimeError</code> if vault is locked.</li>
+<li><strong>Zero <code>except Exception</code> / bare <code>except:</code></strong> — all error handling narrowed to concrete exception types (OSError, ValueError, TypeError, csv.Error, shutil.Error, sqlite3.Error, InvalidToken, RuntimeError).</li>
+</ul>
+<h3 id="minor-notes-not-findings">Minor Notes (not findings)</h3>
+<ul>
+<li><code>aethervault/data/</code> and <code>src/data/</code> both contain runtime backups — both paths are gitignored; consistent with <code>core_logic.py:DATA_DIR</code>.</li>
+<li><code>main.py</code> <code>print()</code> calls are CLI output (upgrade/version), intentional per prior audit.</li>
+</ul>
+<h2 id="map-health">Map Health</h2>
+<table>
+<thead>
+<tr>
+<th>Map File</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docs/sys/ARCHITECTURE.md</code></td>
+<td>✅ OK</td>
+<td>Matches current <code>aethervault/</code> layout + CI/CD pipeline</td>
+</tr>
+<tr>
+<td><code>docs/sys/aethervault.mmd</code></td>
+<td>✅ OK</td>
+<td>Present, describes UI/DB flow accurately</td>
+</tr>
+<tr>
+<td><code>docs/sys/PLAN.md</code></td>
+<td>✅ OK</td>
+<td>All items complete</td>
+</tr>
+<tr>
+<td><code>docs/sys/TASKS.md</code></td>
+<td>✅ OK</td>
+<td>All tasks complete</td>
+</tr>
+</tbody>
+</table>
+<h2 id="remediation-log">Remediation Log</h2>
+<table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Date</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1 (god function)</td>
+<td>2026-07-27</td>
+<td><code>create_main_content()</code> 225→24 lines. Extracted CredentialForm (344 lines) and CredentialTable (334 lines).</td>
+</tr>
+<tr>
+<td>F4 (god function)</td>
+<td>2026-07-27</td>
+<td><code>update_list_view()</code> 67 lines → moved to CredentialTable. 0 lines in app.py.</td>
+</tr>
+<tr>
+<td>F9 (god function)</td>
+<td>2026-07-27</td>
+<td><code>__init__()</code> 56→50 lines. Waived — acceptable for initialization.</td>
+</tr>
+<tr>
+<td>F6 (mixed concerns)</td>
+<td>2026-07-27</td>
+<td>Partially fixed. Favicon fetching moved to CredentialTable. Password health scoring stays in app.py pending extraction to engine.py.</td>
+</tr>
+<tr>
+<td>F8 (WAL mode)</td>
+<td>2026-07-27</td>
+<td>Added <code>PRAGMA journal_mode=WAL;</code> to <code>_connect()</code> — 1 line.</td>
+</tr>
+<tr>
+<td>F7 (DB context manager)</td>
+<td>2026-07-27</td>
+<td>Added <code>__enter__</code>/<code>__exit__</code> to DatabaseManager.</td>
+</tr>
+<tr>
+<td>F2 (god function)</td>
+<td>2026-07-27</td>
+<td><code>show_password_health()</code> reduced 82→64 lines by extracting <code>score_password()</code> to core_logic.py.</td>
+</tr>
+<tr>
+<td>F3 (god function)</td>
+<td>2026-07-27</td>
+<td><code>setup_menu_bar()</code> 70→6 lines. Extracted into 4 builder methods. Duplicated password scoring eliminated from both password_strength.py and app.py.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="audit-log">Audit Log</h2>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-07-27</td>
+<td>Initial audit conducted. Score: C. 12 findings total (9 P1, 3 P2).</td>
+</tr>
+<tr>
+<td>2026-07-27</td>
+<td>Session 1: Split app.py into 5 focused files. F1, F4, F9 fixed. F6 partial.</td>
+</tr>
+<tr>
+<td>2026-07-27</td>
+<td>Session 2: Import conflict dialog + preview/execute. F2, F3, F7, F8 fixed.</td>
+</tr>
+<tr>
+<td>2026-07-27</td>
+<td>Session 3: F10 (prints→logging), F11 (SQL whitelist), F5 (22 tests, 3 test files). All findings closed. Score: C→A.</td>
+</tr>
+<tr>
+<td>2026-07-27</td>
+<td>Re-audit (session 11-12): All 12 findings still closed. 42/42 checklist checks pass. 61 tests. Score: A (unchanged).</td>
+</tr>
+<tr>
+<td>2026-08-01</td>
+<td>Re-audit (session 16): All 12 prior findings closed. New: F12 (unused imports, P2), F13 (except Exception style, P3). 41/42 checks pass. Score: A−.</td>
+</tr>
+<tr>
+<td>2026-08-01</td>
+<td>Remediated F12 + F13: removed all unused imports (AST-verified); narrowed all 22 <code>except Exception</code> blocks to specific types. Added <code>import csv</code> + <code>InvalidToken</code> imports. 42/42 checks pass, 61 tests pass. Score: A.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>Generated on 2026-08-01 01:54 CT by <code>scripts/build_reference.py</code></em></p>
 </body>
 </html>

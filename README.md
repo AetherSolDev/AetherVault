@@ -154,7 +154,7 @@ AetherVault/
 │   ├── __init__.py              # Version, PROJECT_ROOT, portable mode
 │   ├── core_logic.py            # Encryption, hashing, score_password, data model, settings
 │   ├── db_manager.py            # SQLite CRUD, import/export/preview, backup, WAL
-│   ├── main.py                  # Entry point with CLI (--version, --debug, --upgrade, --foreground, auto-detach)
+│   ├── __main__.py              # Entry point (--version, --debug, --upgrade, --foreground, auto-detach)
 │   ├── assets/                  # App icon (aethervault.ico) and screenshots
 │   ├── docs/
 │   │   ├── USER_GUIDE.md        # User-facing documentation

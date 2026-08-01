@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-01 01:37 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:55 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 

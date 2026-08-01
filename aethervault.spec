@@ -1,11 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 # Created: 2026-07-24
-# Last Edited: 2026-07-30 21:46 CT (America/Chicago)
+# Last Edited: 2026-08-01 01:55 CT (America/Chicago)
 # Path: aethervault.spec
 # Purpose: PyInstaller build spec for AetherVault standalone executable.
 
 a = Analysis(
-    ['aethervault/main.py'],
+    ['aethervault/__main__.py'],
     pathex=[],
     binaries=[],
     datas=[('aethervault/assets', 'assets'), ('aethervault/docs', 'docs'), ('README.md', '.'), ('LICENSE', '.')],

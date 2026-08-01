@@ -40,11 +40,10 @@
 </head>
 <body>
 <h1 id="created-2026-07-24">Created: 2026-07-24</h1>
-<h1 id="last-edited-2026-07-30-2231-ct-americachicago">Last Edited: 2026-07-30 22:31 CT (America/Chicago)</h1>
+<h1 id="last-edited-2026-08-01-0137-ct-americachicago">Last Edited: 2026-08-01 01:37 CT (America/Chicago)</h1>
 <h1 id="path-docsuser_guidemd">Path: docs/USER_GUIDE.md</h1>
 <h1 id="purpose-user-facing-handbook-for-aethervault">Purpose: User-facing handbook for AetherVault.</h1>
-<h1 id="kiss-python-password-manager-user-guide">KISS Python Password Manager — User Guide</h1>
-<p><strong>KISS</strong> = <strong>K</strong>eep <strong>I</strong>t <strong>S</strong>imple &amp; <strong>S</strong>ecure</p>
+<h1 id="aethervault-user-guide">AetherVault — User Guide</h1>
 <h2 id="table-of-contents">Table of Contents</h2>
 <ol>
 <li><a href="#getting-started">Getting Started</a></li>
@@ -58,7 +57,7 @@
 </ol>
 <hr />
 <h2 id="getting-started">Getting Started</h2>
-<p>KISS Python Password Manager is a portable, local password vault that stores your credentials in an encrypted SQLite database. All passwords are encrypted with AES-256 using a key derived from your master password. The application runs on Windows, Linux, and macOS.</p>
+<p>AetherVault is a portable, local password vault that stores your credentials in an encrypted SQLite database. All passwords are encrypted with AES-256 using a key derived from your master password. The application runs on Windows, Linux, and macOS.</p>
 <h3 id="key-benefits">Key Benefits</h3>
 <ul>
 <li><strong>Portable</strong> — single file database, easy to back up and move</li>
@@ -77,9 +76,40 @@
 cd AetherVault
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python aethervault.py
+pip install -e .
+aethervault
 </code></pre>
+<h3 id="cli-reference">CLI Reference</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aethervault</code></td>
+<td>Launch GUI (auto-detaches from terminal on Unix)</td>
+</tr>
+<tr>
+<td><code>aethervault --version</code></td>
+<td>Show installed version</td>
+</tr>
+<tr>
+<td><code>aethervault --debug</code></td>
+<td>Launch with debug logging to terminal</td>
+</tr>
+<tr>
+<td><code>aethervault --upgrade</code> / <code>-u</code></td>
+<td>Check for updates and auto-upgrade via git pull or pip</td>
+</tr>
+<tr>
+<td><code>aethervault --foreground</code> / <code>-f</code></td>
+<td>Keep terminal attached (for debugging)</td>
+</tr>
+</tbody>
+</table>
 <h3 id="standalone-executable">Standalone Executable</h3>
 <p>A pre-built executable is available (see Releases). No Python installation required.</p>
 <h2 id="quick-start">Quick Start</h2>
@@ -160,7 +190,7 @@ python aethervault.py
 </tr>
 <tr>
 <td><code>src/data/aethervault.db.bak</code></td>
-<td>Auto-generated backup</td>
+<td>Auto-generated backup files</td>
 </tr>
 <tr>
 <td><code>src/data/.master.key</code></td>
