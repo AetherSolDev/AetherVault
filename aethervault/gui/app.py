@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-01 02:25 CT (America/Chicago)
+# Last Edited: 2026-08-01 02:40 CT (America/Chicago)
 # Path: aethervault/gui/app.py
 # Purpose: Main application window — coordinates auth, menus, CRUD, import/export.
 
@@ -945,7 +945,7 @@ class PySidePWManager(QMainWindow):
         )
         QMessageBox.information(self, "Duress Password", msg)
 
-        master_ok, master_pw = QInputDialog.getText(
+        master_pw, master_ok = QInputDialog.getText(
             self, "Confirm Master Password",
             "Enter your current master password:",
             QLineEdit.Password,
@@ -956,7 +956,7 @@ class PySidePWManager(QMainWindow):
             QMessageBox.warning(self, "Error", "Incorrect master password.")
             return
 
-        ok, duress_pw = QInputDialog.getText(
+        duress_pw, ok = QInputDialog.getText(
             self, "Duress Password",
             "Enter new duress password (leave empty to clear):",
             QLineEdit.Password,
