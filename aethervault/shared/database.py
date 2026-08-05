@@ -1,6 +1,6 @@
-# Created: 2025-12-04
-# Last Edited: 2026-08-01 02:23 CT (America/Chicago)
-# Path: aethervault/db_manager.py
+# Created: 2026-08-05
+# Last Edited: 2026-08-05 15:35 CT (America/Chicago)
+# Path: aethervault/shared/database.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
 """Database operations for AetherVault credential entries using SQLite."""
@@ -13,14 +13,14 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from aethervault.core_logic import (
-    CredentialEntry,
+from aethervault.core.engine import (
     decrypt_data,
     derive_encryption_key,
     encrypt_data,
     get_timestamped_backup_path,
     rotate_backups,
 )
+from aethervault.shared.models import CredentialEntry
 
 COLUMN_ALIASES = {
     "db_id": ["db_id", "id", "entry_id", "entry id"],

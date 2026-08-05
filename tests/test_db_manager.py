@@ -9,7 +9,8 @@ import os
 
 import pytest
 
-from aethervault.core_logic import CredentialEntry
+from aethervault.shared.database import DatabaseManager
+from aethervault.shared.models import CredentialEntry
 
 
 class TestDatabaseManager:

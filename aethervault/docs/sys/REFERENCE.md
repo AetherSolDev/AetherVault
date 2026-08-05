@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-08-05 15:28 CT from docs/sys/
+> Auto-generated on 2026-08-05 15:40 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -33,8 +33,14 @@ AetherVault/
 │       └── ci.yml               # pytest on push/PR (Python 3.9–3.12)
 ├── aethervault/
 │   ├── __init__.py            # Package init, PROJECT_ROOT, VERSION, portable mode
-│   ├── core_logic.py          # Encryption, hashing, score_password, CredentialEntry model, settings
-│   ├── db_manager.py          # SQLite CRUD, import/export/preview/execute, backup, WAL mode
+│   ├── core/                  # Business logic — no UI imports
+│   │   ├── __init__.py
+│   │   ├── engine.py          # Encryption, hashing, key derivation, backup/wipe, settings
+│   │   └── password.py        # score_password, generate_strong_password
+│   ├── shared/                # Cross-cutting — database, models
+│   │   ├── __init__.py
+│   │   ├── database.py        # DatabaseManager — SQLite CRUD, import/export/preview, backup, WAL
+│   │   └── models.py          # CredentialEntry data model
 │   ├── __main__.py            # Application entry point (QApplication setup, auto-detach on Unix, --foreground)
 │   ├── assets/                # App icon (aethersol.ico), logo, screenshots
 │   ├── docs/
@@ -73,7 +79,7 @@ AetherVault/
 
 ## Architecture Layers
 
-### 1. Data Layer (`aethervault/core_logic.py`, `aethervault/db_manager.py`)
+### 1. Data Layer (`aethervault/core/engine.py`, `aethervault/shared/database.py`)
 - SQLite database with AES-256 encrypted credential storage, WAL journal mode
 - PBKDF2 key derivation from master password (600K iterations)
 - Automatic timestamped backups + pre-op backups (backup before import/duplicate removal)
@@ -106,9 +112,9 @@ User Input → PySidePWManager (app.py) → CredentialTable / CredentialForm
                                             ↓ signals
                                     PySidePWManager (coordinator)
                                             ↓
-                                    DatabaseManager (db_manager.py) → SQLite
+                                    DatabaseManager (shared/database.py) → SQLite
                                             ↓
-                                    core_logic.py (AES-256 encrypt/decrypt)
+                                    core/engine.py (AES-256 encrypt/decrypt)
 ```
 
 ## CI/CD Pipeline
@@ -150,21 +156,24 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 | File | Responsibility |
 |------|---------------|
-| `core_logic.py` | Encryption (Fernet/AES-256), password hashing, `score_password()`, `CredentialEntry` model, settings JSON I/O |
-| `db_manager.py` | SQLite CRUD, CSV import/export/preview/execute, column alias mapping (73 aliases), `preview_import()`/`execute_import()`, duplicate removal, pre-op backup, WAL mode, context manager |
+| `aethervault/core/engine.py` | Encryption (Fernet/AES-256), password hashing/verification, key derivation, backup/wipe, settings JSON I/O, path constants |
+| `aethervault/core/password.py` | `score_password()`, `generate_strong_password()` |
+| `aethervault/shared/database.py` | DatabaseManager — SQLite CRUD, CSV import/export/preview/execute, column alias mapping (73 aliases), `preview_import()`/`execute_import()`, duplicate removal, pre-op backup, WAL mode, context manager |
+| `aethervault/shared/models.py` | `CredentialEntry` data model |
 | `aethervault/gui/app.py` | PySidePWManager coordinator — auth flow, menus, CRUD orchestration, import/export/backup, system tray, auto-lock, clipboard, theme toggle, health report |
 | `aethervault/gui/credential_table.py` | CredentialTable — left panel: search, category/tag filters, sortable table, double-click copy, context menu, favicon fetch |
-| `aethervault/gui/credential_form.py` | CredentialForm — right panel: 8 editable fields, rich text notes, custom fields table, password strength bar, save/cancel || `aethervault/gui/conflict_dialog.py` | ImportConflictDialog — conflict review with per-entry radio buttons, bulk actions |
+| `aethervault/gui/credential_form.py` | CredentialForm — right panel: 8 editable fields, rich text notes, custom fields table, password strength bar, save/cancel |
+| `aethervault/gui/conflict_dialog.py` | ImportConflictDialog — conflict review with per-entry radio buttons, bulk actions |
 | `aethervault/gui/click_to_copy_filter.py` | ClickToCopyFilter event filter |
 | `aethervault/gui/password_strength.py` | PasswordStrengthBar widget (uses `score_password()`) |
 | `aethervault/gui/dialogs.py` | PasswordGeneratorDialog, DocumentationDialog |
 | `aethervault/gui/theme.py` | Dark/light mode stylesheets, QPalette |
-| `aethervault/main.py` | QApplication entry point (auto-detach, --foreground flag) |
-| `tests/` | 69 pytest tests across 5 files + shared fixtures |
+| `aethervault/__main__.py` | QApplication entry point (auto-detach, --foreground flag) |
+| `tests/` | 71 pytest tests across 6 files + shared fixtures |
 | `docs/USER_GUIDE.md` | User-facing documentation (opened from Help menu) |
 | `aethervault.spec` | PyInstaller spec for building standalone executables |
 | `.github/workflows/build.yml` | CI builds + release-uploads single-file exe for Win/Linux/macOS (Intel + ARM) |
-| `.github/workflows/ci.yml` | Runs 61 pytest tests on push/PR across Python 3.9–3.12 |
+| `.github/workflows/ci.yml` | Runs pytest on push/PR across Python 3.9–3.12 |
 
 ## Key Decisions
 
@@ -174,7 +183,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 | SQLite + AES-256 | Portable single-file vault, no server needed |
 | PBKDF2 (600K iterations) | Industry-standard key derivation, OWASP recommended |
 | QStackedWidget for views | Reliable view swapping between auth and main content |
-| Single monolithic file | Legacy decision — scheduled for refactor into src/ package |
+| `core/` + `shared/` layout | STRUCTURE.md standard: `core/` = business logic (no UI), `shared/` = database + models. GUI imports both, never the reverse. Completed 2026-08-05 |
 
 ## Gotchas
 
@@ -233,13 +242,15 @@ this exact bug. Don't repeat it.
 
 ## Navigation Hints
 
-- **Need to change encryption?** → `core_logic.py` (encrypt_data, decrypt_data, derive_encryption_key, score_password)
-- **Need to add a DB operation?** → `db_manager.py` (DatabaseManager class)
+- **Need to change encryption?** → `aethervault/core/engine.py` (encrypt_data, decrypt_data, derive_encryption_key)
+- **Need to change password strength/generation?** → `aethervault/core/password.py` (score_password, generate_strong_password)
+- **Need to add a DB operation?** → `aethervault/shared/database.py` (DatabaseManager class)
+- **Need to change the credential model?** → `aethervault/shared/models.py` (CredentialEntry)
 - **Need to change the credential table?** → `aethervault/gui/credential_table.py` (CredentialTable class)
 - **Need to change the edit form?** → `aethervault/gui/credential_form.py` (CredentialForm class)
-- **Need to change import conflict behavior?** → `aethervault/gui/conflict_dialog.py`, `db_manager.py` (preview_import, execute_import)
+- **Need to change import conflict behavior?** → `aethervault/gui/conflict_dialog.py`, `aethervault/shared/database.py` (preview_import, execute_import)
 - **Need to add a menu item?** → `aethervault/gui/app.py` (_build_file_menu, _build_tools_menu, etc.)
-- **Need to change backup behavior?** → `db_manager.py` (create_pre_op_backup, _auto_backup_db)
+- **Need to change backup behavior?** → `aethervault/shared/database.py` (create_pre_op_backup), `aethervault/core/engine.py` (rotate_backups)
 - **Need to run tests?** → `venv/bin/python -m pytest tests/ -v`
 
 ## Future Features
@@ -250,7 +261,8 @@ this exact bug. Don't repeat it.
 
 ## Session History Summary
 
-- **2026-08-05 (session 22)**: **Kit alignment + bug fixes.** Restored `project_kit/` from NAS, compared vs project (gap analysis). Licensing: added "How to Decide: GPL3 vs MIT+EULA" to kit LICENSING.md, moved EULA→instructions/. Brand assets: `aethersol.ico`/`aethersol_logo.png` into `project_kit/assets/` + `instructions/ASSETS.md`. Aligned project: added `sessions.md`, `FUTURE_DEV_IDEAS.md`, `aethervault.txt`, `project_audit/`; synced `instructions/`; updated `AGENTS.md`; removed stale `kiss/`. **Fixed copy/paste bug** (F14): Copy Password button captured the loop variable → copied Category field; fixed with default-arg lambda; 2 regression tests; suite 69→71. Tray/window icon now `aethersol.ico`. Package restructure `core/`+`shared/` **deferred** (dedicated session).
+- **2026-08-05 (session 23)**: **Package restructure (C10).** Split `core_logic.py` → `aethervault/core/engine.py` (encryption/hashing/keys/backup/wipe/settings) + `aethervault/core/password.py` (score/gen); `db_manager.py` → `aethervault/shared/database.py` (DatabaseManager); `CredentialEntry` → `aethervault/shared/models.py`. Updated all importers (GUI + 6 test files), deleted old modules, fixed test monkeypatch targets (`aethervault.core.engine.*`). 71 tests pass; app launches. STRUCTURE.md layout now complete.
+- **2026-08-05 (session 22)**: **Kit alignment + bug fixes.** Restored `project_kit/` from NAS, compared vs project (gap analysis). Licensing: added "How to Decide: GPL3 vs MIT+EULA" to kit LICENSING.md, moved EULA→instructions/. Brand assets: `aethersol.ico`/`aethersol_logo.png` into `project_kit/assets/` + `instructions/ASSETS.md`. Aligned project: added `sessions.md`, `FUTURE_DEV_IDEAS.md`, `aethervault.txt`, `project_audit/`; synced `instructions/`; updated `AGENTS.md`; removed stale `kiss/`. **Fixed copy/paste bug** (F14): Copy Password button captured the loop variable → copied Category field; fixed with default-arg lambda; 2 regression tests; suite 69→71. Tray/window icon now `aethersol.ico`.
 - **2026-07-24 (session 1)**: Initial project audit. Set up project scaffolding with New_Project_init template system. Created AGENTS.md, docs/sys/, USER_GUIDE.md, instructions/, scripts/, .repomixignore. Identified 3 bugs and 5 planned changes.
 - **2026-07-24 (session 2)**: Fixed F0 (missing sys import), F1 (backup call order), F2 (assets dir). Refactored monolithic main_app_pyside.py (~1250 lines) into src/ package (7 files). Added dark/light theme support. Updated PyInstaller spec, .gitignore, requirements.txt.
 - **2026-07-24 (session 3)**: Added system tray icon with quick-lock (A2). Added portable mode detection (A3). Created venv/ symlink (C3).
@@ -355,12 +367,12 @@ this exact bug. Don't repeat it.
   - **Files**: `AGENTS.md`, `aethervault/docs/sys/*`, `aethervault/gui/app.py`, `instructions/*`
   - **Acceptance**: Template files present, tray/window icon shows `aethersol.ico`, tests pass.
 
-- [ ] C10 — Restructure `core_logic.py`/`db_manager.py` into `core/` + `shared/`
+- [x] C10 — Restructure `core_logic.py`/`db_manager.py` into `core/` + `shared/`
   - **ID**: package-restructure
   - **Tags**: change, architecture
-  - **Details**: Split per STRUCTURE.md (core/engine.py, core/password.py, shared/database.py, shared/models.py). DEFERRED — dedicated session.
-  - **Files**: `aethervault/core_logic.py`, `aethervault/db_manager.py`, all importers
-  - **Acceptance**: Package layout matches template; 71+ tests pass.
+  - **Details**: Split per STRUCTURE.md — `core/engine.py` (encryption/hashing/keys/backup/wipe/settings), `core/password.py` (score/gen), `shared/database.py` (DatabaseManager), `shared/models.py` (CredentialEntry). Updated all importers (GUI + 6 test files), deleted old modules, fixed test monkeypatch targets.
+  - **Files**: `aethervault/core/*`, `aethervault/shared/*`, `aethervault/gui/*`, `tests/*`
+  - **Acceptance**: Package layout matches template; 71 tests pass; app launches.
 
 ## Legend
 - C = Changes / Updates
@@ -560,6 +572,11 @@ this exact bug. Don't repeat it.
 
 # Changelog
 
+## [Unreleased] — 2026-08-05 (package restructure)
+
+### Changed
+- **Package restructure to `core/` + `shared/` (C10)** — split `core_logic.py` → `aethervault/core/engine.py` (encryption, hashing, key derivation, backup/wipe, settings) + `aethervault/core/password.py` (`score_password`, `generate_strong_password`); `db_manager.py` → `aethervault/shared/database.py` (DatabaseManager); `CredentialEntry` → `aethervault/shared/models.py`. Updated all importers (GUI modules + 6 test files) and test monkeypatch targets (`aethervault.core.engine.*`). Deleted old flat modules. Matches STRUCTURE.md canonical layout. 71 tests pass; app launches.
+
 ## [Unreleased] — 2026-08-05 (template alignment)
 
 ### Fixed
@@ -570,8 +587,7 @@ this exact bug. Don't repeat it.
 - **Template alignment (Phase 1-2)** — added `aethervault/docs/sys/sessions.md`, `FUTURE_DEV_IDEAS.md`, `aethervault.txt`; copied `aethervault/project_audit/` (6 files); synced `instructions/` with the kit (`TESTING.md`, `STRUCTURE.md`, `DECISIONS.md`, `LICENSING.md`, `EULA.md`, `packaging.md`, `ASSETS.md`); updated `AGENTS.md` (correct `aethervault/` paths, session keywords, Development Workflow). `kiss/` stale venv removed.
 - **Brand assets** — `aethervault.ico` deleted, `aethersol.ico` + `aethersol_logo.png` added; kit `project_kit/assets/` + `instructions/ASSETS.md` created.
 
-### Deferred
-- **Package restructure (`core/` + `shared/`)** — split of `core_logic.py`/`db_manager.py` scheduled as a dedicated session (user decision).
+## [6.3.1] — 2026-08-01
 
 ### Fixed
 - **Duress password setup aborted after master prompt** — `QInputDialog.getText()` in PySide6 returns `(text, ok)` (text first, bool second). The duress setup unpacked them as `(ok, text)`, so the master field held a bool and `verify_password()` raised `AttributeError`, silently stopping the flow before the duress prompt. Now the second prompt (or clear) appears correctly. Verified end-to-end with real modal dialogs; live duress wipe test + restore passed.
@@ -1028,9 +1044,9 @@ this exact bug. Don't repeat it.
                 │  │  created_at, modified_at                                             │  │
                 │  │                                                                      │  │
                 │  │  ┌──────────────────────────────────────────────────────────────┐    │  │
-                │  │  │  core_logic.py  encrypt_data() / decrypt_data() (Fernet/AES) │    │  │
+                │  │  │  core/engine.py encrypt_data() / decrypt_data() (Fernet/AES) │    │  │
                 │  │  │  PBKDF2 key derivation (480K iterations)                     │    │  │
-                │  │  │  CredentialEntry data model                                  │    │  │
+                │  │  │  shared/models.py CredentialEntry data model                  │    │  │
                 │  │  └──────────────────────────────────────────────────────────────┘    │  │
                 │  └─────────────────────────────────────────────────────────────────────┘  │
                 │                                                                           │
@@ -1338,8 +1354,8 @@ flowchart TD
   +----------------------------------+            :
   | +db_id, title, url, username     |            >
   | +email, password, phone, address |    +--------------+
-  | +category, notes, tags           |    |  core_logic  |
-  | +custom_fields, parent_id        |    +--------------+
+  | +category, notes, tags           |    | core/engine |
+  | +custom_fields, parent_id        |    +-------------+
   | +created_at, modified_at         |
   +----------------------------------+
   | +to_dict()                       |
@@ -1391,7 +1407,7 @@ classDiagram
 
     PySidePWManager --> DatabaseManager
     DatabaseManager --> CredentialEntry
-    DatabaseManager ..> core_logic : encrypt/decrypt
+    DatabaseManager ..> core/engine : encrypt/decrypt
 ```
 
 ## CI/CD Pipeline
@@ -1602,4 +1618,4 @@ Append a new entry at the top of the log at the end of every session (see
 
 ---
 
-*Generated on 2026-08-05 15:28 CT by `scripts/build_reference.py`*
+*Generated on 2026-08-05 15:40 CT by `scripts/build_reference.py`*

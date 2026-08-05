@@ -44,12 +44,11 @@ from aethervault import (
     enable_portable_mode,
     is_portable,
 )
-from aethervault.core_logic import (
+from aethervault.core.engine import (
     DB_BACKUP_PATH,
     DB_PATH,
     DEFAULT_LOCKOUT_MINUTES,
     MASTER_KEY_FILE,
-    CredentialEntry,
     clear_duress_password,
     get_timestamped_backup_path,
     load_duress_password,
@@ -57,13 +56,14 @@ from aethervault.core_logic import (
     load_settings,
     rotate_backups,
     save_settings,
-    score_password,
     store_duress_password,
     store_master_password,
     verify_password,
     wipe_vault,
 )
-from aethervault.db_manager import DatabaseManager
+from aethervault.core.password import score_password
+from aethervault.shared.database import DatabaseManager
+from aethervault.shared.models import CredentialEntry
 from aethervault.gui.credential_form import CredentialForm
 from aethervault.gui.credential_table import CredentialTable
 from aethervault.gui.conflict_dialog import ImportConflictDialog

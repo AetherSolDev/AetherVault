@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from aethervault.core_logic import CredentialEntry
+from aethervault.shared.models import CredentialEntry
 from aethervault.gui.theme import DarkThemeColors, ThemeColors
 
 

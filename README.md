@@ -153,8 +153,12 @@ Technical reference: [`docs/sys/REFERENCE.html`](aethervault/docs/sys/REFERENCE.
 AetherVault/
 ├── aethervault/
 │   ├── __init__.py              # Version, PROJECT_ROOT, portable mode
-│   ├── core_logic.py            # Encryption, hashing, score_password, data model, settings
-│   ├── db_manager.py            # SQLite CRUD, import/export/preview, backup, WAL
+│   ├── core/                    # Business logic — no UI imports
+│   │   ├── engine.py            # Encryption, hashing, key derivation, backup/wipe, settings
+│   │   └── password.py          # Password strength + generation
+│   ├── shared/                  # Cross-cutting — database, models
+│   │   ├── database.py          # DatabaseManager — SQLite CRUD, import/export, backup, WAL
+│   │   └── models.py            # CredentialEntry data model
 │   ├── __main__.py              # Entry point (--version, --debug, --upgrade, --foreground, auto-detach)
 │   ├── assets/                  # App icon (aethersol.ico), logo, screenshots
 │   ├── docs/
@@ -170,11 +174,13 @@ AetherVault/
 │       ├── dialogs.py           # Password generator, documentation viewer
 │       ├── password_strength.py # Strength bar widget
 │       └── theme.py             # Dark/light mode stylesheets
-├── tests/                       # pytest test suite (69 tests)
+├── tests/                       # pytest test suite (71 tests)
 │   ├── test_core_logic.py       # encryption, hashing, password gen, settings
 │   ├── test_score_password.py   # password strength scoring
 │   ├── test_credential_entry.py # data model
 │   ├── test_db_manager.py       # CRUD, import/export, duplicates, backup, key guards
+│   ├── test_duress.py           # duress password, vault wipe, backup rotation
+│   ├── test_credential_form.py  # copy buttons (regression)
 │   └── conftest.py
 ├── data/                        # Runtime data (gitignored)
 │   ├── aethervault.db

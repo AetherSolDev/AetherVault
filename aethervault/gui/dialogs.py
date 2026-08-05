@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from aethervault import PROJECT_ROOT
-from aethervault.core_logic import generate_strong_password
+from aethervault.core.password import generate_strong_password
 
 
 def resource_path(relative_path):

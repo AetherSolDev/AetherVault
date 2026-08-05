@@ -11,12 +11,10 @@ import tempfile
 
 import pytest
 
-from aethervault.core_logic import (
-    CredentialEntry,
+from aethervault.core.engine import (
     decrypt_data,
     derive_encryption_key,
     encrypt_data,
-    generate_strong_password,
     hash_password,
     load_master_password,
     load_settings,
@@ -24,6 +22,8 @@ from aethervault.core_logic import (
     store_master_password,
     verify_password,
 )
+from aethervault.core.password import generate_strong_password
+from aethervault.shared.models import CredentialEntry
 
 
 class TestDeriveEncryptionKey:
@@ -135,7 +135,7 @@ class TestMasterPasswordPersistence:
     def test_store_and_load(self, monkeypatch):
         with tempfile.TemporaryDirectory() as tmpdir:
             key_path = os.path.join(tmpdir, ".master.key")
-            monkeypatch.setattr("aethervault.core_logic.MASTER_KEY_FILE", key_path)
+            monkeypatch.setattr("aethervault.core.engine.MASTER_KEY_FILE", key_path)
             assert store_master_password("MyM@sterP@ss!")
             loaded = load_master_password(key_path)
             assert loaded is not None
@@ -150,7 +150,7 @@ class TestSettingsPersistence:
     def test_save_and_load(self, monkeypatch):
         with tempfile.TemporaryDirectory() as tmpdir:
             settings_path = os.path.join(tmpdir, ".app_settings.json")
-            monkeypatch.setattr("aethervault.core_logic.APP_SETTINGS_FILE", settings_path)
+            monkeypatch.setattr("aethervault.core.engine.APP_SETTINGS_FILE", settings_path)
             settings = {"lockout_minutes": 5, "theme": "light"}
             save_settings(settings)
             loaded = load_settings()
@@ -159,14 +159,14 @@ class TestSettingsPersistence:
     def test_missing_file_returns_defaults(self, monkeypatch):
         with tempfile.TemporaryDirectory() as tmpdir:
             settings_path = os.path.join(tmpdir, ".nonexistent.json")
-            monkeypatch.setattr("aethervault.core_logic.APP_SETTINGS_FILE", settings_path)
+            monkeypatch.setattr("aethervault.core.engine.APP_SETTINGS_FILE", settings_path)
             loaded = load_settings()
             assert loaded == {"lockout_minutes": 3, "theme": "dark"}
 
     def test_invalid_json_returns_defaults(self, monkeypatch):
         with tempfile.TemporaryDirectory() as tmpdir:
             settings_path = os.path.join(tmpdir, "bad.json")
-            monkeypatch.setattr("aethervault.core_logic.APP_SETTINGS_FILE", settings_path)
+            monkeypatch.setattr("aethervault.core.engine.APP_SETTINGS_FILE", settings_path)
             with open(settings_path, "w") as f:
                 f.write("not json")
             loaded = load_settings()

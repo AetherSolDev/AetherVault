@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-05 15:37 CT (America/Chicago)
 # Path: docs/sys/AetherVault.mmd
 # Purpose: Mermaid diagram and ASCII flowchart for AetherVault architecture.
 
@@ -62,9 +62,9 @@
                 │  │  created_at, modified_at                                             │  │
                 │  │                                                                      │  │
                 │  │  ┌──────────────────────────────────────────────────────────────┐    │  │
-                │  │  │  core_logic.py  encrypt_data() / decrypt_data() (Fernet/AES) │    │  │
+                │  │  │  core/engine.py encrypt_data() / decrypt_data() (Fernet/AES) │    │  │
                 │  │  │  PBKDF2 key derivation (480K iterations)                     │    │  │
-                │  │  │  CredentialEntry data model                                  │    │  │
+                │  │  │  shared/models.py CredentialEntry data model                  │    │  │
                 │  │  └──────────────────────────────────────────────────────────────┘    │  │
                 │  └─────────────────────────────────────────────────────────────────────┘  │
                 │                                                                           │
@@ -372,8 +372,8 @@ flowchart TD
   +----------------------------------+            :
   | +db_id, title, url, username     |            >
   | +email, password, phone, address |    +--------------+
-  | +category, notes, tags           |    |  core_logic  |
-  | +custom_fields, parent_id        |    +--------------+
+  | +category, notes, tags           |    | core/engine |
+  | +custom_fields, parent_id        |    +-------------+
   | +created_at, modified_at         |
   +----------------------------------+
   | +to_dict()                       |
@@ -425,7 +425,7 @@ classDiagram
 
     PySidePWManager --> DatabaseManager
     DatabaseManager --> CredentialEntry
-    DatabaseManager ..> core_logic : encrypt/decrypt
+    DatabaseManager ..> core/engine : encrypt/decrypt
 ```
 
 ## CI/CD Pipeline

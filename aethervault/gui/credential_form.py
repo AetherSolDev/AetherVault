@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from aethervault.core_logic import CredentialEntry
+from aethervault.shared.models import CredentialEntry
 from aethervault.gui.click_to_copy_filter import ClickToCopyFilter
 from aethervault.gui.password_strength import PasswordStrengthBar
 

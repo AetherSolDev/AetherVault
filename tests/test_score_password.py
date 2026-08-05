@@ -5,7 +5,7 @@
 
 """Unit tests for the score_password function."""
 
-from aethervault.core_logic import score_password
+from aethervault.core.password import score_password
 
 
 class TestScorePassword:

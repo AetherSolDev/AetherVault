@@ -9,8 +9,8 @@ import tempfile
 
 import pytest
 
-from aethervault.core_logic import CredentialEntry
-from aethervault.db_manager import DatabaseManager
+from aethervault.shared.database import DatabaseManager
+from aethervault.shared.models import CredentialEntry
 
 
 @pytest.fixture

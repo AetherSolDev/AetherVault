@@ -9,12 +9,12 @@ import os
 
 import pytest
 
-import aethervault.core_logic as core
+import aethervault.core.engine as core
 
 
 @pytest.fixture
 def fake_data_dir(tmp_path, monkeypatch):
-    """Point core_logic's DATA_DIR-dependent paths at an isolated temp dir."""
+    """Point core.engine's DATA_DIR-dependent paths at an isolated temp dir."""
     data_dir = tmp_path / "data"
     data_dir.mkdir()
     monkeypatch.setattr(core, "DATA_DIR", str(data_dir))

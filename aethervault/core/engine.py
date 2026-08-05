@@ -1,20 +1,17 @@
-# Created: 2025-12-04
-# Last Edited: 2026-08-01 02:23 CT (America/Chicago)
-# Path: aethervault/core_logic.py
-# Purpose: Encryption, hashing, data model, and settings management for AetherVault.
+# Created: 2026-08-05
+# Last Edited: 2026-08-05 15:35 CT (America/Chicago)
+# Path: aethervault/core/engine.py
+# Purpose: Encryption, hashing, key derivation, backup/wipe, and settings management.
 
-"""Encryption, hashing, credential data model, and application settings management for AetherVault."""
+"""Encryption, hashing, key derivation, backup/wipe, and settings management."""
 
 import base64
 import hashlib
 import json
 import logging
-import re
 import os
-import random
-import string
 import time
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.backends import default_backend
@@ -86,41 +83,6 @@ def decrypt_data(encrypted_data: str, key: bytes) -> str:
         return encrypted_data
 
 
-def generate_strong_password(
-    length: int = 18, use_lower=True, use_upper=True, use_digit=True, use_symbol=True
-) -> str:
-    """Generate a cryptographically random password with configurable character sets."""
-    if length < 1:
-        length = 1
-    char_sets = []
-    if use_lower:
-        char_sets.append(string.ascii_lowercase)
-    if use_upper:
-        char_sets.append(string.ascii_uppercase)
-    if use_digit:
-        char_sets.append(string.digits)
-    if use_symbol:
-        char_sets.append(string.punctuation)
-    if not char_sets:
-        char_sets.append(string.ascii_letters)
-    all_chars = "".join(char_sets)
-    if not all_chars:
-        return ""
-    password = []
-    if use_lower:
-        password.append(random.choice(string.ascii_lowercase))
-    if use_upper:
-        password.append(random.choice(string.ascii_uppercase))
-    if use_digit:
-        password.append(random.choice(string.digits))
-    if use_symbol:
-        password.append(random.choice(string.punctuation))
-    while len(password) < length:
-        password.append(random.choice(all_chars))
-    random.shuffle(password)
-    return "".join(password[:length])
-
-
 def hash_password(password: str) -> str:
     """Hash a password with a random salt using PBKDF2-SHA256 and return a Base64 string."""
     salt = os.urandom(16)
@@ -140,28 +102,6 @@ def verify_password(password: str, stored_hash: str) -> bool:
         return new_hash_part == stored_hash_part
     except (ValueError, TypeError):
         return False
-
-
-def score_password(password: str) -> int:
-    """Score a password 0-100 based on length and character diversity."""
-    if not password:
-        return 0
-    score = 0
-    if len(password) >= 8:
-        score += 15
-    if len(password) >= 12:
-        score += 15
-    if len(password) >= 16:
-        score += 10
-    if re.search(r"[a-z]", password):
-        score += 10
-    if re.search(r"[A-Z]", password):
-        score += 15
-    if re.search(r"\d", password):
-        score += 15
-    if re.search(r"[^a-zA-Z0-9]", password):
-        score += 20
-    return min(score, 100)
 
 
 def load_master_password(file_path: str) -> Optional[str]:
@@ -284,48 +224,3 @@ def save_settings(settings: dict):
             json.dump(settings, f, indent=4)
     except IOError as e:
         logger.error("Error saving settings: %s", e)
-
-
-class CredentialEntry:
-    """Data class representing a single credential entry with all metadata fields."""
-    def __init__(self, **kwargs):
-        """Initialize a CredentialEntry from keyword arguments, defaulting missing fields."""
-        self.db_id = kwargs.get("db_id")
-        self.title = kwargs.get("title", "")
-        self.url = kwargs.get("url", "")
-        self.username = kwargs.get("username", "")
-        self.email = kwargs.get("email", "")
-        self.password = kwargs.get("password", "")
-        self.phone = kwargs.get("phone", "")
-        self.address = kwargs.get("address", "")
-        self.category = kwargs.get("category", "")
-        self.notes = kwargs.get("notes", "")
-        self.tags = kwargs.get("tags", "")
-        self.custom_fields = kwargs.get("custom_fields", "")
-        self.parent_id = kwargs.get("parent_id", 0)
-        self.created_at = kwargs.get("created_at")
-        self.modified_at = kwargs.get("modified_at")
-        self.time_last_used = kwargs.get("time_last_used", "")
-        self.time_password_changed = kwargs.get("time_password_changed", "")
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize this credential entry to a plain dictionary."""
-        return {
-            "db_id": self.db_id,
-            "title": self.title,
-            "url": self.url,
-            "username": self.username,
-            "email": self.email,
-            "password": self.password,
-            "phone": self.phone,
-            "address": self.address,
-            "category": self.category,
-            "notes": self.notes,
-            "tags": self.tags,
-            "custom_fields": self.custom_fields,
-            "parent_id": self.parent_id,
-            "created_at": self.created_at,
-            "modified_at": self.modified_at,
-            "time_last_used": self.time_last_used,
-            "time_password_changed": self.time_password_changed,
-        }

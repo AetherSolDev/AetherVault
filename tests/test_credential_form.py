@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtWidgets import QApplication, QPushButton
 
-from aethervault.core_logic import CredentialEntry
+from aethervault.shared.models import CredentialEntry
 from aethervault.gui.credential_form import CredentialForm
 
 
