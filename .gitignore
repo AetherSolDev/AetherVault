@@ -70,6 +70,12 @@ aethervault/docs/sys/PLAN.md
 aethervault/docs/sys/TASKS.md
 aethervault/docs/sys/Model_Pricing_Reference.txt
 aethervault/docs/sys/function_inventory.*
+aethervault/docs/sys/sessions.md
+aethervault/docs/sys/FUTURE_DEV_IDEAS.md
+aethervault/docs/sys/aethervault.txt
+
+# Internal audit toolkit (ships with the project, kept local-only)
+aethervault/project_audit/
 
 # Scripts/ Individual scripts for prooduction.
 scripts/

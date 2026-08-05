@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-01 02:40 CT (America/Chicago)
+# Last Edited: 2026-08-05 15:17 CT (America/Chicago)
 # Path: aethervault/gui/app.py
 # Purpose: Main application window — coordinates auth, menus, CRUD, import/export.
 
@@ -13,8 +13,7 @@ from typing import List, Optional
 
 from PySide6.QtCore import QEvent, QObject, Qt, QTimer, QUrl
 from PySide6.QtGui import (
-    QAction, QColor, QDesktopServices, QFont, QIcon, QKeySequence,
-    QPainter, QPixmap, QShortcut,
+    QAction, QDesktopServices, QFont, QIcon, QKeySequence, QShortcut,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -85,7 +84,7 @@ class PySidePWManager(QMainWindow):
         self.resize(1100, 700)
         self.setMinimumSize(750, 500)
 
-        icon_path = resource_path(os.path.join("assets", "aethervault.ico"))
+        icon_path = resource_path(os.path.join("assets", "aethersol.ico"))
         if os.path.exists(icon_path):
             self.setWindowIcon(QIcon(icon_path))
 
@@ -993,18 +992,10 @@ class PySidePWManager(QMainWindow):
     # --- System Tray ---
 
     def _make_tray_icon(self) -> QIcon:
-        pixmap = QPixmap(16, 16)
-        pixmap.fill(Qt.transparent)
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(QColor("#54a0ff"))
-        painter.setPen(Qt.NoPen)
-        painter.drawRoundedRect(0, 0, 16, 16, 3, 3)
-        painter.setPen(QColor("#ffffff"))
-        painter.setFont(QFont("Monospace", 8, QFont.Bold))
-        painter.drawText(pixmap.rect(), Qt.AlignCenter, "K")
-        painter.end()
-        return QIcon(pixmap)
+        icon_path = resource_path(os.path.join("assets", "aethersol.ico"))
+        if os.path.exists(icon_path):
+            return QIcon(icon_path)
+        return QIcon()
 
     def _setup_system_tray(self):
         self.tray_icon = QSystemTrayIcon(self)

@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
+# Last Edited: 2026-08-05 15:25 CT (America/Chicago)
 # Path: aethervault/gui/credential_form.py
 # Purpose: Credential detail/edit form widget for the right panel.
 
@@ -91,7 +91,7 @@ class CredentialForm(QWidget):
                 copy_pass_btn = QPushButton("Copy")
                 copy_pass_btn.setToolTip("Copy password to clipboard")
                 copy_pass_btn.clicked.connect(
-                    lambda: self.copy_requested.emit(line_edit.text(), "password")
+                    lambda checked, le=line_edit: self.copy_requested.emit(le.text(), "password")
                 )
                 al.addWidget(copy_pass_btn)
                 form_grid.addLayout(al, row, 2)

@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-08-01 02:56 CT from docs/sys/
+> Auto-generated on 2026-08-05 15:28 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -15,6 +15,8 @@
 - [Model Pricing Reference](#model-pricing-reference)
 - [Diagram (aethervault)](#diagram-(aethervault))
 - [Audit Report](#audit-report)
+- [Future Dev Ideas](#future-dev-ideas)
+- [Sessions](#sessions)
 
 ---
 
@@ -34,11 +36,11 @@ AetherVault/
 │   ├── core_logic.py          # Encryption, hashing, score_password, CredentialEntry model, settings
 │   ├── db_manager.py          # SQLite CRUD, import/export/preview/execute, backup, WAL mode
 │   ├── __main__.py            # Application entry point (QApplication setup, auto-detach on Unix, --foreground)
-│   ├── assets/                # App icon and screenshots
+│   ├── assets/                # App icon (aethersol.ico), logo, screenshots
 │   ├── docs/
 │   │   ├── USER_GUIDE.md      # User-facing documentation
 │   │   ├── USER_GUIDE.html
-│   │   └── sys/               # System documentation
+│   │   └── sys/               # System documentation (PLAN, TASKS, CHANGELOG, sessions.md, etc.)
 │   └── gui/
 │       ├── __init__.py
 │       ├── app.py             # PySidePWManager — coordinator (auth, menus, CRUD, import/export, tray)
@@ -152,8 +154,7 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 | `db_manager.py` | SQLite CRUD, CSV import/export/preview/execute, column alias mapping (73 aliases), `preview_import()`/`execute_import()`, duplicate removal, pre-op backup, WAL mode, context manager |
 | `aethervault/gui/app.py` | PySidePWManager coordinator — auth flow, menus, CRUD orchestration, import/export/backup, system tray, auto-lock, clipboard, theme toggle, health report |
 | `aethervault/gui/credential_table.py` | CredentialTable — left panel: search, category/tag filters, sortable table, double-click copy, context menu, favicon fetch |
-| `aethervault/gui/credential_form.py` | CredentialForm — right panel: 8 editable fields, rich text notes, custom fields table, password strength bar, save/cancel |
-| `aethervault/gui/conflict_dialog.py` | ImportConflictDialog — conflict review with per-entry radio buttons, bulk actions |
+| `aethervault/gui/credential_form.py` | CredentialForm — right panel: 8 editable fields, rich text notes, custom fields table, password strength bar, save/cancel || `aethervault/gui/conflict_dialog.py` | ImportConflictDialog — conflict review with per-entry radio buttons, bulk actions |
 | `aethervault/gui/click_to_copy_filter.py` | ClickToCopyFilter event filter |
 | `aethervault/gui/password_strength.py` | PasswordStrengthBar widget (uses `score_password()`) |
 | `aethervault/gui/dialogs.py` | PasswordGeneratorDialog, DocumentationDialog |
@@ -184,7 +185,8 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 - Tags stored as comma-separated string in `tags` TEXT column — both columns auto-migrated on startup
 - `handle_backup()` uses `get_timestamped_backup_path()` for unique filenames, shows success in status bar (no dialog)
 - `.master.key` stores the hash, not the raw password — safe, but file deletion = permanent lockout
-- Virtual env: `venv/` is a symlink → `kiss/`; both names resolve
+- Virtual env: `venv/` (the old `kiss/` dir was removed 2026-08-05)
+- App icon: `aethervault/assets/aethersol.ico` (window + tray); logo `aethersol_logo.png` (README). Do not reference `aethervault.ico` — renamed.
 - Portable mode: create `.portable` file in app directory to keep all data local
 - System tray: close minimizes to tray; use File → Quit or tray → Quit to fully exit
 - Auto-detach: `main.py` forks on Unix — parent exits, child runs GUI. Debug output goes to `/dev/null`. Use `--foreground` / `-f` to keep terminal attached
@@ -248,6 +250,7 @@ this exact bug. Don't repeat it.
 
 ## Session History Summary
 
+- **2026-08-05 (session 22)**: **Kit alignment + bug fixes.** Restored `project_kit/` from NAS, compared vs project (gap analysis). Licensing: added "How to Decide: GPL3 vs MIT+EULA" to kit LICENSING.md, moved EULA→instructions/. Brand assets: `aethersol.ico`/`aethersol_logo.png` into `project_kit/assets/` + `instructions/ASSETS.md`. Aligned project: added `sessions.md`, `FUTURE_DEV_IDEAS.md`, `aethervault.txt`, `project_audit/`; synced `instructions/`; updated `AGENTS.md`; removed stale `kiss/`. **Fixed copy/paste bug** (F14): Copy Password button captured the loop variable → copied Category field; fixed with default-arg lambda; 2 regression tests; suite 69→71. Tray/window icon now `aethersol.ico`. Package restructure `core/`+`shared/` **deferred** (dedicated session).
 - **2026-07-24 (session 1)**: Initial project audit. Set up project scaffolding with New_Project_init template system. Created AGENTS.md, docs/sys/, USER_GUIDE.md, instructions/, scripts/, .repomixignore. Identified 3 bugs and 5 planned changes.
 - **2026-07-24 (session 2)**: Fixed F0 (missing sys import), F1 (backup call order), F2 (assets dir). Refactored monolithic main_app_pyside.py (~1250 lines) into src/ package (7 files). Added dark/light theme support. Updated PyInstaller spec, .gitignore, requirements.txt.
 - **2026-07-24 (session 3)**: Added system tray icon with quick-lock (A2). Added portable mode detection (A3). Created venv/ symlink (C3).
@@ -335,6 +338,29 @@ this exact bug. Don't repeat it.
 ## Tasks
 
 # AetherVault Tasks
+
+## P0 — Critical (security/stability)
+
+- [x] F14 — Copy Password button copies wrong field (late-binding lambda)
+  - **ID**: fix-copy-password
+  - **Tags**: bug, gui, clipboard
+  - **Details**: `credential_form.py` wired the Copy Password button to a lambda capturing the loop variable `line_edit`, which after the form loop points to the last field (`category`). Clicking copied the wrong field (or empty).
+  - **Files**: `aethervault/gui/credential_form.py`, `tests/test_credential_form.py`
+  - **Acceptance**: Clicking Copy next to Password places the actual decrypted password on the clipboard; 2 regression tests pass.
+
+- [x] A17 — Align repo structure to project_kit template
+  - **ID**: template-alignment
+  - **Tags**: change, documentation, structure
+  - **Details**: Added `sessions.md`, `FUTURE_DEV_IDEAS.md`, `aethervault.txt`, `project_audit/`; synced `instructions/`; updated `AGENTS.md`; replaced tray "K" icon with `aethersol.ico`; removed stale `kiss/`.
+  - **Files**: `AGENTS.md`, `aethervault/docs/sys/*`, `aethervault/gui/app.py`, `instructions/*`
+  - **Acceptance**: Template files present, tray/window icon shows `aethersol.ico`, tests pass.
+
+- [ ] C10 — Restructure `core_logic.py`/`db_manager.py` into `core/` + `shared/`
+  - **ID**: package-restructure
+  - **Tags**: change, architecture
+  - **Details**: Split per STRUCTURE.md (core/engine.py, core/password.py, shared/database.py, shared/models.py). DEFERRED — dedicated session.
+  - **Files**: `aethervault/core_logic.py`, `aethervault/db_manager.py`, all importers
+  - **Acceptance**: Package layout matches template; 71+ tests pass.
 
 ## Legend
 - C = Changes / Updates
@@ -508,6 +534,20 @@ this exact bug. Don't repeat it.
   - **Files**: `.github/workflows/build.yml`, `aethervault.spec`, `README.md`, `.gitignore`
   - **Acceptance**: All 4 executables build green; release assets downloadable at `/releases/latest/download/`.
 
+- [x] A16 — Duress password (optional, destructive)
+  - **ID**: duress-password
+  - **Tags**: feature, security
+  - **Details**: If the duress password is entered at login, cryptographically destroys the vault and all backups (`wipe_vault()`). Keys deleted first (crypto erasure), then random-overwrite + delete all `.db`, `.db-wal`, `.db-shm`, `.db.bak`, `aethervault_*.db.bak`, `.app_settings.json`. Shows fake "Invalid password" dialog then silent exit. Stored as PBKDF2 hash in `data/.duress.key`; checked first with identical cost (no timing tell). Configured via Settings → Duress Password (requires master password). Verified live: wipe destroyed everything, restore from backup worked (429 creds).
+  - **Files**: `aethervault/core_logic.py`, `aethervault/gui/app.py`
+  - **Acceptance**: Entering duress at login wipes `data/` completely, exits silently; backup restores the vault.
+
+- [x] C9 — Cap `.bak` backup rotation
+  - **ID**: backup-rotation
+  - **Tags**: change, database
+  - **Details**: `rotate_backups()` keeps the 5 most recent timestamped backups and prunes the rest (pre-op + manual backup paths), keeping duress-wipe time bounded.
+  - **Files**: `aethervault/core_logic.py`, `aethervault/db_manager.py`, `aethervault/gui/app.py`
+  - **Acceptance**: Only the 5 most recent `aethervault_*.db.bak` files remain after a backup.
+
 ## P3 — Future
 
 - [ ] Browser extension integration
@@ -520,7 +560,18 @@ this exact bug. Don't repeat it.
 
 # Changelog
 
-## [6.3.1] — 2026-08-01
+## [Unreleased] — 2026-08-05 (template alignment)
+
+### Fixed
+- **Copy Password button copied the Category field instead of the password** — `credential_form.py` used `lambda: self.copy_requested.emit(line_edit.text(), ...)` where `line_edit` was the loop variable, which after the form loop points to the last field (`category`). The classic late-binding closure bug. Fixed by capturing with a default arg: `lambda checked, le=line_edit: ...`. Verified on real X11: clicking Copy now places the actual decrypted password on the clipboard. Added `tests/test_credential_form.py` (2 regression tests). Suite: 69 → 71.
+
+### Changed
+- **Tray + window icon** — replaced the hand-drawn "K" placeholder with the packaged `aethersol.ico` (multi-size 16-64px). Updated `app.py`, `MANIFEST.in`; removed unused `QColor`/`QPixmap`/`QPainter` imports.
+- **Template alignment (Phase 1-2)** — added `aethervault/docs/sys/sessions.md`, `FUTURE_DEV_IDEAS.md`, `aethervault.txt`; copied `aethervault/project_audit/` (6 files); synced `instructions/` with the kit (`TESTING.md`, `STRUCTURE.md`, `DECISIONS.md`, `LICENSING.md`, `EULA.md`, `packaging.md`, `ASSETS.md`); updated `AGENTS.md` (correct `aethervault/` paths, session keywords, Development Workflow). `kiss/` stale venv removed.
+- **Brand assets** — `aethervault.ico` deleted, `aethersol.ico` + `aethersol_logo.png` added; kit `project_kit/assets/` + `instructions/ASSETS.md` created.
+
+### Deferred
+- **Package restructure (`core/` + `shared/`)** — split of `core_logic.py`/`db_manager.py` scheduled as a dedicated session (user decision).
 
 ### Fixed
 - **Duress password setup aborted after master prompt** — `QInputDialog.getText()` in PySide6 returns `(text, ok)` (text first, bool second). The duress setup unpacked them as `(ok, text)`, so the master field held a bool and `verify_password()` raised `AttributeError`, silently stopping the flow before the duress prompt. Now the second prompt (or clear) appears correctly. Verified end-to-end with real modal dialogs; live duress wipe test + restore passed.
@@ -743,6 +794,20 @@ this exact bug. Don't repeat it.
 
 # AetherVault Bug Tracker
 
+## F14 — Copy Password button copies the Category field's text
+
+- **Status**: Fixed
+- **Fixed**: 2026-08-05
+- **Found**: 2026-08-05 (user report: "copy/paste isn't working")
+- **Priority**: P0 (password copy silently failed)
+- **Tags**: bug, gui, clipboard
+- **Environment**: Linux/X11, PySide6
+- **Description**: Clicking the "Copy" button next to the Password field copied the text of the *Category* field (or empty) instead of the password. Reproduced on real X11: clipboard ended up empty or stale while the password field visibly held the correct value.
+- **Root Cause**: `credential_form.py` wired the button as `lambda: self.copy_requested.emit(line_edit.text(), "password")`, capturing the loop variable `line_edit` by reference. After the form-build loop finishes, `line_edit` is rebound to the last field created (`category`), so the click emits the wrong field's text. Classic Python late-binding closure bug.
+- **Fix**: Capture with a default argument: `lambda checked, le=line_edit: self.copy_requested.emit(le.text(), "password")`.
+- **Tests**: `tests/test_credential_form.py` — `test_password_copy_button_copies_password_not_last_field`, `test_password_copy_button_not_capturing_category` (2 tests, offscreen Qt). Suite 69 → 71.
+- **Files**: `aethervault/gui/credential_form.py`, `tests/test_credential_form.py`
+
 ## F0 — `resource_path()` references `sys._MEIPASS` without module-level `sys` import
 
 - **Status**: Fixed
@@ -854,6 +919,7 @@ this exact bug. Don't repeat it.
 |------|----------|-------|------|
 | 2026-07-26 | 2026-07-24 – 07-26 (3 days) | multi-model | $0.13 |
 | 2026-07-30 | 2026-07-27 – 07-30 (4 days) | deepseek-v4-flash | ~$0.16 |
+| 2026-08-01 | 2026-07-31 – 08-01 (2 days) | deepseek-v4-flash | ~$0.30 |
 
 ## Cost Breakdown
 
@@ -870,6 +936,8 @@ this exact bug. Don't repeat it.
 | 2026-07-25 | Recall query | deepseek-v4-flash | 126,654 | 17,150 | $0.03 |
 | 2026-07-26 | Session 7 — docs cleanup, git cleanup, push | deepseek-v4-flash | ~70,000 | ~8,000 | ~$0.02 |
 | 2026-07-30 | Session 15 — CI/CD pipeline, release v6.2.1, doc sync | deepseek-v4-flash | ~450,000 | ~55,000 | ~$0.16 |
+| 2026-08-01 | Session 16–19 — audit (F12/F13), repo move to AetherSolDev, entry-point cleanup, remove src/, gitignore project_kit | deepseek-v4-flash | ~220,000 | ~30,000 | ~$0.09 |
+| 2026-08-01 | Session 20–21 — duress password feature, live wipe test + restore, release v6.3.0/6.3.1 | deepseek-v4-flash | ~280,000 | ~38,000 | ~$0.12 |
 
 ---
 
@@ -1484,4 +1552,54 @@ Live test of the duress wipe on a full copy of the real vault (429 creds):
 
 ---
 
-*Generated on 2026-08-01 02:56 CT by `scripts/build_reference.py`*
+## Future Dev Ideas
+
+> This file is for the project owner only — brainstorming and notes before
+> discussing with AI. No structured format required.
+
+## Ideas
+
+- _Add notes here_
+
+---
+
+## Sessions
+
+# Session Log
+
+Append a new entry at the top of the log at the end of every session (see
+`save session` protocol in `instructions/memory.md`). This file lives in
+`aethervault/docs/sys/` and is NOT tracked by git.
+
+## 2026-08-05 — Kit alignment, brand assets, copy/paste bug
+
+### Completed
+- Restored `project_kit/` from NAS; compared kit vs project structure (gaps documented)
+- Licensing: added "How to Decide: GPL3 vs MIT + EULA" to kit LICENSING.md; moved EULA.md → instructions/EULA.md
+- Brand assets: copied `aethersol.ico` + `aethersol_logo.png` into `project_kit/assets/`; wrote `instructions/ASSETS.md`
+- Phase 0: removed stale `kiss/` venv; baseline 69 tests pass
+
+### In Progress
+- Phase 1: adding missing template structure (sessions.md, FUTURE_DEV_IDEAS.md, project_audit/, instructions sync, aethervault.txt)
+- Phase 1b: icon & branding (pending)
+- Phase 3a/3b: copy/paste bug investigation (pending)
+
+### Blocked
+- None
+
+### Key Decisions
+- License decision note lives at TOP of LICENSING.md (per-project: MIT+EULA commercial / GPL3 open-source)
+- EULA template moved to `instructions/` — the kit root keeps only MIT `LICENSE`
+- Asset usage guide lives at `instructions/ASSETS.md` (discoverable from AGENTS.md + new_project.md)
+- Tray icon should use the packaged `.ico`, not the hand-drawn "K" placeholder
+
+### Cost
+- Model(s) used: deepseek-v4-flash (session start)
+- Tokens — input / output: (run `scripts/update_cost.py` at session end)
+- Peak or off-peak: off-peak
+- $ cost this session: (fill at save session)
+- Project total (from COST.md): see COST.md
+
+---
+
+*Generated on 2026-08-05 15:28 CT by `scripts/build_reference.py`*

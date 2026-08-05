@@ -156,7 +156,7 @@ AetherVault/
 │   ├── core_logic.py            # Encryption, hashing, score_password, data model, settings
 │   ├── db_manager.py            # SQLite CRUD, import/export/preview, backup, WAL
 │   ├── __main__.py              # Entry point (--version, --debug, --upgrade, --foreground, auto-detach)
-│   ├── assets/                  # App icon (aethervault.ico) and screenshots
+│   ├── assets/                  # App icon (aethersol.ico), logo, screenshots
 │   ├── docs/
 │   │   ├── USER_GUIDE.md        # User-facing documentation
 │   │   ├── USER_GUIDE.html
