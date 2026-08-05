@@ -83,6 +83,10 @@ No Python or pip needed. Grab the binary for your platform from the
 > The binaries are unsigned, so Windows SmartScreen and macOS Gatekeeper may warn on first run.
 > Windows: click **More info → Run anyway**. macOS: `xattr -d com.apple.quarantine aethervault-macos`.
 > Linux: the binary expects standard Qt/X11 system libraries.
+> **Executable installs** — to update, download the new binary from the
+> [Releases](https://github.com/AetherSolDev/AetherVault/releases) page
+> (`aethervault -u` requires a pip or git install and will not work inside a
+> bundled executable).
 
 ---
 
