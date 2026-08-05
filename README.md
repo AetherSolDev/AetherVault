@@ -1,67 +1,77 @@
-# AetherVault
+<pre align="center">
+╔══════════════════════════════╗
+║       A E T H E R V A U L T  ║
+║   Encrypted Password Vault   ║
+╚══════════════════════════════╝
+</pre>
 
-A local, portable, encrypted password vault.
+<h1 align="center">AetherVault</h1>
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
-[![PySide6](https://img.shields.io/badge/PySide6-6.5+-green.svg)](https://pypi.org/project/PySide6/)
-[![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux%20%7C%20macos-lightgrey)]()
-[![Build](https://github.com/AetherSolDev/AetherVault/actions/workflows/build.yml/badge.svg)](https://github.com/AetherSolDev/AetherVault/actions/workflows/build.yml)
-[![Code style: black](https://img.shields.io/badge/code%20style-PEP%208-000000.svg)]()
+<p align="center">
+  <em>Encrypted, local-first password manager</em>
+  <br>
+  Store, organize, and protect your credentials — encrypted with AES-256, right on your machine.
+  <br>
+  <strong><em>Your data stays yours. No cloud. No servers.</em></strong>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Linux-%E2%9C%93-informational?logo=linux&logoColor=white" alt="Linux">
+  <img src="https://img.shields.io/badge/macOS-%E2%9C%93-informational?logo=apple&logoColor=white" alt="macOS">
+  <img src="https://img.shields.io/badge/Windows-%E2%9C%93-informational?logo=windows&logoColor=white" alt="Windows">
+  <img src="https://img.shields.io/badge/python-3.10+-blue?logo=python" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/license-GPLv3-blue" alt="GPLv3">
+  <img src="https://img.shields.io/badge/PySide6-6.5+-green" alt="PySide6 6.5+">
+  <img src="https://img.shields.io/pypi/v/aethervault-py?logo=pypi&logoColor=white&color=3776AB" alt="PyPI">
+  <img src="https://github.com/AetherSolDev/AetherVault/actions/workflows/build.yml/badge.svg" alt="Build">
+</p>
 
 ---
 
-## Overview
+## Screenshots
 
-AetherVault is a desktop application that stores your credentials in an encrypted local SQLite database. No cloud, no servers, no subscriptions — your data stays on your machine, encrypted with AES-256.
+![Demo](aethervault/assets/screens/aethervault-demo.gif)
 
-### Features
+![Login](aethervault/assets/screens/login.png)
+![Vault](aethervault/assets/screens/vault.png)
+![Entry](aethervault/assets/screens/entry.png)
+![Generator](aethervault/assets/screens/generator.png)
+![Health](aethervault/assets/screens/health.png)
 
-- **AES-256 encryption** via Fernet (cryptography library), key derived with PBKDF2-SHA256 (480K iterations)
-- **Master password** authentication with setup/login flow
+---
+
+## Features
+
+- **AES-256 encryption** — every password encrypted with Fernet (cryptography library), key derived with PBKDF2-SHA256
+- **Master password auth** — setup/login flow; only the PBKDF2 hash is stored
 - **Credential management** — add, edit, delete, search, sort, filter
-- **Password generator** — configurable length (8–64), character sets
+- **Password generator** — configurable length and character sets
 - **Password strength meter** — real-time scoring as you type
 - **Password health report** — scan for weak, reused, or short passwords
 - **Category & tag filters** — dynamic dropdowns, category click-to-filter
-- **Custom fields** — add key/value pairs to any entry (JSON-backed)
-- **Rich text notes** — bold/italic/underline formatting toolbar
-- **Favicon auto-fetch** — downloads site icons from Google's service
-- **System tray** — minimize to tray, quick-lock from tray menu
-- **Dark/light theme** — toggle in Settings, persistent across sessions
+- **Custom fields** — key/value pairs on any entry (JSON-backed)
+- **Rich text notes** — bold / italic / underline formatting toolbar
+- **Favicon auto-fetch** — site icons pulled from Google's service
+- **System tray** — minimize to tray, quick-lock from the tray menu
+- **Dark / light theme** — toggle in Settings, persists across sessions
 - **Auto-lock** — configurable 1/3/5/10/30 minutes or never
 - **Duress password** *(optional)* — entering it at login permanently destroys the vault and all backups, indistinguishable from a failed login
 - **Clipboard auto-clear** — copied passwords clear after 15 seconds
-- **One-click backup** — timestamped filenames, no confirmation dialog
-- **CSV import/export** — bulk add or migrate data
-- **Duplicate detection** — find and remove entries with matching title+username
+- **One-click backup** — timestamped filenames, auto-rotation keeps the 5 most recent
+- **CSV import / export** — bulk add or migrate from other managers
+- **Duplicate detection** — find and remove entries with matching title + username
 - **Portable mode** — all data stays in the app directory (`.portable` marker)
-- **Right-click context menu** — copy username/password, edit, delete
-- **Sortable columns** — click Title/Username/Category to sort ascending/descending
+- **Startup integrity check** — auto-detects corruption and recovers from backup
 
-## Screenshots
+---
 
-![AetherVault Main Screen](aethervault/assets/main.png)
-
-## Installation
-
-### Option 1: Install from PyPI (Recommended)
-
-Requires Python 3.10+. The distribution name on PyPI is `aethervault-py`;
-the app, import package, and CLI command are all `aethervault`.
-
-```bash
-pip install aethervault-py
-
-# Run from anywhere:
-aethervault
-```
-
-### Option 2: Download a Pre-Built Executable
+## Download a Pre-Built Executable
 
 No Python or pip needed. Grab the binary for your platform from the
 [Releases](https://github.com/AetherSolDev/AetherVault/releases) page
 (or the latest [Actions build](https://github.com/AetherSolDev/AetherVault/actions) artifacts):
+
+> Prefer a package manager? **`pip install aethervault-py`** (PyPI) works on Linux, macOS, and Windows.
 
 | Platform | Download |
 |----------|----------|
@@ -70,152 +80,108 @@ No Python or pip needed. Grab the binary for your platform from the
 | macOS (Apple Silicon) | [aethervault-macos-arm64](https://github.com/AetherSolDev/AetherVault/releases/latest/download/aethervault-macos-arm64) |
 | macOS (Intel) | [aethervault-macos-x86_64](https://github.com/AetherSolDev/AetherVault/releases/latest/download/aethervault-macos-x86_64) |
 
-> **macOS note:** the app is unsigned. On first launch, right-click the
-> binary and select **Open** to bypass Gatekeeper.
-> **Linux note:** the binary expects standard Qt/X11 system libraries.
+> The binaries are unsigned, so Windows SmartScreen and macOS Gatekeeper may warn on first run.
+> Windows: click **More info → Run anyway**. macOS: `xattr -d com.apple.quarantine aethervault-macos`.
+> Linux: the binary expects standard Qt/X11 system libraries.
 
-### Option 3: Global Install (Editable)
+---
 
-Installs the `aethervault` command system-wide. Works in any directory.
+## Quick Start
 
+### Install
+
+AetherVault is on **PyPI** (`aethervault-py`) and published to GitHub Releases on every version tag.
+
+**Option 1 — pip (recommended, all platforms):**
+```bash
+pip install aethervault-py
+# or
+pip install --user aethervault-py
+```
+
+**Option 2 — Global install (editable):**
 ```bash
 git clone https://github.com/AetherSolDev/AetherVault.git
 cd AetherVault
-
-# Outside any virtual environment:
 pip install --user --break-system-packages -e .
-
-# Run from anywhere:
-aethervault
 ```
 
-### Option 4: Virtual Environment (Isolated)
-
+**Option 3 — Virtual environment:**
 ```bash
 git clone https://github.com/AetherSolDev/AetherVault.git
 cd AetherVault
-
 python -m venv venv
-source venv/bin/activate   # Linux/macOS
-# venv\Scripts\activate    # Windows
-
+source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -e .
-aethervault
 ```
 
-### Option 5: Build It Yourself (PyInstaller)
-
-No Python or pip needed on the target machine.
-
+**Option 4 — Build yourself (PyInstaller):**
 ```bash
 pip install pyinstaller
 pyinstaller aethervault.spec
 # Output in dist/aethervault/
-
-# Copy the dist/aethervault/ folder to any machine and run:
-./aethervault
 ```
 
-### CLI Reference
+### Run
 
-| Command | Description |
-|---------|-------------|
-| `aethervault` | Launch the GUI (auto-detaches from terminal on Unix) |
-| `aethervault --version` | Show installed version |
-| `aethervault --debug` | Launch with debug logging to terminal |
-| `aethervault --upgrade` / `-u` | Check for updates and auto-upgrade via git pull or pip |
-| `aethervault --foreground` / `-f` | Keep terminal attached (for debugging) |
+```bash
+aethervault            # Launch GUI (auto-detaches from terminal on Unix)
+aethervault --version  # Show installed version
+aethervault --help     # CLI usage
+```
+
+---
 
 ## Usage
 
-1. **First launch** — Set a master password (minimum 8 characters)
-2. **Login** — Enter your master password to unlock the vault
-3. **Add entries** — Click "Add New" and fill in the form
-4. **Generate passwords** — Click "Generate" next to the password field
-5. **Copy to clipboard** — Double-click a table cell or click "Copy" buttons
-6. **Organize** — Use categories and tags to group entries
+1. **First launch** — set a master password (minimum 8 characters)
+2. **Login** — enter your master password to unlock the vault
+3. **Add entries** — click "Add New" and fill in the form
+4. **Generate passwords** — click "Generate" next to the password field
+5. **Copy to clipboard** — double-click a table cell or click the "Copy" buttons
+6. **Organize** — categories and tags group your entries
 7. **Backup** — File → Backup Vault (or auto-backup on save/shutdown)
 
-## Data Storage
+| CLI Command | Description |
+|-------------|-------------|
+| `aethervault` | Launch the GUI (auto-detaches on Unix) |
+| `aethervault --version` | Show installed version |
+| `aethervault --debug` | Launch with debug logging |
+| `aethervault --upgrade` / `-u` | Check for updates and auto-upgrade |
+| `aethervault --foreground` / `-f` | Keep terminal attached (debugging) |
 
-| File | Purpose |
-|------|---------|
-| `data/aethervault.db` | Encrypted SQLite vault |
-| `data/.master.key` | PBKDF2 hash of master password |
-| `data/.app_settings.json` | Theme, auto-lock, and app preferences |
-| `.portable` | Marker file for portable mode |
+---
 
 ## Security
 
-- Passwords are **never stored in plain text** — encrypted with AES-256 via Fernet
-- Master password is **never stored** — only the PBKDF2-SHA256 hash (600K iterations)
-- Encryption key is derived from the master password hash (480K iterations)
-- Clipboard is **auto-cleared** after 15 seconds
+- Passwords are **never stored in plain text** — AES-256 via Fernet
+- Master password is **never stored** — only its PBKDF2-SHA256 hash
+- Encryption key derived from the master password hash (PBKDF2, 480K iterations)
+- Clipboard **auto-cleared** after 15 seconds
 - Auto-lock on **inactivity** or window focus loss
 - SQLite with **parameterized queries** (no SQL injection)
+- Startup **integrity check** with automatic recovery from backup
+- Optional **duress password** — destroys the vault on coercion
+
+---
+
+## Data
+
+| Data | Location |
+|------|----------|
+| Encrypted vault | `data/aethervault.db` |
+| Master password hash | `data/.master.key` |
+| App settings | `data/.app_settings.json` |
+| Portable marker | `.portable` (enables portable mode) |
+
+---
 
 ## Documentation
 
-Full user guide: [`docs/USER_GUIDE.md`](aethervault/docs/USER_GUIDE.md)
-Technical reference: [`docs/sys/REFERENCE.html`](aethervault/docs/sys/REFERENCE.html)
+Full user guide: [`aethervault/docs/USER_GUIDE.md`](aethervault/docs/USER_GUIDE.md)
 
-## Project Structure
-
-```
-AetherVault/
-├── aethervault/
-│   ├── __init__.py              # Version, PROJECT_ROOT, portable mode
-│   ├── core/                    # Business logic — no UI imports
-│   │   ├── engine.py            # Encryption, hashing, key derivation, backup/wipe, settings
-│   │   └── password.py          # Password strength + generation
-│   ├── shared/                  # Cross-cutting — database, models
-│   │   ├── database.py          # DatabaseManager — SQLite CRUD, import/export, backup, WAL
-│   │   └── models.py            # CredentialEntry data model
-│   ├── __main__.py              # Entry point (--version, --debug, --upgrade, --foreground, auto-detach)
-│   ├── assets/                  # App icon (aethersol.ico), logo, screenshots
-│   ├── docs/
-│   │   ├── USER_GUIDE.md        # User-facing documentation
-│   │   ├── USER_GUIDE.html
-│   │   └── sys/                 # PLAN, ARCHITECTURE, CHANGELOG, etc.
-│   └── gui/
-│       ├── app.py               # Main window coordinator
-│       ├── click_to_copy_filter.py
-│       ├── conflict_dialog.py   # Import conflict resolution
-│       ├── credential_form.py   # Entry detail/edit form
-│       ├── credential_table.py  # Credential list with search/filter
-│       ├── dialogs.py           # Password generator, documentation viewer
-│       ├── password_strength.py # Strength bar widget
-│       └── theme.py             # Dark/light mode stylesheets
-├── tests/                       # pytest test suite (71 tests)
-│   ├── test_core_logic.py       # encryption, hashing, password gen, settings
-│   ├── test_score_password.py   # password strength scoring
-│   ├── test_credential_entry.py # data model
-│   ├── test_db_manager.py       # CRUD, import/export, duplicates, backup, key guards
-│   ├── test_duress.py           # duress password, vault wipe, backup rotation
-│   ├── test_credential_form.py  # copy buttons (regression)
-│   └── conftest.py
-├── data/                        # Runtime data (gitignored)
-│   ├── aethervault.db
-│   ├── .master.key
-│   └── .app_settings.json
-├── MANIFEST.in                  # Package data for pip non-editable installs
-├── pyproject.toml               # Package build config & CLI entry point
-├── requirements.txt
-└── aethervault.spec             # PyInstaller build spec
-```
-
-## Tech Stack
-
-- **Python 3.12+** — core language
-- **PySide6 (Qt)** — GUI framework
-- **SQLite 3** — local database
-- **cryptography** — Fernet AES-256 encryption
-- **PBKDF2-SHA256** — key derivation (480K–600K iterations)
+---
 
 ## License
 
-GNU General Public License v3.0 — see [LICENSE](LICENSE)
-
-## Contributing
-
-Bug reports and feature requests are welcome via [GitHub Issues](https://github.com/AetherSolDev/AetherVault/issues).
+[GPLv3](LICENSE) — Free as in freedom.
