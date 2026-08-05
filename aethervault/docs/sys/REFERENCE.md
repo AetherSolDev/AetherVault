@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-08-05 16:10 CT from docs/sys/
+> Auto-generated on 2026-08-05 16:27 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -1621,4 +1621,4 @@ Append a new entry at the top of the log at the end of every session (see
 
 ---
 
-*Generated on 2026-08-05 16:10 CT by `scripts/build_reference.py`*
+*Generated on 2026-08-05 16:27 CT by `scripts/build_reference.py`*

@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-05 16:08 CT (America/Chicago)
+# Last Edited: 2026-08-05 16:27 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -33,6 +33,15 @@ AetherVault is a portable, local password vault that stores your credentials in 
 - **OS**: Windows 10+, Linux (any modern distro), macOS 12+
 - **Python**: 3.10+
 - **Dependencies**: PySide6, cryptography
+
+### Install from PyPI
+
+The PyPI distribution is `aethervault-py`; the app/import/CLI name is `aethervault`.
+
+```bash
+pip install aethervault-py
+aethervault
+```
 
 ### Setup from Source
 

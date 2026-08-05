@@ -45,7 +45,19 @@ AetherVault is a desktop application that stores your credentials in an encrypte
 
 ## Installation
 
-### Option 1: Download a Pre-Built Executable (Recommended)
+### Option 1: Install from PyPI (Recommended)
+
+Requires Python 3.10+. The distribution name on PyPI is `aethervault-py`;
+the app, import package, and CLI command are all `aethervault`.
+
+```bash
+pip install aethervault-py
+
+# Run from anywhere:
+aethervault
+```
+
+### Option 2: Download a Pre-Built Executable
 
 No Python or pip needed. Grab the binary for your platform from the
 [Releases](https://github.com/AetherSolDev/AetherVault/releases) page
@@ -62,7 +74,7 @@ No Python or pip needed. Grab the binary for your platform from the
 > binary and select **Open** to bypass Gatekeeper.
 > **Linux note:** the binary expects standard Qt/X11 system libraries.
 
-### Option 2: Global Install (Editable)
+### Option 3: Global Install (Editable)
 
 Installs the `aethervault` command system-wide. Works in any directory.
 
@@ -77,7 +89,7 @@ pip install --user --break-system-packages -e .
 aethervault
 ```
 
-### Option 3: Virtual Environment (Isolated)
+### Option 4: Virtual Environment (Isolated)
 
 ```bash
 git clone https://github.com/AetherSolDev/AetherVault.git
@@ -91,7 +103,7 @@ pip install -e .
 aethervault
 ```
 
-### Option 4: Build It Yourself (PyInstaller)
+### Option 5: Build It Yourself (PyInstaller)
 
 No Python or pip needed on the target machine.
 
