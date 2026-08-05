@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
 # Path: tests/test_db_manager.py
 # Purpose: Integration tests for DatabaseManager CRUD operations.
 
@@ -65,7 +65,9 @@ class TestDatabaseManager:
 
     def test_execute_import_keep_vault(self, temp_db, tmp_path):
         import csv
-        temp_db.save_credential(CredentialEntry(title="Existing", username="admin", password="vault_pass"))
+        temp_db.save_credential(
+            CredentialEntry(title="Existing", username="admin", password="vault_pass")
+        )
 
         csv_path = tmp_path / "test.csv"
         with open(csv_path, "w", newline="") as f:
@@ -82,7 +84,9 @@ class TestDatabaseManager:
 
     def test_execute_import_replace(self, temp_db, tmp_path):
         import csv
-        temp_db.save_credential(CredentialEntry(title="Existing", username="admin", password="vault_pass"))
+        temp_db.save_credential(
+            CredentialEntry(title="Existing", username="admin", password="vault_pass")
+        )
 
         csv_path = tmp_path / "test.csv"
         with open(csv_path, "w", newline="") as f:

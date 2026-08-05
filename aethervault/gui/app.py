@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-05 15:17 CT (America/Chicago)
+# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
 # Path: aethervault/gui/app.py
 # Purpose: Main application window — coordinates auth, menus, CRUD, import/export.
 
@@ -830,7 +830,13 @@ class PySidePWManager(QMainWindow):
             label = "Empty" if not c.password else "Short"
             rows.append((f"{label} password", c.title, f"{len(c.password or '')} chars"))
         for pw, titles in reused_entries.items():
-            rows.append(("Reused password", titles[0], f'"{pw[:12]}..." shared by {len(titles)} entries'))
+            rows.append(
+                (
+                    "Reused password",
+                    titles[0],
+                    f'"{pw[:12]}..." shared by {len(titles)} entries',
+                )
+            )
 
         table.setRowCount(len(rows))
         for ri, (issue, title, detail) in enumerate(rows):

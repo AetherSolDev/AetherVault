@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
+# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
 # Path: aethervault/gui/credential_table.py
 # Purpose: Credential list table widget with search, filter, and context menu.
 
@@ -159,7 +159,10 @@ class CredentialTable(QWidget):
         return [
             c for c in self.credentials
             if (selected_cat == "All Categories" or c.category == selected_cat)
-            and (selected_tag == "All Tags" or (c.tags and selected_tag in [t.strip() for t in c.tags.split(",")]))
+            and (
+                selected_tag == "All Tags"
+                or (c.tags and selected_tag in [t.strip() for t in c.tags.split(",")])
+            )
             and (
                 not search
                 or search in c.title.lower()
@@ -204,7 +207,10 @@ class CredentialTable(QWidget):
         item = self.table.item(row, col)
         if not item or not item.text():
             return
-        labels = {0: "title", 1: "username", 2: "url", 3: "category", 5: "last used", 6: "pass changed"}
+        labels = {
+            0: "title", 1: "username", 2: "url", 3: "category",
+            5: "last used", 6: "pass changed",
+        }
         label = labels.get(col, "value")
         self.copy_requested.emit(item.text(), label)
 
@@ -222,7 +228,11 @@ class CredentialTable(QWidget):
         if column == 4:
             return
         if self.sort_column == column:
-            self.sort_order = Qt.DescendingOrder if self.sort_order == Qt.AscendingOrder else Qt.AscendingOrder
+            self.sort_order = (
+                Qt.DescendingOrder
+                if self.sort_order == Qt.AscendingOrder
+                else Qt.AscendingOrder
+            )
         else:
             self.sort_column = column
             self.sort_order = Qt.AscendingOrder

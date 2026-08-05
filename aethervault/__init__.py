@@ -1,9 +1,9 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-01 02:56 CT (America/Chicago)
+# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
 # Path: aethervault/__init__.py
 # Purpose: Package init for AetherVault source. Defines PROJECT_ROOT and portable mode.
 
-"""Package initializer for AetherVault providing PROJECT_ROOT, version constants, and portable mode controls."""
+"""Package initializer providing PROJECT_ROOT, version constants, and portable mode controls."""
 
 __version__ = "6.3.1"
 VERSION = __version__

@@ -1,0 +1,54 @@
+# Created: 2026-08-05
+# Last Edited: 2026-08-05 15:56 CT (America/Chicago)
+# Path: maps/imports.mmd
+# Purpose: Module dependency graph for AetherVault (mermaid flowchart).
+
+# Import Map
+
+> Source of truth for module dependencies. No circular imports. `core/` never imports `gui/`.
+
+```mermaid
+flowchart LR
+    subgraph Core["core/ (business logic)"]
+        engine["core/engine.py"]
+        password["core/password.py"]
+    end
+    subgraph Shared["shared/ (cross-cutting)"]
+        database["shared/database.py"]
+        models["shared/models.py"]
+    end
+    subgraph Gui["gui/ (UI)"]
+        app["gui/app.py"]
+        form["gui/credential_form.py"]
+        table["gui/credential_table.py"]
+        dialog["gui/dialogs.py"]
+        strength["gui/password_strength.py"]
+        conflict["gui/conflict_dialog.py"]
+        ctc["gui/click_to_copy_filter.py"]
+        theme["gui/theme.py"]
+    end
+    main["__main__.py"]
+
+    main --> app
+    main --> aethervault_init["aethervault/__init__.py"]
+    engine --> aethervault_init
+    database --> engine
+    database --> models
+    app --> engine
+    app --> password
+    app --> database
+    app --> models
+    app --> form
+    app --> table
+    app --> conflict
+    app --> dialog
+    app --> theme
+    form --> models
+    form --> ctc
+    form --> strength
+    table --> models
+    table --> theme
+    dialog --> password
+    dialog --> aethervault_init
+    strength --> password
+```

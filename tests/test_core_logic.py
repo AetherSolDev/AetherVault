@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
 # Path: tests/test_core_logic.py
 # Purpose: Unit tests for encryption, hashing, password generation, and settings.
 
@@ -116,14 +116,20 @@ class TestGenerateStrongPassword:
         assert len(pw) == 1
 
     def test_contains_each_chosen_set(self):
-        pw = generate_strong_password(length=50, use_lower=True, use_upper=True, use_digit=True, use_symbol=True)
+        pw = generate_strong_password(
+            length=50, use_lower=True, use_upper=True, use_digit=True,
+            use_symbol=True,
+        )
         assert any(c.islower() for c in pw)
         assert any(c.isupper() for c in pw)
         assert any(c.isdigit() for c in pw)
         assert any(not c.isalnum() for c in pw)
 
     def test_only_lowercase(self):
-        pw = generate_strong_password(length=20, use_lower=True, use_upper=False, use_digit=False, use_symbol=False)
+        pw = generate_strong_password(
+            length=20, use_lower=True, use_upper=False, use_digit=False,
+            use_symbol=False,
+        )
         assert all(c.islower() for c in pw)
 
     def test_unique_generations(self):

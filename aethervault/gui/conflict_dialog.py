@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
+# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
 # Path: aethervault/gui/conflict_dialog.py
 # Purpose: Import conflict review dialog for per-entry resolution.
 
@@ -46,7 +46,9 @@ class ImportConflictDialog(QDialog):
 
         table = QTableWidget()
         table.setColumnCount(5)
-        table.setHorizontalHeaderLabels(["Title", "Username", "Vault Password", "Import Password", "Action"])
+        table.setHorizontalHeaderLabels(
+            ["Title", "Username", "Vault Password", "Import Password", "Action"]
+        )
         table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -73,9 +75,14 @@ class ImportConflictDialog(QDialog):
             group.addButton(replace_rb)
             keep_rb.setChecked(True)
 
-            key = (vault.get("title", "").lower().strip(), vault.get("username", "").lower().strip())
+            key = (
+                vault.get("title", "").lower().strip(),
+                vault.get("username", "").lower().strip(),
+            )
             self.decisions[key] = "keep_vault"
-            group.buttonClicked.connect(lambda checked, k=key, g=group: self._on_decision_changed(k, g))
+            group.buttonClicked.connect(
+                lambda checked, k=key, g=group: self._on_decision_changed(k, g)
+            )
 
             hb = QHBoxLayout()
             hb.addWidget(keep_rb)
@@ -123,7 +130,10 @@ class ImportConflictDialog(QDialog):
             else:
                 buttons[1].setChecked(True)
             vault = self.conflicts[ri]["vault"]
-            key = (vault.get("title", "").lower().strip(), vault.get("username", "").lower().strip())
+            key = (
+                vault.get("title", "").lower().strip(),
+                vault.get("username", "").lower().strip(),
+            )
             self.decisions[key] = decision
 
     def get_decisions(self) -> Dict[Tuple[str, str], str]:

@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-05 15:35 CT (America/Chicago)
+# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
 # Path: aethervault/shared/database.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
@@ -36,10 +36,21 @@ COLUMN_ALIASES = {
     "tags": ["tags", "tag", "labels"],
     "custom_fields": ["custom_fields", "custom fields", "custom"],
     "parent_id": ["parent_id", "parent", "folder id"],
-    "created_at": ["created_at", "time created", "timecreated", "creation time", "created"],
-    "modified_at": ["modified_at", "time modified", "timemodified", "modification time", "modified", "updated"],
-    "time_last_used": ["time_last_used", "time last used", "timelastused", "last_used", "last used"],
-    "time_password_changed": ["time_password_changed", "time password changed", "timepasswordchanged", "password changed", "pass changed"],
+    "created_at": [
+        "created_at", "time created", "timecreated", "creation time", "created",
+    ],
+    "modified_at": [
+        "modified_at", "time modified", "timemodified", "modification time",
+        "modified", "updated",
+    ],
+    "time_last_used": [
+        "time_last_used", "time last used", "timelastused", "last_used",
+        "last used",
+    ],
+    "time_password_changed": [
+        "time_password_changed", "time password changed", "timepasswordchanged",
+        "password changed", "pass changed",
+    ],
 }
 
 _BUILT_ALIAS_MAP = {}
@@ -170,8 +181,16 @@ class DatabaseManager:
             entry_dict["password"], self.encryption_key
         )
         sql = """
-        INSERT INTO credentials (title, url, username, email, password, phone, address, category, notes, tags, custom_fields, parent_id, created_at, modified_at, time_last_used, time_password_changed)
-        VALUES (:title, :url, :username, :email, :password, :phone, :address, :category, :notes, :tags, :custom_fields, :parent_id, :created_at, :modified_at, :time_last_used, :time_password_changed)
+        INSERT INTO credentials (
+            title, url, username, email, password, phone, address, category,
+            notes, tags, custom_fields, parent_id, created_at, modified_at,
+            time_last_used, time_password_changed
+        )
+        VALUES (
+            :title, :url, :username, :email, :password, :phone, :address,
+            :category, :notes, :tags, :custom_fields, :parent_id, :created_at,
+            :modified_at, :time_last_used, :time_password_changed
+        )
         """
         try:
             self.cursor.execute(sql, entry_dict)
@@ -227,7 +246,8 @@ class DatabaseManager:
             self.error_handler("Database Error", f"Error deleting credential: {e}")
 
     def create_pre_op_backup(self, operation: str) -> Optional[str]:
-        """Create a timestamped backup before a destructive operation. Returns the backup path or None."""
+        """Create a timestamped backup before a destructive operation.
+        Returns the backup path or None."""
         if not os.path.exists(self.db_path):
             return None
         try:

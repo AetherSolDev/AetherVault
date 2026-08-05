@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-05 15:25 CT (America/Chicago)
+# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
 # Path: aethervault/gui/credential_form.py
 # Purpose: Credential detail/edit form widget for the right panel.
 
@@ -59,7 +59,11 @@ class CredentialForm(QWidget):
             line_edit = QLineEdit()
             self.input_fields[key] = line_edit
             line_edit.installEventFilter(
-                ClickToCopyFilter(self, key, lambda text, name=key: self.copy_requested.emit(text, name))
+                ClickToCopyFilter(
+                    self,
+                    key,
+                    lambda text, name=key: self.copy_requested.emit(text, name),
+                )
             )
             form_grid.addWidget(label, row, 0, alignment=Qt.AlignRight | Qt.AlignVCenter)
             if key == "password":
@@ -153,7 +157,11 @@ class CredentialForm(QWidget):
         self.notes_entry = QTextEdit()
         self.notes_entry.textChanged.connect(self._on_field_modified)
         self.notes_entry.installEventFilter(
-            ClickToCopyFilter(self, "notes", lambda text, n="notes": self.copy_requested.emit(text, n))
+            ClickToCopyFilter(
+                self,
+                "notes",
+                lambda text, n="notes": self.copy_requested.emit(text, n),
+            )
         )
         notes_container_layout.addWidget(self.notes_entry)
         form_grid.addWidget(notes_container, notes_row, 1, 1, 2)

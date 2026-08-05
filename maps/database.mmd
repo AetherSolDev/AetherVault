@@ -1,0 +1,31 @@
+# Created: 2026-08-05
+# Last Edited: 2026-08-05 15:56 CT (America/Chicago)
+# Path: maps/database.mmd
+# Purpose: Entity-relationship diagram for the AetherVault SQLite schema.
+
+# Database Map
+
+> SQLite schema from `aethervault/shared/database.py` `_create_table()`. Single table.
+
+```mermaid
+erDiagram
+    credentials {
+        INTEGER db_id PK
+        TEXT title
+        TEXT url
+        TEXT username
+        TEXT email
+        TEXT password "AES-256 encrypted (Fernet)"
+        TEXT phone
+        TEXT address
+        TEXT category
+        TEXT notes
+        TEXT tags "comma-separated"
+        TEXT custom_fields "JSON array"
+        INTEGER parent_id
+        TEXT created_at
+        TEXT modified_at
+        TEXT time_last_used
+        TEXT time_password_changed
+    }
+```
