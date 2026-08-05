@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-08-05 17:51 CT from docs/sys/
+> Auto-generated on 2026-08-05 18:00 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -261,6 +261,7 @@ this exact bug. Don't repeat it.
 
 ## Session History Summary
 
+- **2026-08-05 (session 24)**: **Release v6.4.0 + PyPI + README.** Tagged/released v6.4.0 (4 binaries: Linux, macOS arm64/x86_64, Windows). Published `aethervault-py` 6.4.0 to PyPI via trusted publishing; fixed publish workflow YAML bug (heredoc broke parsing) + CI Qt deps + badge cache-bust. Rewrote README in AetherPod format; captured full-screen demo GIF incl. password health report (dialogs grabbed via `activeWindow().grab()`). Captured format in kit `README_FORMAT.md`. Made `-u` PyPI-aware (`importlib.metadata` → `pip install --upgrade aethervault-py`; source/git keeps git path; exe users redownload). 74 tests pass.
 - **2026-08-05 (session 23)**: **Package restructure (C10).** Split `core_logic.py` → `aethervault/core/engine.py` (encryption/hashing/keys/backup/wipe/settings) + `aethervault/core/password.py` (score/gen); `db_manager.py` → `aethervault/shared/database.py` (DatabaseManager); `CredentialEntry` → `aethervault/shared/models.py`. Updated all importers (GUI + 6 test files), deleted old modules, fixed test monkeypatch targets (`aethervault.core.engine.*`). 71 tests pass; app launches. STRUCTURE.md layout now complete.
 - **2026-08-05 (session 22)**: **Kit alignment + bug fixes.** Restored `project_kit/` from NAS, compared vs project (gap analysis). Licensing: added "How to Decide: GPL3 vs MIT+EULA" to kit LICENSING.md, moved EULA→instructions/. Brand assets: `aethersol.ico`/`aethersol_logo.png` into `project_kit/assets/` + `instructions/ASSETS.md`. Aligned project: added `sessions.md`, `FUTURE_DEV_IDEAS.md`, `aethervault.txt`, `project_audit/`; synced `instructions/`; updated `AGENTS.md`; removed stale `kiss/`. **Fixed copy/paste bug** (F14): Copy Password button captured the loop variable → copied Category field; fixed with default-arg lambda; 2 regression tests; suite 69→71. Tray/window icon now `aethersol.ico`.
 - **2026-07-24 (session 1)**: Initial project audit. Set up project scaffolding with New_Project_init template system. Created AGENTS.md, docs/sys/, USER_GUIDE.md, instructions/, scripts/, .repomixignore. Identified 3 bugs and 5 planned changes.
@@ -352,6 +353,13 @@ this exact bug. Don't repeat it.
 # AetherVault Tasks
 
 ## P0 — Critical (security/stability)
+
+- [x] R1 — Release v6.4.0 + PyPI publishing + README/GIF
+  - **ID**: release-6.4.0-pypi
+  - **Tags**: release, ci, docs, packaging
+  - **Details**: Bumped to 6.4.0; tagged + released with 4 binaries (Linux, macOS arm64/x86_64, Windows). Published `aethervault-py` to PyPI via trusted publishing (fixed workflow YAML heredoc bug + CI Qt deps + badge cache). Rewrote README in AetherPod format with full-screen demo GIF incl. password health report. Made `-u` PyPI-aware. Captured README format in kit `README_FORMAT.md`.
+  - **Files**: `README.md`, `.github/workflows/*`, `aethervault/__main__.py`, `aethervault/assets/screens/*`, `project_kit/instructions/README_FORMAT.md`
+  - **Acceptance**: `pip install aethervault-py` → v6.4.0; `aethervault -u` upgrades via PyPI; 4 release binaries attached; 74 tests pass.
 
 - [x] F14 — Copy Password button copies wrong field (late-binding lambda)
   - **ID**: fix-copy-password
@@ -600,6 +608,10 @@ this exact bug. Don't repeat it.
 
 ### Fixed
 - **Copy Password button copied the Category field** — late-binding lambda; captured with default arg. 2 regression tests.
+- **`aethervault -u` for PyPI installs** — previously always ran `pip install --upgrade git+<repo>`, which fails for PyPI users. Now detects install source via `importlib.metadata`: `aethervault-py` present → `pip install --upgrade aethervault-py`; source/git installs keep the git path. Executable (exe) installs can't self-upgrade — documented in README (redownload from Releases).
+
+### Notes
+- **v6.4.0 published** — `aethervault-py` 6.4.0 live on PyPI (wheel + sdist) via trusted publishing; 4 release binaries (Linux, macOS arm64/x86_64, Windows). CI + publish workflows fixed (Qt deps, YAML heredoc bug, badge cache).
 
 ## [Unreleased] — 2026-08-05 (audit remediation F14 + F15)
 
@@ -1605,6 +1617,34 @@ Append a new entry at the top of the log at the end of every session (see
 `save session` protocol in `instructions/memory.md`). This file lives in
 `aethervault/docs/sys/` and is NOT tracked by git.
 
+## 2026-08-05 — Release v6.4.0, PyPI publishing, README/GIF, upgrade fix
+
+### Completed
+- **Release v6.4.0** — integrity check, core/shared restructure, python floor 3.10, PyPI publishing, AetherPod-format README + demo GIF. Tagged + released; 4 binaries attached (Linux, macOS arm64 + x86_64, Windows).
+- **PyPI live** — `aethervault-py` 6.4.0 published via trusted publishing (wheel + sdist). Fixed publish workflow YAML bug (heredoc broke parsing → moved to YAML-safe `python -c` inline). Fixed CI (Qt system deps for GUI tests). Badge cache-bust fix (GitHub cached "not found" pre-publish).
+- **README/GIF** — rewrote README in AetherPod format (banner, badges, screenshots-first). Captured demo GIF at full-screen: login → vault → entries → edit (strength meter) → search → generator → **health report** (reused + too-short findings). Fixed seed key-derivation bug (used raw pw vs stored hash). Health dialog captured via `activeWindow().grab()` (main-window grab misses dialogs).
+- **README format captured in project_kit** — `instructions/README_FORMAT.md` (house style, demo-GIF recipe, dialog-grab gotcha), linked from kit AGENTS.md + new_project.md.
+- **`aethervault -u` PyPI-aware** — detects `aethervault-py` dist via importlib.metadata → `pip install --upgrade aethervault-py`; source/git installs keep git path. Binary/exe users must redownload (added README note).
+
+### In Progress
+- None — session complete
+
+### Blocked
+- None
+
+### Key Decisions
+- PyPI distribution name = `aethervault-py` (the name `aethervault` collides with existing `aether-vault` on PyPI)
+- `-u` upgrade path branches on install source: PyPI dist / git checkout / git-URL fallback
+- Standalone executables cannot self-upgrade — README documents manual redownload
+- Trusted publisher claims: project `aethervault-py`, owner `AetherSolDev`, repo `AetherVault`, workflow `publish-pypi.yml`, env `pypi`
+
+### Cost
+- Model(s) used: deepseek-v4-flash (off-peak)
+- Tokens — input / output: (run `scripts/update_cost.py`)
+- Peak or off-peak: off-peak
+- $ cost this session: (fill at save session)
+- Project total (from COST.md): see COST.md
+
 ## 2026-08-05 — Kit alignment, brand assets, copy/paste bug
 
 ### Completed
@@ -1636,4 +1676,4 @@ Append a new entry at the top of the log at the end of every session (see
 
 ---
 
-*Generated on 2026-08-05 17:51 CT by `scripts/build_reference.py`*
+*Generated on 2026-08-05 18:00 CT by `scripts/build_reference.py`*

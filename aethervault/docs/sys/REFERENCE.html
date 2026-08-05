@@ -41,7 +41,7 @@
 <body>
 <h1 id="docs-technical-reference">docs — Technical Reference</h1>
 <blockquote>
-<p>Auto-generated on 2026-08-05 17:51 CT from docs/sys/
+<p>Auto-generated on 2026-08-05 18:00 CT from docs/sys/
 Source: <code>scripts/build_reference.py</code></p>
 </blockquote>
 <h2 id="table-of-contents">Table of Contents</h2>
@@ -405,6 +405,7 @@ this exact bug. Don't repeat it.</p>
 </table>
 <h2 id="session-history-summary">Session History Summary</h2>
 <ul>
+<li><strong>2026-08-05 (session 24)</strong>: <strong>Release v6.4.0 + PyPI + README.</strong> Tagged/released v6.4.0 (4 binaries: Linux, macOS arm64/x86_64, Windows). Published <code>aethervault-py</code> 6.4.0 to PyPI via trusted publishing; fixed publish workflow YAML bug (heredoc broke parsing) + CI Qt deps + badge cache-bust. Rewrote README in AetherPod format; captured full-screen demo GIF incl. password health report (dialogs grabbed via <code>activeWindow().grab()</code>). Captured format in kit <code>README_FORMAT.md</code>. Made <code>-u</code> PyPI-aware (<code>importlib.metadata</code> → <code>pip install --upgrade aethervault-py</code>; source/git keeps git path; exe users redownload). 74 tests pass.</li>
 <li><strong>2026-08-05 (session 23)</strong>: <strong>Package restructure (C10).</strong> Split <code>core_logic.py</code> → <code>aethervault/core/engine.py</code> (encryption/hashing/keys/backup/wipe/settings) + <code>aethervault/core/password.py</code> (score/gen); <code>db_manager.py</code> → <code>aethervault/shared/database.py</code> (DatabaseManager); <code>CredentialEntry</code> → <code>aethervault/shared/models.py</code>. Updated all importers (GUI + 6 test files), deleted old modules, fixed test monkeypatch targets (<code>aethervault.core.engine.*</code>). 71 tests pass; app launches. STRUCTURE.md layout now complete.</li>
 <li><strong>2026-08-05 (session 22)</strong>: <strong>Kit alignment + bug fixes.</strong> Restored <code>project_kit/</code> from NAS, compared vs project (gap analysis). Licensing: added "How to Decide: GPL3 vs MIT+EULA" to kit LICENSING.md, moved EULA→instructions/. Brand assets: <code>aethersol.ico</code>/<code>aethersol_logo.png</code> into <code>project_kit/assets/</code> + <code>instructions/ASSETS.md</code>. Aligned project: added <code>sessions.md</code>, <code>FUTURE_DEV_IDEAS.md</code>, <code>aethervault.txt</code>, <code>project_audit/</code>; synced <code>instructions/</code>; updated <code>AGENTS.md</code>; removed stale <code>kiss/</code>. <strong>Fixed copy/paste bug</strong> (F14): Copy Password button captured the loop variable → copied Category field; fixed with default-arg lambda; 2 regression tests; suite 69→71. Tray/window icon now <code>aethersol.ico</code>.</li>
 <li><strong>2026-07-24 (session 1)</strong>: Initial project audit. Set up project scaffolding with New_Project_init template system. Created AGENTS.md, docs/sys/, USER_GUIDE.md, instructions/, scripts/, .repomixignore. Identified 3 bugs and 5 planned changes.</li>
@@ -496,7 +497,17 @@ this exact bug. Don't repeat it.</p>
 <h1 id="aethervault-tasks">AetherVault Tasks</h1>
 <h2 id="p0-critical-securitystability">P0 — Critical (security/stability)</h2>
 <ul>
-<li>[x] F14 — Copy Password button copies wrong field (late-binding lambda)</li>
+<li>[x] R1 — Release v6.4.0 + PyPI publishing + README/GIF</li>
+<li><strong>ID</strong>: release-6.4.0-pypi</li>
+<li><strong>Tags</strong>: release, ci, docs, packaging</li>
+<li><strong>Details</strong>: Bumped to 6.4.0; tagged + released with 4 binaries (Linux, macOS arm64/x86_64, Windows). Published <code>aethervault-py</code> to PyPI via trusted publishing (fixed workflow YAML heredoc bug + CI Qt deps + badge cache). Rewrote README in AetherPod format with full-screen demo GIF incl. password health report. Made <code>-u</code> PyPI-aware. Captured README format in kit <code>README_FORMAT.md</code>.</li>
+<li><strong>Files</strong>: <code>README.md</code>, <code>.github/workflows/*</code>, <code>aethervault/__main__.py</code>, <code>aethervault/assets/screens/*</code>, <code>project_kit/instructions/README_FORMAT.md</code></li>
+<li>
+<p><strong>Acceptance</strong>: <code>pip install aethervault-py</code> → v6.4.0; <code>aethervault -u</code> upgrades via PyPI; 4 release binaries attached; 74 tests pass.</p>
+</li>
+<li>
+<p>[x] F14 — Copy Password button copies wrong field (late-binding lambda)</p>
+</li>
 <li><strong>ID</strong>: fix-copy-password</li>
 <li><strong>Tags</strong>: bug, gui, clipboard</li>
 <li><strong>Details</strong>: <code>credential_form.py</code> wired the Copy Password button to a lambda capturing the loop variable <code>line_edit</code>, which after the form loop points to the last field (<code>category</code>). Clicking copied the wrong field (or empty).</li>
@@ -821,6 +832,11 @@ this exact bug. Don't repeat it.</p>
 <h3 id="fixed">Fixed</h3>
 <ul>
 <li><strong>Copy Password button copied the Category field</strong> — late-binding lambda; captured with default arg. 2 regression tests.</li>
+<li><strong><code>aethervault -u</code> for PyPI installs</strong> — previously always ran <code>pip install --upgrade git+&lt;repo&gt;</code>, which fails for PyPI users. Now detects install source via <code>importlib.metadata</code>: <code>aethervault-py</code> present → <code>pip install --upgrade aethervault-py</code>; source/git installs keep the git path. Executable (exe) installs can't self-upgrade — documented in README (redownload from Releases).</li>
+</ul>
+<h3 id="notes">Notes</h3>
+<ul>
+<li><strong>v6.4.0 published</strong> — <code>aethervault-py</code> 6.4.0 live on PyPI (wheel + sdist) via trusted publishing; 4 release binaries (Linux, macOS arm64/x86_64, Windows). CI + publish workflows fixed (Qt deps, YAML heredoc bug, badge cache).</li>
 </ul>
 <h2 id="unreleased-2026-08-05-audit-remediation-f14-f15">[Unreleased] — 2026-08-05 (audit remediation F14 + F15)</h2>
 <h3 id="added_1">Added</h3>
@@ -2123,19 +2139,18 @@ discussing with AI. No structured format required.</p>
 <p>Append a new entry at the top of the log at the end of every session (see
 <code>save session</code> protocol in <code>instructions/memory.md</code>). This file lives in
 <code>aethervault/docs/sys/</code> and is NOT tracked by git.</p>
-<h2 id="2026-08-05-kit-alignment-brand-assets-copypaste-bug">2026-08-05 — Kit alignment, brand assets, copy/paste bug</h2>
+<h2 id="2026-08-05-release-v640-pypi-publishing-readmegif-upgrade-fix">2026-08-05 — Release v6.4.0, PyPI publishing, README/GIF, upgrade fix</h2>
 <h3 id="completed">Completed</h3>
 <ul>
-<li>Restored <code>project_kit/</code> from NAS; compared kit vs project structure (gaps documented)</li>
-<li>Licensing: added "How to Decide: GPL3 vs MIT + EULA" to kit LICENSING.md; moved EULA.md → instructions/EULA.md</li>
-<li>Brand assets: copied <code>aethersol.ico</code> + <code>aethersol_logo.png</code> into <code>project_kit/assets/</code>; wrote <code>instructions/ASSETS.md</code></li>
-<li>Phase 0: removed stale <code>kiss/</code> venv; baseline 69 tests pass</li>
+<li><strong>Release v6.4.0</strong> — integrity check, core/shared restructure, python floor 3.10, PyPI publishing, AetherPod-format README + demo GIF. Tagged + released; 4 binaries attached (Linux, macOS arm64 + x86_64, Windows).</li>
+<li><strong>PyPI live</strong> — <code>aethervault-py</code> 6.4.0 published via trusted publishing (wheel + sdist). Fixed publish workflow YAML bug (heredoc broke parsing → moved to YAML-safe <code>python -c</code> inline). Fixed CI (Qt system deps for GUI tests). Badge cache-bust fix (GitHub cached "not found" pre-publish).</li>
+<li><strong>README/GIF</strong> — rewrote README in AetherPod format (banner, badges, screenshots-first). Captured demo GIF at full-screen: login → vault → entries → edit (strength meter) → search → generator → <strong>health report</strong> (reused + too-short findings). Fixed seed key-derivation bug (used raw pw vs stored hash). Health dialog captured via <code>activeWindow().grab()</code> (main-window grab misses dialogs).</li>
+<li><strong>README format captured in project_kit</strong> — <code>instructions/README_FORMAT.md</code> (house style, demo-GIF recipe, dialog-grab gotcha), linked from kit AGENTS.md + new_project.md.</li>
+<li><strong><code>aethervault -u</code> PyPI-aware</strong> — detects <code>aethervault-py</code> dist via importlib.metadata → <code>pip install --upgrade aethervault-py</code>; source/git installs keep git path. Binary/exe users must redownload (added README note).</li>
 </ul>
 <h3 id="in-progress">In Progress</h3>
 <ul>
-<li>Phase 1: adding missing template structure (sessions.md, FUTURE_DEV_IDEAS.md, project_audit/, instructions sync, aethervault.txt)</li>
-<li>Phase 1b: icon &amp; branding (pending)</li>
-<li>Phase 3a/3b: copy/paste bug investigation (pending)</li>
+<li>None — session complete</li>
 </ul>
 <h3 id="blocked">Blocked</h3>
 <ul>
@@ -2143,12 +2158,45 @@ discussing with AI. No structured format required.</p>
 </ul>
 <h3 id="key-decisions_1">Key Decisions</h3>
 <ul>
+<li>PyPI distribution name = <code>aethervault-py</code> (the name <code>aethervault</code> collides with existing <code>aether-vault</code> on PyPI)</li>
+<li><code>-u</code> upgrade path branches on install source: PyPI dist / git checkout / git-URL fallback</li>
+<li>Standalone executables cannot self-upgrade — README documents manual redownload</li>
+<li>Trusted publisher claims: project <code>aethervault-py</code>, owner <code>AetherSolDev</code>, repo <code>AetherVault</code>, workflow <code>publish-pypi.yml</code>, env <code>pypi</code></li>
+</ul>
+<h3 id="cost">Cost</h3>
+<ul>
+<li>Model(s) used: deepseek-v4-flash (off-peak)</li>
+<li>Tokens — input / output: (run <code>scripts/update_cost.py</code>)</li>
+<li>Peak or off-peak: off-peak</li>
+<li>$ cost this session: (fill at save session)</li>
+<li>Project total (from COST.md): see COST.md</li>
+</ul>
+<h2 id="2026-08-05-kit-alignment-brand-assets-copypaste-bug">2026-08-05 — Kit alignment, brand assets, copy/paste bug</h2>
+<h3 id="completed_1">Completed</h3>
+<ul>
+<li>Restored <code>project_kit/</code> from NAS; compared kit vs project structure (gaps documented)</li>
+<li>Licensing: added "How to Decide: GPL3 vs MIT + EULA" to kit LICENSING.md; moved EULA.md → instructions/EULA.md</li>
+<li>Brand assets: copied <code>aethersol.ico</code> + <code>aethersol_logo.png</code> into <code>project_kit/assets/</code>; wrote <code>instructions/ASSETS.md</code></li>
+<li>Phase 0: removed stale <code>kiss/</code> venv; baseline 69 tests pass</li>
+</ul>
+<h3 id="in-progress_1">In Progress</h3>
+<ul>
+<li>Phase 1: adding missing template structure (sessions.md, FUTURE_DEV_IDEAS.md, project_audit/, instructions sync, aethervault.txt)</li>
+<li>Phase 1b: icon &amp; branding (pending)</li>
+<li>Phase 3a/3b: copy/paste bug investigation (pending)</li>
+</ul>
+<h3 id="blocked_1">Blocked</h3>
+<ul>
+<li>None</li>
+</ul>
+<h3 id="key-decisions_2">Key Decisions</h3>
+<ul>
 <li>License decision note lives at TOP of LICENSING.md (per-project: MIT+EULA commercial / GPL3 open-source)</li>
 <li>EULA template moved to <code>instructions/</code> — the kit root keeps only MIT <code>LICENSE</code></li>
 <li>Asset usage guide lives at <code>instructions/ASSETS.md</code> (discoverable from AGENTS.md + new_project.md)</li>
 <li>Tray icon should use the packaged <code>.ico</code>, not the hand-drawn "K" placeholder</li>
 </ul>
-<h3 id="cost">Cost</h3>
+<h3 id="cost_1">Cost</h3>
 <ul>
 <li>Model(s) used: deepseek-v4-flash (session start)</li>
 <li>Tokens — input / output: (run <code>scripts/update_cost.py</code> at session end)</li>
@@ -2157,6 +2205,6 @@ discussing with AI. No structured format required.</p>
 <li>Project total (from COST.md): see COST.md</li>
 </ul>
 <hr />
-<p><em>Generated on 2026-08-05 17:51 CT by <code>scripts/build_reference.py</code></em></p>
+<p><em>Generated on 2026-08-05 18:00 CT by <code>scripts/build_reference.py</code></em></p>
 </body>
 </html>
