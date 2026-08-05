@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-01 02:23 CT (America/Chicago)
+# Last Edited: 2026-08-05 16:08 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -31,7 +31,7 @@ AetherVault is a portable, local password vault that stores your credentials in 
 
 ### System Requirements
 - **OS**: Windows 10+, Linux (any modern distro), macOS 12+
-- **Python**: 3.9+
+- **Python**: 3.10+
 - **Dependencies**: PySide6, cryptography
 
 ### Setup from Source

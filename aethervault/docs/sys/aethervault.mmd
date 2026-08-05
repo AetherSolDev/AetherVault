@@ -432,7 +432,7 @@ classDiagram
 
 ```mermaid
 flowchart TD
-    GIT[Push to main or Pull Request] --> CI[pytest on Python 3.9 to 3.12]
+    GIT[Push to main or Pull Request] --> CI[pytest on Python 3.10 to 3.12]
     REL[Publish GitHub Release] --> BUILD[PyInstaller single file per OS]
     MAN[Manual workflow run] --> BUILD
     CI -->|must pass| BUILD

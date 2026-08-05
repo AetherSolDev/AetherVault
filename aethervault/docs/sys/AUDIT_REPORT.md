@@ -1,107 +1,77 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-01 03:02 CT (America/Chicago)
+# Last Edited: 2026-08-05 16:08 CT (America/Chicago)
 # Path: docs/sys/AUDIT_REPORT.md
 # Purpose: Formal audit findings from alignment_checklist.md evaluation of AetherVault.
 
 # Audit Report: AetherVault
 
-**Date**: 2026-08-01 (re-audit)
-**Files Scanned**: 13 source files (aethervault/), 5 test files, 6 scripts
-**Overall Score**: **A** (all prior findings closed; F12 + F13 remediated)
+**Date**: 2026-08-05 (post-restructure re-audit + remediation)
+**Files Scanned**: 17 source files (aethervault/ incl. core/ + shared/), 6 test files, 6 scripts
+**Overall Score**: **A** (F15 + F16 remediated)
 
 ## Summary
 
 | Finding Type | Resolved | New This Audit | Remaining |
 |--------------|----------|----------------|-----------|
-| God functions | 5 | 0 | 0 |
-| Test gaps | 1 | 0 | 0 |
-| Mixed concerns | 1 | 0 | 0 |
-| DB connection pattern | 1 | 0 | 0 |
-| Missing WAL mode | 1 | 0 | 0 |
-| Debug artifacts | 2 | 0 | 0 |
-| SQL f-string (low risk) | 1 | 0 | 0 |
-| Encryption key guard | 0 | 1 (fixed) | 0 |
-| Git repo detection | 0 | 1 (added) | 0 |
-| Auto-upgrade feat | 0 | 1 (added) | 0 |
-| Unused imports | 0 | 1 (fixed) | 0 |
-| Bare-except style | 0 | 1 (fixed) | 0 |
-| **Total** | **14** | **5** | **0** |
+| Structure alignment | 0 | 1 (fixed, C10) | 0 |
+| Maps | 0 | 1 (added maps/) | 0 |
+| Line length | 0 | 1 (fixed) | 0 |
+| Startup integrity check | 0 | 1 (fixed, F15) | 0 |
+| Python version floor | 0 | 1 (fixed, F16) | 0 |
+| **Total** | **0** | **5** | **0** |
 
-## Priority Definitions
+## Re-Audit Findings (2026-08-05)
 
-- **P0**: Fix immediately (security, data loss, production breakage)
-- **P1**: Fix this session (major standard violation, missing critical tests)
-- **P2**: Fix when convenient (minor violations, documentation gaps)
-- **P3**: Enhancement for future (nice-to-have, cosmetic)
-
-## Detailed Findings
-
-### P2
-
-1. **F12 — Unused imports in 6 source files** `[x] Fixed`
-   - **Files**:
-     - `aethervault/core_logic.py:16,18` — `sys`, `List` (never referenced)
-     - `aethervault/db_manager.py:14` — `Any` (never referenced)
-     - `aethervault/main.py:19` — `QMessageBox` (never referenced)
-     - `aethervault/gui/app.py:8,23,42,66,67` — `json`, `QHBoxLayout`, `PORTABLE_MARKER`, `DocumentationDialog`, `DarkThemeColors`, `ThemeColors` (imported but unused)
-     - `aethervault/gui/conflict_dialog.py:10` — `Qt` (never referenced)
-     - `aethervault/gui/credential_form.py:15` — `QHeaderView` (never referenced)
-     - `aethervault/gui/credential_table.py:11` — `Optional`, `QPainter`, `QFont` (never referenced)
-   - **Issue**: Violates checklist 2.3 (no unused imports).
-   - **Fix**: Removed all unused names. `gui/app.py` additionally gained `import csv` (needed by F13 exception narrowing). AST re-scan confirms zero unused imports.
-
-### P3
-
-2. **F13 — Style review: `except Exception` catch-alls (22 instances)** `[x] Fixed`
-   - **Files**: `core_logic.py:71,84,140,172,184`, `db_manager.py:68,152,240,298,357,407,464`, `gui/app.py:447,458,475,496,508,533,563,868`, `gui/dialogs.py:34,171`, `gui/credential_table.py:132,315`
-   - **Issue**: Checklist 3.4 prefers specific exceptions over `except Exception` catch-alls. All 22 instances do handle the error (log, dialog, or safe return), and none are silent `pass` — but they are broad. The bare `except Exception:` at `core_logic.py:140,172,184` and `credential_table.py:132,315` are the most notable (no error surfaced).
-   - **Severity rationale**: No P0/P1 because each block either logs, shows a user dialog, or returns a safe default. No data loss path.
-   - **Fix**: Narrowed all 22 instances to concrete exceptions:
-     - `core_logic.py` — `(TypeError, ValueError)` for Fernet encrypt, `(InvalidToken, TypeError, ValueError)` for decrypt, `(ValueError, TypeError)` for verify, `OSError` for file reads/writes.
-     - `db_manager.py` — `ValueError` for key derivation, `(TypeError, ValueError)` for decryption load, `OSError` for backup, `(OSError, csv.Error, ValueError)` for import/export/preview/execute.
-     - `gui/app.py` — `(OSError, csv.Error, ValueError, RuntimeError)` for import/export handlers, `(OSError, shutil.Error)` for backup/restore/auto-backup.
-     - `gui/dialogs.py` — `AttributeError` for `sys._MEIPASS`, `OSError` for doc read.
-     - `gui/credential_table.py` — `(TypeError, ValueError)` for URL parsing.
-
-## Re-Audit Findings (2026-08-01)
-
-All prior findings (F1–F11) remain closed. Fresh scan of 13 source files + 5 test
-files + 6 scripts against `alignment_checklist.md`:
+Fresh scan of 17 source files + 6 test files + 6 scripts against
+`alignment_checklist.md` after the `core/`+`shared/` restructure:
 
 | Category | Checks | Pass | Fail | Notes |
 |----------|--------|------|------|-------|
-| 1. File Structure & Headers | 5 | 5 | 0 | All headers present, paths correct |
-| 2. Imports | 5 | 5 | 0 | F12 fixed — AST scan: zero unused imports |
-| 3. Error Handling | 4 | 4 | 0 | F13 fixed — no bare `except:`, no `except Exception`; specific types only |
-| 4. Functions & Structure | 6 | 6 | 0 | No god functions >100 lines; no circular imports |
-| 5. Database | 4 | 4 | 0 | Parameterized, WAL, context manager, Row access |
-| 6. Testing | 4 | 4 | 0 | 61 tests, all passing, core logic covered |
-| 7. Project Hygiene | 6 | 6 | 0 | No secrets, .gitignore, venv/, unique package name |
-| 8. Documentation | 5 | 5 | 0 | ARCHITECTURE, USER_GUIDE, mmd all current |
-| 9. Environment | 3 | 3 | 0 | Python 3.10+, venv active |
+| 1. File Structure & Headers | 5 | 5 | 0 | All headers present, correct order, line length ≤100 |
+| 2. Imports | 5 | 5 | 0 | AST scan: zero unused imports; grouped stdlib→third→local; absolute imports |
+| 3. Error Handling | 4 | 4 | 0 | No bare `except:`, no `except Exception`; specific types only |
+| 4. Functions & Structure | 6 | 6 | 0 | No circular imports (verified vs imports.mmd); separation of concerns (core/shared/gui) |
+| 5. Database | 4 | 4 | 0 | Parameterized, WAL, Row access, context manager, **integrity check + auto-recovery (F15)** |
+| 6. Testing | 4 | 4 | 0 | 74 tests, all passing, core/model/DB/score/duress/form/integrity covered |
+| 7. Project Hygiene | 6 | 6 | 0 | No secrets, .gitignore covers internals, venv/, unique package name |
+| 8. Documentation | 5 | 5 | 0 | ARCHITECTURE, USER_GUIDE, mmd, maps/ all current |
+| 9. Environment | 3 | 3 | 0 | venv active; **requires-python ≥3.10 (F16 fixed)** |
 | **Total** | **42** | **42** | **0** | **Score: A** |
 
 ### Notable Strengths
-- **61 tests passing** in 4.39s (encryption, hashing, password gen, settings, DB CRUD, import/export, duplicates, backup, key guards).
-- **No debug artifacts**: zero `print()` in production code (main.py output is CLI by design).
+- **71 tests passing** in ~5s — encryption, hashing, password gen, settings, DB CRUD, import/export, duplicates, backup, duress, copy-buttons.
+- **STRUCTURE.md layout complete**: `core/` (engine, password) + `shared/` (database, models) + `gui/`. Verified `core/` never imports `gui/`.
+- **No debug artifacts**: zero `print()` in production (CLI output in `__main__.py` is by design).
 - **No lines > 100 chars**, no trailing whitespace, all file headers present.
-- **DB discipline intact**: parameterized queries, `PRAGMA journal_mode=WAL`, context manager protocol, `sqlite3.Row` access, whitelist-guarded ALTER TABLE.
-- **No secrets committed**: `.master.key`, DB files, settings all gitignored.
-- **Import guard**: all import methods raise `RuntimeError` if vault is locked.
-- **Zero `except Exception` / bare `except:`** — all error handling narrowed to concrete exception types (OSError, ValueError, TypeError, csv.Error, shutil.Error, sqlite3.Error, InvalidToken, RuntimeError).
+- **DB discipline**: parameterized queries, `PRAGMA journal_mode=WAL`, context manager, `sqlite3.Row`, whitelist-guarded ALTER TABLE (f-string uses fixed internal set, not user input).
+- **Maps added**: `maps/architecture.md`, `maps/imports.mmd`, `maps/database.mmd` — validated against the real import graph (all edges match).
+- **No secrets committed**: `.master.key`, DB files, settings, sessions.md, COST.md, project_audit/, scripts/ all gitignored.
 
-### Minor Notes (not findings)
-- `aethervault/data/` and `src/data/` both contain runtime backups — both paths are gitignored; consistent with `core_logic.py:DATA_DIR`.
-- `main.py` `print()` calls are CLI output (upgrade/version), intentional per prior audit.
+### Findings
+
+### P1
+
+1. **F15 — Missing startup integrity check** `[x] Fixed`
+   - **File**: `aethervault/shared/database.py` (`_connect()`), `aethervault/gui/app.py` (`__init__`)
+   - **Issue**: AGENTS.md Critical Rules require "Run startup integrity checks with automatic recovery." No `PRAGMA integrity_check` (or equivalent) runs at startup or on DB connect. Checklist 5.x implies connection robustness; a corrupted DB would fail cryptically at first query rather than at startup with a recoverable error.
+   - **Fix**: `_connect()` now runs `PRAGMA integrity_check`. On failure it notifies via `error_handler` and auto-recovers from the most recent `.db.bak` (copy + re-check). No backup → `conn=None` (safe fail). 3 regression tests added. Verified live: corrupt DB recovered, `secret` intact.
+
+### P3
+
+2. **F16 — `requires-python` is `>=3.9`, checklist prefers 3.10+** `[x] Fixed`
+   - **File**: `pyproject.toml`
+   - **Issue**: Checklist 9.1 (Environment) wants Python 3.10+. Project supported 3.9+.
+   - **Fix**: Raised `requires-python` to `>=3.10`; dropped Python 3.9 from the CI matrix (`ci.yml` now 3.10–3.12); updated USER_GUIDE system requirements.
 
 ## Map Health
 
 | Map File | Status | Notes |
 |----------|--------|-------|
-| `docs/sys/ARCHITECTURE.md` | ✅ OK | Matches current `aethervault/` layout + CI/CD pipeline |
-| `docs/sys/aethervault.mmd` | ✅ OK | Present, describes UI/DB flow accurately |
-| `docs/sys/PLAN.md` | ✅ OK | All items complete |
-| `docs/sys/TASKS.md` | ✅ OK | All tasks complete |
+| `maps/architecture.md` | ✅ OK | Tree matches current `core/`+`shared/`+`gui/` layout; all 12 modules mapped |
+| `maps/imports.mmd` | ✅ OK | Every edge validated against real imports; no ghosts, no missing |
+| `maps/database.mmd` | ✅ OK | 17/17 schema columns mapped |
+| `aethervault/docs/sys/aethervault.mmd` | ✅ OK | Present, describes UI/DB flow accurately |
+| `docs/sys/ARCHITECTURE.md` | ✅ OK | Matches restructured layout |
 
 ## Remediation Log
 
@@ -116,6 +86,15 @@ files + 6 scripts against `alignment_checklist.md`:
 | F2 (god function) | 2026-07-27 | `show_password_health()` reduced 82→64 lines by extracting `score_password()` to core_logic.py. |
 | F3 (god function) | 2026-07-27 | `setup_menu_bar()` 70→6 lines. Extracted into 4 builder methods. Duplicated password scoring eliminated from both password_strength.py and app.py. |
 
+## Post-Duress-Test Verification (2026-08-01)
+
+Live test of the duress wipe on a full copy of the real vault (429 creds):
+- Duress password set → entered at login → vault + backups + keys destroyed (data/ → 0 files), fake "Invalid password" dialog + silent exit.
+- Manual backup (`~/aethervault-backup-2026-08-01/`) + NAS copy both preserved 429 creds.
+- Restore from manual backup → 429 creds, logged in successfully.
+- Fixed a real bug found during testing: `QInputDialog.getText()` returns `(text, ok)` in PySide6; the duress setup unpacked them backwards, causing a silent `AttributeError` after the master prompt. Swap fixed + verified with real modal dialogs.
+- Cleanup: test dirs removed; manual backup removed after successful restore (NAS remains as long-term copy).
+
 ## Audit Log
 
 | Date | Action |
@@ -126,14 +105,8 @@ files + 6 scripts against `alignment_checklist.md`:
 | 2026-07-27 | Session 3: F10 (prints→logging), F11 (SQL whitelist), F5 (22 tests, 3 test files). All findings closed. Score: C→A. |
 | 2026-07-27 | Re-audit (session 11-12): All 12 findings still closed. 42/42 checklist checks pass. 61 tests. Score: A (unchanged). |
 | 2026-08-01 | Re-audit (session 16): All 12 prior findings closed. New: F12 (unused imports, P2), F13 (except Exception style, P3). 41/42 checks pass. Score: A−. |
-| 2026-08-01 | Remediated F12 + F13: removed all unused imports (AST-verified); narrowed all 22 `except Exception` blocks to specific types. Added `import csv` + `InvalidToken` imports. 42/42 checks pass, 61 tests pass. Score: A. |
-| 2026-08-01 | Re-audit (session 20): Post-duress-test pass. 42/42 checklist checks pass. New code clean (no bare except, no f-string SQL, no unused imports, headers OK). 9 functions > 50 lines are pre-existing/UI-builders, none > 75 in logic. 69 tests pass. Score: A. |
+| 2026-08-01 | Remediated F12 + F13: removed all unused imports (AST-verified); narrowed all 22 `except Exception` blocks to specific types. 42/42 checks pass, 61 tests pass. Score: A. |
+| 2026-08-01 | Re-audit (session 20): Post-duress-test pass. 42/42 checklist checks pass. 9 functions > 50 lines are pre-existing/UI-builders, none > 75 in logic. 69 tests pass. Score: A. |
+| 2026-08-05 | Post-restructure re-audit: STRUCTURE.md layout verified, maps/ added + validated, line-length enforced (PEP 8). 40/42 checks pass. 2 new findings: F15 (startup integrity check, P1), F16 (python floor, P3). 71 tests pass. Score: A−. |
+| 2026-08-05 | Remediated F15 + F16: added `PRAGMA integrity_check` + auto-recovery from backup in `DatabaseManager._connect()` (3 regression tests, suite 71→74); raised `requires-python` to 3.10+, dropped 3.9 from CI. 42/42 checks pass, 74 tests pass. Score: A. |
 
-## Post-Duress-Test Verification (2026-08-01)
-
-Live test of the duress wipe on a full copy of the real vault (429 creds):
-- Duress password set → entered at login → vault + backups + keys destroyed (data/ → 0 files), fake "Invalid password" dialog + silent exit.
-- Manual backup (`~/aethervault-backup-2026-08-01/`) + NAS copy both preserved 429 creds.
-- Restore from manual backup → 429 creds, logged in successfully.
-- Fixed a real bug found during testing: `QInputDialog.getText()` returns `(text, ok)` in PySide6; the duress setup unpacked them backwards, causing a silent `AttributeError` after the master prompt. Swap fixed + verified with real modal dialogs.
-- Cleanup: test dirs removed; manual backup removed after successful restore (NAS remains as long-term copy).

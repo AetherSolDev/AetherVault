@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
+# Last Edited: 2026-08-05 16:05 CT (America/Chicago)
 # Path: tests/test_db_manager.py
 # Purpose: Integration tests for DatabaseManager CRUD operations.
 
@@ -262,3 +262,59 @@ class TestDatabaseManager:
         result = temp_db.create_pre_op_backup("TestOp")
         assert result is not None
         assert os.path.exists(result)
+
+    # --- integrity check & recovery (F14) ---
+
+    def test_integrity_check_passes_on_valid_db(self, temp_db):
+        assert temp_db.conn is not None
+        result = temp_db.cursor.execute("PRAGMA integrity_check").fetchone()
+        assert result[0] == "ok"
+
+    def test_recover_from_backup_when_corrupt(self, tmp_path, monkeypatch):
+        """A corrupt DB is recovered from the latest backup on connect."""
+        import shutil
+        from aethervault.core.engine import DB_BACKUP_PATH, DATA_DIR
+        from aethervault.shared.database import DatabaseManager
+
+        db_path = str(tmp_path / "aethervault.db")
+        monkeypatch.setattr("aethervault.core.engine.DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(
+            "aethervault.core.engine.DB_BACKUP_PATH", str(tmp_path / "aethervault.db.bak")
+        )
+
+        # create valid db with a credential
+        dm = DatabaseManager(db_path, lambda t, m: None)
+        dm.set_encryption_key("test-key")
+        dm.save_credential(CredentialEntry(title="T", password="secret"))
+        dm.conn.close()
+
+        # back it up, then corrupt the live db
+        backup = tmp_path / "aethervault_2026.08.05_120000.db.bak"
+        shutil.copyfile(db_path, backup)
+        with open(db_path, "w") as f:
+            f.write("NOT A VALID SQLITE DATABASE" * 10)
+
+        messages = []
+        dm2 = DatabaseManager(db_path, lambda t, m: messages.append(f"{t}: {m}"))
+        assert dm2.conn is not None
+        dm2.set_encryption_key("test-key")
+        loaded = dm2.load_all_credentials()
+        assert len(loaded) == 1
+        assert loaded[0].password == "secret"
+        assert any("recovered" in m.lower() for m in messages)
+        dm2.conn.close()
+
+    def test_no_backup_fails_safely(self, tmp_path, monkeypatch):
+        """A corrupt DB with no backup leaves conn=None instead of crashing."""
+        from aethervault.shared.database import DatabaseManager
+
+        db_path = str(tmp_path / "aethervault.db")
+        monkeypatch.setattr("aethervault.core.engine.DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(
+            "aethervault.core.engine.DB_BACKUP_PATH", str(tmp_path / "aethervault.db.bak")
+        )
+        with open(db_path, "w") as f:
+            f.write("NOT A VALID SQLITE DATABASE" * 10)
+
+        dm = DatabaseManager(db_path, lambda t, m: None)
+        assert dm.conn is None

@@ -41,7 +41,7 @@
 <body>
 <h1 id="docs-technical-reference">docs — Technical Reference</h1>
 <blockquote>
-<p>Auto-generated on 2026-08-05 15:40 CT from docs/sys/
+<p>Auto-generated on 2026-08-05 16:10 CT from docs/sys/
 Source: <code>scripts/build_reference.py</code></p>
 </blockquote>
 <h2 id="table-of-contents">Table of Contents</h2>
@@ -67,7 +67,7 @@ Source: <code>scripts/build_reference.py</code></p>
 ├── .github/
 │   └── workflows/
 │       ├── build.yml            # Cross-platform exe builds + release asset upload
-│       └── ci.yml               # pytest on push/PR (Python 3.9–3.12)
+│       └── ci.yml               # pytest on push/PR (Python 3.10–3.12)
 ├── aethervault/
 │   ├── __init__.py            # Package init, PROJECT_ROOT, VERSION, portable mode
 │   ├── core/                  # Business logic — no UI imports
@@ -154,7 +154,7 @@ Source: <code>scripts/build_reference.py</code></p>
                                     core/engine.py (AES-256 encrypt/decrypt)
 </code></pre>
 <h2 id="cicd-pipeline">CI/CD Pipeline</h2>
-<pre><code>Push to main / PR            → ci.yml → pytest (Python 3.9–3.12)     → gate
+<pre><code>Push to main / PR            → ci.yml → pytest (Python 3.10–3.12)     → gate
 Publish Release / manual run → build.yml → PyInstaller onefile per OS →
     ├── ubuntu-latest   → aethervault-linux-x86_64
     ├── windows-latest  → aethervault-windows-x86_64.exe
@@ -248,7 +248,7 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 <td>71 pytest tests across 6 files + shared fixtures</td>
 </tr>
 <tr>
-<td><code>docs/USER_GUIDE.md</code></td>
+<td><code>aethervault/docs/USER_GUIDE.md</code></td>
 <td>User-facing documentation (opened from Help menu)</td>
 </tr>
 <tr>
@@ -261,7 +261,7 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 </tr>
 <tr>
 <td><code>.github/workflows/ci.yml</code></td>
-<td>Runs pytest on push/PR across Python 3.9–3.12</td>
+<td>Runs pytest on push/PR across Python 3.10–3.12</td>
 </tr>
 </tbody>
 </table>
@@ -352,7 +352,7 @@ this exact bug. Don't repeat it.</p>
 </tr>
 <tr>
 <td>Upgrade check</td>
-<td><code>aethervault/main.py</code> fetches latest tag from GitHub API</td>
+<td><code>aethervault/__main__.py</code> fetches latest tag from GitHub API</td>
 </tr>
 <tr>
 <td>PyInstaller build (local)</td>
@@ -521,7 +521,27 @@ this exact bug. Don't repeat it.</p>
 <li><strong>Tags</strong>: change, architecture</li>
 <li><strong>Details</strong>: Split per STRUCTURE.md — <code>core/engine.py</code> (encryption/hashing/keys/backup/wipe/settings), <code>core/password.py</code> (score/gen), <code>shared/database.py</code> (DatabaseManager), <code>shared/models.py</code> (CredentialEntry). Updated all importers (GUI + 6 test files), deleted old modules, fixed test monkeypatch targets.</li>
 <li><strong>Files</strong>: <code>aethervault/core/*</code>, <code>aethervault/shared/*</code>, <code>aethervault/gui/*</code>, <code>tests/*</code></li>
-<li><strong>Acceptance</strong>: Package layout matches template; 71 tests pass; app launches.</li>
+<li>
+<p><strong>Acceptance</strong>: Package layout matches template; 71 tests pass; app launches.</p>
+</li>
+<li>
+<p>[x] F15 — Missing startup integrity check (audit finding)</p>
+</li>
+<li><strong>ID</strong>: integrity-check</li>
+<li><strong>Tags</strong>: bug, database, security</li>
+<li><strong>Details</strong>: AGENTS.md requires startup integrity checks with automatic recovery; none existed. Added <code>PRAGMA integrity_check</code> to <code>DatabaseManager._connect()</code> with auto-recovery from the latest <code>.db.bak</code> (copy + re-check). No backup → <code>conn=None</code> safe fail. 3 regression tests.</li>
+<li><strong>Files</strong>: <code>aethervault/shared/database.py</code>, <code>tests/test_db_manager.py</code></li>
+<li>
+<p><strong>Acceptance</strong>: Corrupt DB recovered from backup; no-backup case fails safely; 74 tests pass.</p>
+</li>
+<li>
+<p>[x] F16 — Python floor below checklist standard (audit finding)</p>
+</li>
+<li><strong>ID</strong>: python-floor</li>
+<li><strong>Tags</strong>: change, environment</li>
+<li><strong>Details</strong>: <code>requires-python</code> was <code>&gt;=3.9</code>; checklist 9.1 prefers 3.10+. Raised to <code>&gt;=3.10</code>, dropped 3.9 from CI matrix, updated USER_GUIDE.</li>
+<li><strong>Files</strong>: <code>pyproject.toml</code>, <code>.github/workflows/ci.yml</code>, <code>aethervault/docs/USER_GUIDE.md</code></li>
+<li><strong>Acceptance</strong>: <code>requires-python &gt;=3.10</code>; CI tests 3.10–3.12.</li>
 </ul>
 <h2 id="legend_1">Legend</h2>
 <ul>
@@ -785,8 +805,17 @@ this exact bug. Don't repeat it.</p>
 <hr />
 <h2 id="changelog">Changelog</h2>
 <h1 id="changelog_1">Changelog</h1>
-<h2 id="unreleased-2026-08-05-package-restructure">[Unreleased] — 2026-08-05 (package restructure)</h2>
+<h2 id="unreleased-2026-08-05-audit-remediation-f14-f15">[Unreleased] — 2026-08-05 (audit remediation F14 + F15)</h2>
+<h3 id="added">Added</h3>
+<ul>
+<li><strong>Startup integrity check (F14, P1)</strong> — <code>DatabaseManager._connect()</code> now runs <code>PRAGMA integrity_check</code>. On failure it notifies the user and automatically recovers from the most recent <code>.db.bak</code> backup (copy over + re-check). If no backup exists, the connection fails safely (<code>conn=None</code>) instead of crashing. 3 regression tests added (<code>test_recover_from_backup_when_corrupt</code>, <code>test_no_backup_fails_safely</code>, <code>test_integrity_check_passes_on_valid_db</code>). Suite: 71 → 74.</li>
+</ul>
 <h3 id="changed">Changed</h3>
+<ul>
+<li><strong>Python floor raised to 3.10+ (F15, P3)</strong> — <code>pyproject.toml</code> <code>requires-python</code> <code>&gt;=3.9</code> → <code>&gt;=3.10</code>; CI matrix dropped Python 3.9 (<code>ci.yml</code> now 3.10–3.12); USER_GUIDE system requirements updated.</li>
+</ul>
+<h2 id="unreleased-2026-08-05-package-restructure">[Unreleased] — 2026-08-05 (package restructure)</h2>
+<h3 id="changed_1">Changed</h3>
 <ul>
 <li><strong>Package restructure to <code>core/</code> + <code>shared/</code> (C10)</strong> — split <code>core_logic.py</code> → <code>aethervault/core/engine.py</code> (encryption, hashing, key derivation, backup/wipe, settings) + <code>aethervault/core/password.py</code> (<code>score_password</code>, <code>generate_strong_password</code>); <code>db_manager.py</code> → <code>aethervault/shared/database.py</code> (DatabaseManager); <code>CredentialEntry</code> → <code>aethervault/shared/models.py</code>. Updated all importers (GUI modules + 6 test files) and test monkeypatch targets (<code>aethervault.core.engine.*</code>). Deleted old flat modules. Matches STRUCTURE.md canonical layout. 71 tests pass; app launches.</li>
 </ul>
@@ -795,7 +824,7 @@ this exact bug. Don't repeat it.</p>
 <ul>
 <li><strong>Copy Password button copied the Category field instead of the password</strong> — <code>credential_form.py</code> used <code>lambda: self.copy_requested.emit(line_edit.text(), ...)</code> where <code>line_edit</code> was the loop variable, which after the form loop points to the last field (<code>category</code>). The classic late-binding closure bug. Fixed by capturing with a default arg: <code>lambda checked, le=line_edit: ...</code>. Verified on real X11: clicking Copy now places the actual decrypted password on the clipboard. Added <code>tests/test_credential_form.py</code> (2 regression tests). Suite: 69 → 71.</li>
 </ul>
-<h3 id="changed_1">Changed</h3>
+<h3 id="changed_2">Changed</h3>
 <ul>
 <li><strong>Tray + window icon</strong> — replaced the hand-drawn "K" placeholder with the packaged <code>aethersol.ico</code> (multi-size 16-64px). Updated <code>app.py</code>, <code>MANIFEST.in</code>; removed unused <code>QColor</code>/<code>QPixmap</code>/<code>QPainter</code> imports.</li>
 <li><strong>Template alignment (Phase 1-2)</strong> — added <code>aethervault/docs/sys/sessions.md</code>, <code>FUTURE_DEV_IDEAS.md</code>, <code>aethervault.txt</code>; copied <code>aethervault/project_audit/</code> (6 files); synced <code>instructions/</code> with the kit (<code>TESTING.md</code>, <code>STRUCTURE.md</code>, <code>DECISIONS.md</code>, <code>LICENSING.md</code>, <code>EULA.md</code>, <code>packaging.md</code>, <code>ASSETS.md</code>); updated <code>AGENTS.md</code> (correct <code>aethervault/</code> paths, session keywords, Development Workflow). <code>kiss/</code> stale venv removed.</li>
@@ -807,7 +836,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong>Duress password setup aborted after master prompt</strong> — <code>QInputDialog.getText()</code> in PySide6 returns <code>(text, ok)</code> (text first, bool second). The duress setup unpacked them as <code>(ok, text)</code>, so the master field held a bool and <code>verify_password()</code> raised <code>AttributeError</code>, silently stopping the flow before the duress prompt. Now the second prompt (or clear) appears correctly. Verified end-to-end with real modal dialogs; live duress wipe test + restore passed.</li>
 </ul>
 <h2 id="630-2026-08-01">[6.3.0] — 2026-08-01</h2>
-<h3 id="added">Added</h3>
+<h3 id="added_1">Added</h3>
 <ul>
 <li><strong>Duress password (optional)</strong> — if entered at the login screen, cryptographically destroys the vault and all backups (<code>wipe_vault()</code>): master/duress key files are deleted FIRST (crypto erasure), then all <code>.db</code>, <code>.db-wal</code>, <code>.db-shm</code>, <code>.db.bak</code>, <code>aethervault_*.db.bak</code>, and <code>.app_settings.json</code> are overwritten with random data and removed. After wiping it shows a fake "Invalid password" dialog and exits — indistinguishable from a failed login. Configured via Settings → Duress Password (requires the master password to set/clear). Stored as a PBKDF2 hash in <code>data/.duress.key</code>; checked before the master password with identical PBKDF2 cost so timing is indistinguishable.</li>
 <li><strong>Backup rotation</strong> — <code>rotate_backups()</code> keeps the 5 most recent timestamped backups and prunes the rest (pre-op + manual backup paths), keeping wipe time bounded.</li>
@@ -817,12 +846,12 @@ this exact bug. Don't repeat it.</p>
 <li>8 new tests (<code>tests/test_duress.py</code>): duress hash roundtrip/clear/absent, backup rotation keep/prune, wipe destroys all files including keys, wipe idempotent. Suite now 69 tests. Verified live against an isolated copy of the real vault — wipe destroyed all files, real vault untouched.</li>
 </ul>
 <h2 id="unreleased-2026-08-01-session-19">[Unreleased] — 2026-08-01 (session 19)</h2>
-<h3 id="changed_2">Changed</h3>
+<h3 id="changed_3">Changed</h3>
 <ul>
 <li><strong>Removed <code>src/</code> package dir</strong> — runtime data moved from <code>src/data/</code> → root <code>data/</code> (<code>DATA_DIR = PROJECT_ROOT/data</code>). Deleted stale <code>aethervault/data/</code> (old backups + <code>.gitkeep</code>). Updated <code>.gitignore</code> (data/* entries), README, ARCHITECTURE, USER_GUIDE.</li>
 </ul>
 <h2 id="unreleased-2026-08-01-session-18">[Unreleased] — 2026-08-01 (session 18)</h2>
-<h3 id="changed_3">Changed</h3>
+<h3 id="changed_4">Changed</h3>
 <ul>
 <li><strong>Entry point cleanup</strong> — renamed <code>aethervault/main.py</code> → <code>aethervault/__main__.py</code> so the app runs via <code>python -m aethervault</code>; updated <code>[project.scripts]</code> (<code>aethervault.__main__:run</code>), <code>aethervault.spec</code>, and the global install.</li>
 <li><strong>Removed root <code>aethervault.py</code> shim</strong> — legacy pre-package wrapper deleted; single entry point.</li>
@@ -830,20 +859,20 @@ this exact bug. Don't repeat it.</p>
 <li><strong><code>build_reference.py</code></strong> — fixed stale <code>docs/</code> root path → <code>aethervault/docs/</code>; regenerated <code>REFERENCE.md</code>/<code>.html</code>/<code>USER_GUIDE.html</code>.</li>
 </ul>
 <h2 id="unreleased-2026-08-01-session-17">[Unreleased] — 2026-08-01 (session 17)</h2>
-<h3 id="changed_4">Changed</h3>
+<h3 id="changed_5">Changed</h3>
 <ul>
 <li><strong>Repo moved to <code>AetherSolDev/AetherVault</code></strong> — updated git remote and all URL references in <code>main.py</code> (upgrade/tags/releases), <code>README.md</code> (badges, release links, clone URLs), and <code>USER_GUIDE.md</code>/<code>.html</code>. Marked transfer checklist complete in <code>instructions/PRE_PUBLIC_CLEANUP.md</code>.</li>
 <li>Workflows (<code>build.yml</code> + <code>ci.yml</code>) already cover Linux, Windows, macOS Intel + ARM — no changes needed.</li>
 </ul>
 <h2 id="unreleased-2026-08-01-session-16">[Unreleased] — 2026-08-01 (session 16)</h2>
-<h3 id="changed_5">Changed</h3>
+<h3 id="changed_6">Changed</h3>
 <ul>
 <li><strong>Unused imports removed</strong> (F12) — <code>sys</code>/<code>List</code> in <code>core_logic.py</code>, <code>Any</code> in <code>db_manager.py</code>, <code>QMessageBox</code> in <code>main.py</code>, <code>json</code>/<code>QHBoxLayout</code>/<code>PORTABLE_MARKER</code>/<code>DocumentationDialog</code>/<code>DarkThemeColors</code>/<code>ThemeColors</code> in <code>gui/app.py</code>, <code>Qt</code> in <code>conflict_dialog.py</code>, <code>QHeaderView</code> in <code>credential_form.py</code>, <code>Optional</code>/<code>QPainter</code>/<code>QFont</code> in <code>credential_table.py</code>. AST scan confirms zero unused imports.</li>
 <li><strong><code>except Exception</code> catch-alls narrowed</strong> (F13) — all 22 instances replaced with specific exception types: <code>OSError</code>, <code>ValueError</code>, <code>TypeError</code>, <code>csv.Error</code>, <code>shutil.Error</code>, <code>sqlite3.Error</code>, <code>InvalidToken</code>, <code>RuntimeError</code>. Added <code>InvalidToken</code> import in <code>core_logic.py</code> and <code>csv</code> import in <code>gui/app.py</code>.</li>
 <li><strong>Re-audit</strong> — 42/42 checklist checks pass, score back to A. 61 tests pass.</li>
 </ul>
 <h2 id="unreleased-2026-07-30-session-15">[Unreleased] — 2026-07-30 (session 15)</h2>
-<h3 id="added_1">Added</h3>
+<h3 id="added_2">Added</h3>
 <ul>
 <li><strong>GitHub Releases delivery</strong> — <code>build.yml</code> builds single-file executables for Windows, Linux, and macOS (Intel + Apple Silicon) and auto-attaches them to the Release on <code>release: published</code> (<code>softprops/action-gh-release</code>). Manual runs via <code>workflow_dispatch</code> still upload workflow artifacts.</li>
 <li><strong>README quick-download table</strong> — one-click links to the latest binaries via <code>/releases/latest/download/...</code>, plus a Build status badge.</li>
@@ -855,7 +884,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong><code>build.yml</code> Linux system deps</strong> — <code>libgl1-mesa-glx</code> no longer exists on Ubuntu 24.04 runners; replaced with <code>libgl1</code> + <code>libxkbcommon-x11-0</code> and added <code>libxcb-icccm4</code> / <code>libxcb-keysyms1</code> / <code>libxcb-shape0</code> so the Qt xcb libraries bundle into the onefile.</li>
 <li><strong>macOS build matrix</strong> — <code>macos-13</code> runner retired by GitHub (jobs queued forever); switched Intel build to <code>macos-15-intel</code>. Dropped the universal2 attempt (cffi ships no fat wheel, PyInstaller refuses single-arch deps) in favor of separate <code>macos-latest</code> (arm64) + <code>macos-15-intel</code> (x86_64) binaries.</li>
 </ul>
-<h3 id="changed_6">Changed</h3>
+<h3 id="changed_7">Changed</h3>
 <ul>
 <li><strong><code>aethervault.spec</code></strong> — removed from <code>.gitignore</code> and committed so CI builds can use it (was untracked, breaking <code>pyinstaller aethervault.spec</code> in CI).</li>
 <li><strong>Removed <code>safety.md</code></strong> from the repository.</li>
@@ -873,11 +902,11 @@ this exact bug. Don't repeat it.</p>
 <li><strong>Encryption key guard</strong> — <code>import_from_csv()</code>, <code>execute_import()</code>, and <code>preview_import()</code> now raise <code>RuntimeError</code> upfront if the vault is locked (no encryption key set), instead of firing a flood of per-row error dialogs from <code>save_credential()</code> / <code>update_credential()</code>.</li>
 <li><strong><code>find_and_remove_duplicates()</code> SQL</strong> — simplified to a single <code>DELETE ... WHERE db_id NOT IN (SELECT MIN(db_id)...)</code> query, fixing a "SQL statements in progress" transaction error on Python 3.14.</li>
 </ul>
-<h3 id="added_2">Added</h3>
+<h3 id="added_3">Added</h3>
 <ul>
 <li><strong>Test suite expansion</strong> — 39 new tests across <code>test_core_logic.py</code> (24 tests: encryption roundtrip, key derivation, password hashing, password generation, settings persistence) and <code>test_db_manager.py</code> (15 tests: <code>import_from_csv</code>, export, duplicate removal, backup, and encryption-key-not-set guards for all import methods).</li>
 </ul>
-<h3 id="changed_7">Changed</h3>
+<h3 id="changed_8">Changed</h3>
 <ul>
 <li><strong>Documentation</strong> — README tests badge 22→61, project tree paths corrected; KNOWLEDGE.md session history and test count updated; ARCHITECTURE.md paths aligned with <code>aethervault/</code> package layout.</li>
 <li><strong><code>--upgrade</code> / <code>-u</code></strong> — now auto-performs the upgrade (git pull + pip install -e . for cloned repos, pip install --upgrade for pip installs) instead of printing manual instructions. Uses <code>subprocess.run()</code> with helpful status output.</li>
@@ -890,16 +919,16 @@ this exact bug. Don't repeat it.</p>
 <li><strong><code>build.yml</code></strong> — fixed stale <code>src/main.py</code> entry point → uses <code>aethervault.spec</code>; added Linux (<code>ubuntu-latest</code>) build target.</li>
 </ul>
 <h2 id="620-2026-07-27">[6.2.0] — 2026-07-27</h2>
-<h3 id="added_3">Added</h3>
+<h3 id="added_4">Added</h3>
 <ul>
 <li><strong>Auto-detach from terminal</strong> — <code>main.py</code> forks on Unix to release the terminal so users don't need <code>aethervault &amp;</code>. <code>--foreground</code> / <code>-f</code> flag keeps terminal attached for debugging.</li>
 </ul>
-<h3 id="changed_8">Changed</h3>
+<h3 id="changed_9">Changed</h3>
 <ul>
 <li><strong>CLI reference</strong> updated in README and USER_GUIDE with <code>--foreground</code> flag</li>
 </ul>
 <h2 id="610-2026-07-27">[6.1.0] — 2026-07-27</h2>
-<h3 id="added_4">Added</h3>
+<h3 id="added_5">Added</h3>
 <ul>
 <li><strong>Version bump criteria</strong> documented in AGENTS.md — SemVer from conventional commit types</li>
 <li><strong>Import conflict system</strong> — <code>preview_import()</code> scans for title+username collisions; <code>execute_import()</code> with per-entry resolution (Keep Vault / Use Import) or bulk import and review later</li>
@@ -908,7 +937,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong><code>tests/conftest.py</code></strong> — shared temp database and sample entry fixtures</li>
 <li><strong><code>docs/sys/AUDIT_REPORT.md</code></strong> — formal audit trail with 12 findings, all resolved</li>
 </ul>
-<h3 id="changed_9">Changed</h3>
+<h3 id="changed_10">Changed</h3>
 <ul>
 <li><strong>God file split</strong>: <code>app.py</code> 1627→968 lines. Extracted <code>CredentialForm</code> (344), <code>CredentialTable</code> (334), <code>ClickToCopyFilter</code> (24), <code>PasswordStrengthBar</code> (46)</li>
 <li><strong><code>setup_menu_bar()</code></strong> 70→6 lines — extracted into 4 builder methods</li>
@@ -930,7 +959,7 @@ this exact bug. Don't repeat it.</p>
 <li><code>show_password_health()</code> reduced 82→64 lines via <code>score_password()</code> reuse</li>
 </ul>
 <h2 id="2026-07-24-session-3">2026-07-24 (session 3)</h2>
-<h3 id="added_5">Added</h3>
+<h3 id="added_6">Added</h3>
 <ul>
 <li>Project scaffolding with template system (AGENTS.md, docs/, instructions/, scripts/)</li>
 <li>System documentation: PLAN, ARCHITECTURE, KNOWLEDGE, TASKS, BUGS, COST, mermaid diagram</li>
@@ -945,7 +974,7 @@ this exact bug. Don't repeat it.</p>
 <li>Dark/light theme toggle in Settings menu (persistent across sessions)</li>
 <li>In-app help now loads from consolidated <code>docs/USER_GUIDE.md</code></li>
 </ul>
-<h3 id="changed_10">Changed</h3>
+<h3 id="changed_11">Changed</h3>
 <ul>
 <li>Customized AGENTS.md for AetherLock (paths, critical files, database schema)</li>
 <li>Updated USER_GUIDE.md with actual application features and documentation</li>
@@ -956,7 +985,7 @@ this exact bug. Don't repeat it.</p>
 <li>Updated <code>requirements.txt</code> with actual runtime dependencies</li>
 <li><strong>C3</strong>: Created <code>venv/</code> symlink → <code>kiss/</code> for standardized virtual env name</li>
 </ul>
-<h3 id="added_6">Added</h3>
+<h3 id="added_7">Added</h3>
 <ul>
 <li><strong>A3</strong>: Portable mode detection and config — <code>.portable</code> marker file, toggle in Settings menu, status bar indicator</li>
 <li><strong>A2</strong>: System tray icon with quick-lock — tray menu (Show Window, Lock Vault, Quit), minimize-to-tray on close</li>
@@ -968,7 +997,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong>F2</strong>: Created <code>assets/</code> directory (icon optionally placed there, gracefully handled)</li>
 </ul>
 <h2 id="2026-07-24-session-4">2026-07-24 (session 4)</h2>
-<h3 id="added_7">Added</h3>
+<h3 id="added_8">Added</h3>
 <ul>
 <li><strong>Category filter</strong> dropdown (QComboBox next to search) with dynamic population from credentials</li>
 <li><strong>Tag filter</strong> dropdown — parses comma-separated tags, filters entries</li>
@@ -983,7 +1012,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong>Rich text notes</strong> — B/I/U formatting toolbar, stored as HTML</li>
 <li><strong>One-click backup</strong> — status bar message instead of modal dialog, timestamped filenames</li>
 </ul>
-<h3 id="changed_11">Changed</h3>
+<h3 id="changed_12">Changed</h3>
 <ul>
 <li>Auto-lock: <code>WindowDeactivate</code> now resets activity timer instead of immediately locking</li>
 <li>Table columns: increased default sizes (Title 220, Username 160, Category 140), minimum section 100px</li>
@@ -1001,7 +1030,7 @@ this exact bug. Don't repeat it.</p>
 <li><code>sectionClicked.disconnect()</code> RuntimeWarning — moved connection to table creation</li>
 </ul>
 <h2 id="2026-07-25-session-6">2026-07-25 (session 6)</h2>
-<h3 id="changed_12">Changed</h3>
+<h3 id="changed_13">Changed</h3>
 <ul>
 <li><strong>Rebrand</strong>: Renamed project from <code>AetherLock</code> to <code>AetherVault</code> to align with GitHub repo name <code>brandonmunoz1975-ops/AetherVault</code></li>
 <li><strong>Package</strong>: Created <code>pyproject.toml</code> for <code>pip install -e .</code> with CLI entry point <code>aethervault</code></li>
@@ -1010,7 +1039,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong>Rebuilt</strong> REFERENCE.md, REFERENCE.html, and USER_GUIDE.html from updated sources</li>
 </ul>
 <h2 id="2026-07-26-session-7">2026-07-26 (session 7)</h2>
-<h3 id="changed_13">Changed</h3>
+<h3 id="changed_14">Changed</h3>
 <ul>
 <li><strong>Cleanup</strong>: Removed <code>docs/sys/COST.md</code> and <code>docs/sys/KNOWLEDGE.md</code> from git tracking (keep local only)</li>
 <li><strong>Docs</strong>: Updated all documentation to reference <code>src/data/aethervault.db</code> instead of <code>password_manager.db</code></li>
@@ -1023,13 +1052,13 @@ this exact bug. Don't repeat it.</p>
 <li>Deleted stale files: root <code>password_manager.db</code>, <code>src/data/aetherlock.db</code>, <code>src/data/aetherlock.db.bak</code>, <code>src/data/kiss_vault_*.db.bak</code></li>
 </ul>
 <h2 id="2026-07-24-session-5">2026-07-24 (session 5)</h2>
-<h3 id="added_8">Added</h3>
+<h3 id="added_9">Added</h3>
 <ul>
 <li>Docstrings added to all modules, classes, and functions across 9 source files (~129 items)</li>
 <li>GitHub Actions CI workflow (<code>.github/workflows/build.yml</code>) — builds Windows + macOS executables on release</li>
 <li>Help menu now opens <code>USER_GUIDE.html</code> in system browser via <code>QDesktopServices</code></li>
 </ul>
-<h3 id="changed_14">Changed</h3>
+<h3 id="changed_15">Changed</h3>
 <ul>
 <li>Cleaned up <code>.gitignore</code>: added <code>.repomixignore</code>, <code>aetherlock.spec</code>, <code>AetherVault/</code></li>
 <li>Removed from tracking: <code>AGENTS.md</code>, <code>aetherlock.spec</code>, <code>.repomixignore</code>, <code>venv</code> symlink</li>
@@ -1038,6 +1067,19 @@ this exact bug. Don't repeat it.</p>
 <hr />
 <h2 id="bug-tracker">Bug Tracker</h2>
 <h1 id="aethervault-bug-tracker">AetherVault Bug Tracker</h1>
+<h2 id="f15-no-startup-integrity-check-on-the-vault-database">F15 — No startup integrity check on the vault database</h2>
+<ul>
+<li><strong>Status</strong>: Fixed</li>
+<li><strong>Fixed</strong>: 2026-08-05</li>
+<li><strong>Found</strong>: 2026-08-05 (audit)</li>
+<li><strong>Priority</strong>: P1</li>
+<li><strong>Tags</strong>: bug, database, security</li>
+<li><strong>Description</strong>: AGENTS.md Critical Rules require "Run startup integrity checks with automatic recovery," but no <code>PRAGMA integrity_check</code> ran at startup or on DB connect. A corrupted DB would fail cryptically on the first query instead of at startup with a recoverable error.</li>
+<li><strong>Root Cause</strong>: <code>DatabaseManager._connect()</code> connected and ran WAL but never verified integrity.</li>
+<li><strong>Fix</strong>: <code>_connect()</code> now runs <code>PRAGMA integrity_check</code>. On failure it notifies the user (via <code>error_handler</code>) and auto-recovers from the most recent <code>.db.bak</code> (copy over + re-check). If no backup exists, <code>conn=None</code> so callers fail safely.</li>
+<li><strong>Tests</strong>: <code>test_integrity_check_passes_on_valid_db</code>, <code>test_recover_from_backup_when_corrupt</code>, <code>test_no_backup_fails_safely</code> (3 tests in <code>test_db_manager.py</code>). Suite 71 → 74.</li>
+<li><strong>Files</strong>: <code>aethervault/shared/database.py</code>, <code>tests/test_db_manager.py</code></li>
+</ul>
 <h2 id="f14-copy-password-button-copies-the-category-fields-text">F14 — Copy Password button copies the Category field's text</h2>
 <ul>
 <li><strong>Status</strong>: Fixed</li>
@@ -1168,22 +1210,10 @@ this exact bug. Don't repeat it.</p>
 </thead>
 <tbody>
 <tr>
-<td>2026-07-26</td>
-<td>2026-07-24 – 07-26 (3 days)</td>
+<td>2026-08-05</td>
+<td>2026-07-24 (13 days)</td>
 <td>multi-model</td>
-<td>$0.13</td>
-</tr>
-<tr>
-<td>2026-07-30</td>
-<td>2026-07-27 – 07-30 (4 days)</td>
-<td>deepseek-v4-flash</td>
-<td>~$0.16</td>
-</tr>
-<tr>
-<td>2026-08-01</td>
-<td>2026-07-31 – 08-01 (2 days)</td>
-<td>deepseek-v4-flash</td>
-<td>~$0.30</td>
+<td>$0.63</td>
 </tr>
 </tbody>
 </table>
@@ -1273,36 +1303,20 @@ this exact bug. Don't repeat it.</p>
 <td>$0.03</td>
 </tr>
 <tr>
-<td>2026-07-26</td>
-<td>Session 7 — docs cleanup, git cleanup, push</td>
-<td>deepseek-v4-flash</td>
-<td>~70,000</td>
-<td>~8,000</td>
-<td>~$0.02</td>
-</tr>
-<tr>
-<td>2026-07-30</td>
-<td>Session 15 — CI/CD pipeline, release v6.2.1, doc sync</td>
-<td>deepseek-v4-flash</td>
-<td>~450,000</td>
-<td>~55,000</td>
-<td>~$0.16</td>
-</tr>
-<tr>
 <td>2026-08-01</td>
-<td>Session 16–19 — audit (F12/F13), repo move to AetherSolDev, entry-point cleanup, remove src/, gitignore project_kit</td>
+<td>Run app audit with project_kit</td>
 <td>deepseek-v4-flash</td>
-<td>~220,000</td>
-<td>~30,000</td>
-<td>~$0.09</td>
+<td>172,419</td>
+<td>101,844</td>
+<td>$0.32</td>
 </tr>
 <tr>
-<td>2026-08-01</td>
-<td>Session 20–21 — duress password feature, live wipe test + restore, release v6.3.0/6.3.1</td>
+<td>2026-08-05</td>
+<td>Project kit vs structure gap analysis</td>
 <td>deepseek-v4-flash</td>
-<td>~280,000</td>
-<td>~38,000</td>
-<td>~$0.12</td>
+<td>305,168</td>
+<td>89,784</td>
+<td>$0.21</td>
 </tr>
 </tbody>
 </table>
@@ -1752,7 +1766,7 @@ flowchart TD
 </code></pre>
 <h2 id="cicd-pipeline_1">CI/CD Pipeline</h2>
 <pre><code class="language-mermaid">flowchart TD
-    GIT[Push to main or Pull Request] --&gt; CI[pytest on Python 3.9 to 3.12]
+    GIT[Push to main or Pull Request] --&gt; CI[pytest on Python 3.10 to 3.12]
     REL[Publish GitHub Release] --&gt; BUILD[PyInstaller single file per OS]
     MAN[Manual workflow run] --&gt; BUILD
     CI --&gt;|must pass| BUILD
@@ -1766,9 +1780,9 @@ flowchart TD
 <hr />
 <h2 id="audit-report">Audit Report</h2>
 <h1 id="audit-report-aethervault">Audit Report: AetherVault</h1>
-<p><strong>Date</strong>: 2026-08-01 (re-audit)
-<strong>Files Scanned</strong>: 13 source files (aethervault/), 5 test files, 6 scripts
-<strong>Overall Score</strong>: <strong>A</strong> (all prior findings closed; F12 + F13 remediated)</p>
+<p><strong>Date</strong>: 2026-08-05 (post-restructure re-audit + remediation)
+<strong>Files Scanned</strong>: 17 source files (aethervault/ incl. core/ + shared/), 6 test files, 6 scripts
+<strong>Overall Score</strong>: <strong>A</strong> (F15 + F16 remediated)</p>
 <h2 id="summary">Summary</h2>
 <table>
 <thead>
@@ -1781,127 +1795,46 @@ flowchart TD
 </thead>
 <tbody>
 <tr>
-<td>God functions</td>
-<td>5</td>
+<td>Structure alignment</td>
 <td>0</td>
-<td>0</td>
-</tr>
-<tr>
-<td>Test gaps</td>
-<td>1</td>
-<td>0</td>
+<td>1 (fixed, C10)</td>
 <td>0</td>
 </tr>
 <tr>
-<td>Mixed concerns</td>
-<td>1</td>
+<td>Maps</td>
 <td>0</td>
-<td>0</td>
-</tr>
-<tr>
-<td>DB connection pattern</td>
-<td>1</td>
-<td>0</td>
+<td>1 (added maps/)</td>
 <td>0</td>
 </tr>
 <tr>
-<td>Missing WAL mode</td>
-<td>1</td>
-<td>0</td>
-<td>0</td>
-</tr>
-<tr>
-<td>Debug artifacts</td>
-<td>2</td>
-<td>0</td>
-<td>0</td>
-</tr>
-<tr>
-<td>SQL f-string (low risk)</td>
-<td>1</td>
-<td>0</td>
-<td>0</td>
-</tr>
-<tr>
-<td>Encryption key guard</td>
+<td>Line length</td>
 <td>0</td>
 <td>1 (fixed)</td>
 <td>0</td>
 </tr>
 <tr>
-<td>Git repo detection</td>
+<td>Startup integrity check</td>
 <td>0</td>
-<td>1 (added)</td>
-<td>0</td>
-</tr>
-<tr>
-<td>Auto-upgrade feat</td>
-<td>0</td>
-<td>1 (added)</td>
+<td>1 (fixed, F15)</td>
 <td>0</td>
 </tr>
 <tr>
-<td>Unused imports</td>
+<td>Python version floor</td>
 <td>0</td>
-<td>1 (fixed)</td>
-<td>0</td>
-</tr>
-<tr>
-<td>Bare-except style</td>
-<td>0</td>
-<td>1 (fixed)</td>
+<td>1 (fixed, F16)</td>
 <td>0</td>
 </tr>
 <tr>
 <td><strong>Total</strong></td>
-<td><strong>14</strong></td>
+<td><strong>0</strong></td>
 <td><strong>5</strong></td>
 <td><strong>0</strong></td>
 </tr>
 </tbody>
 </table>
-<h2 id="priority-definitions">Priority Definitions</h2>
-<ul>
-<li><strong>P0</strong>: Fix immediately (security, data loss, production breakage)</li>
-<li><strong>P1</strong>: Fix this session (major standard violation, missing critical tests)</li>
-<li><strong>P2</strong>: Fix when convenient (minor violations, documentation gaps)</li>
-<li><strong>P3</strong>: Enhancement for future (nice-to-have, cosmetic)</li>
-</ul>
-<h2 id="detailed-findings">Detailed Findings</h2>
-<h3 id="p2">P2</h3>
-<ol>
-<li><strong>F12 — Unused imports in 6 source files</strong> <code>[x] Fixed</code></li>
-<li><strong>Files</strong>:<ul>
-<li><code>aethervault/core_logic.py:16,18</code> — <code>sys</code>, <code>List</code> (never referenced)</li>
-<li><code>aethervault/db_manager.py:14</code> — <code>Any</code> (never referenced)</li>
-<li><code>aethervault/main.py:19</code> — <code>QMessageBox</code> (never referenced)</li>
-<li><code>aethervault/gui/app.py:8,23,42,66,67</code> — <code>json</code>, <code>QHBoxLayout</code>, <code>PORTABLE_MARKER</code>, <code>DocumentationDialog</code>, <code>DarkThemeColors</code>, <code>ThemeColors</code> (imported but unused)</li>
-<li><code>aethervault/gui/conflict_dialog.py:10</code> — <code>Qt</code> (never referenced)</li>
-<li><code>aethervault/gui/credential_form.py:15</code> — <code>QHeaderView</code> (never referenced)</li>
-<li><code>aethervault/gui/credential_table.py:11</code> — <code>Optional</code>, <code>QPainter</code>, <code>QFont</code> (never referenced)</li>
-</ul>
-</li>
-<li><strong>Issue</strong>: Violates checklist 2.3 (no unused imports).</li>
-<li><strong>Fix</strong>: Removed all unused names. <code>gui/app.py</code> additionally gained <code>import csv</code> (needed by F13 exception narrowing). AST re-scan confirms zero unused imports.</li>
-</ol>
-<h3 id="p3">P3</h3>
-<ol>
-<li><strong>F13 — Style review: <code>except Exception</code> catch-alls (22 instances)</strong> <code>[x] Fixed</code></li>
-<li><strong>Files</strong>: <code>core_logic.py:71,84,140,172,184</code>, <code>db_manager.py:68,152,240,298,357,407,464</code>, <code>gui/app.py:447,458,475,496,508,533,563,868</code>, <code>gui/dialogs.py:34,171</code>, <code>gui/credential_table.py:132,315</code></li>
-<li><strong>Issue</strong>: Checklist 3.4 prefers specific exceptions over <code>except Exception</code> catch-alls. All 22 instances do handle the error (log, dialog, or safe return), and none are silent <code>pass</code> — but they are broad. The bare <code>except Exception:</code> at <code>core_logic.py:140,172,184</code> and <code>credential_table.py:132,315</code> are the most notable (no error surfaced).</li>
-<li><strong>Severity rationale</strong>: No P0/P1 because each block either logs, shows a user dialog, or returns a safe default. No data loss path.</li>
-<li><strong>Fix</strong>: Narrowed all 22 instances to concrete exceptions:<ul>
-<li><code>core_logic.py</code> — <code>(TypeError, ValueError)</code> for Fernet encrypt, <code>(InvalidToken, TypeError, ValueError)</code> for decrypt, <code>(ValueError, TypeError)</code> for verify, <code>OSError</code> for file reads/writes.</li>
-<li><code>db_manager.py</code> — <code>ValueError</code> for key derivation, <code>(TypeError, ValueError)</code> for decryption load, <code>OSError</code> for backup, <code>(OSError, csv.Error, ValueError)</code> for import/export/preview/execute.</li>
-<li><code>gui/app.py</code> — <code>(OSError, csv.Error, ValueError, RuntimeError)</code> for import/export handlers, <code>(OSError, shutil.Error)</code> for backup/restore/auto-backup.</li>
-<li><code>gui/dialogs.py</code> — <code>AttributeError</code> for <code>sys._MEIPASS</code>, <code>OSError</code> for doc read.</li>
-<li><code>gui/credential_table.py</code> — <code>(TypeError, ValueError)</code> for URL parsing.</li>
-</ul>
-</li>
-</ol>
-<h2 id="re-audit-findings-2026-08-01">Re-Audit Findings (2026-08-01)</h2>
-<p>All prior findings (F1–F11) remain closed. Fresh scan of 13 source files + 5 test
-files + 6 scripts against <code>alignment_checklist.md</code>:</p>
+<h2 id="re-audit-findings-2026-08-05">Re-Audit Findings (2026-08-05)</h2>
+<p>Fresh scan of 17 source files + 6 test files + 6 scripts against
+<code>alignment_checklist.md</code> after the <code>core/</code>+<code>shared/</code> restructure:</p>
 <table>
 <thead>
 <tr>
@@ -1918,63 +1851,63 @@ files + 6 scripts against <code>alignment_checklist.md</code>:</p>
 <td>5</td>
 <td>5</td>
 <td>0</td>
-<td>All headers present, paths correct</td>
+<td>All headers present, correct order, line length ≤100</td>
 </tr>
 <tr>
 <td>2. Imports</td>
 <td>5</td>
 <td>5</td>
 <td>0</td>
-<td>F12 fixed — AST scan: zero unused imports</td>
+<td>AST scan: zero unused imports; grouped stdlib→third→local; absolute imports</td>
 </tr>
 <tr>
 <td>3. Error Handling</td>
 <td>4</td>
 <td>4</td>
 <td>0</td>
-<td>F13 fixed — no bare <code>except:</code>, no <code>except Exception</code>; specific types only</td>
+<td>No bare <code>except:</code>, no <code>except Exception</code>; specific types only</td>
 </tr>
 <tr>
 <td>4. Functions &amp; Structure</td>
 <td>6</td>
 <td>6</td>
 <td>0</td>
-<td>No god functions &gt;100 lines; no circular imports</td>
+<td>No circular imports (verified vs imports.mmd); separation of concerns (core/shared/gui)</td>
 </tr>
 <tr>
 <td>5. Database</td>
 <td>4</td>
 <td>4</td>
 <td>0</td>
-<td>Parameterized, WAL, context manager, Row access</td>
+<td>Parameterized, WAL, Row access, context manager, <strong>integrity check + auto-recovery (F15)</strong></td>
 </tr>
 <tr>
 <td>6. Testing</td>
 <td>4</td>
 <td>4</td>
 <td>0</td>
-<td>61 tests, all passing, core logic covered</td>
+<td>74 tests, all passing, core/model/DB/score/duress/form/integrity covered</td>
 </tr>
 <tr>
 <td>7. Project Hygiene</td>
 <td>6</td>
 <td>6</td>
 <td>0</td>
-<td>No secrets, .gitignore, venv/, unique package name</td>
+<td>No secrets, .gitignore covers internals, venv/, unique package name</td>
 </tr>
 <tr>
 <td>8. Documentation</td>
 <td>5</td>
 <td>5</td>
 <td>0</td>
-<td>ARCHITECTURE, USER_GUIDE, mmd all current</td>
+<td>ARCHITECTURE, USER_GUIDE, mmd, maps/ all current</td>
 </tr>
 <tr>
 <td>9. Environment</td>
 <td>3</td>
 <td>3</td>
 <td>0</td>
-<td>Python 3.10+, venv active</td>
+<td>venv active; <strong>requires-python ≥3.10 (F16 fixed)</strong></td>
 </tr>
 <tr>
 <td><strong>Total</strong></td>
@@ -1987,19 +1920,29 @@ files + 6 scripts against <code>alignment_checklist.md</code>:</p>
 </table>
 <h3 id="notable-strengths">Notable Strengths</h3>
 <ul>
-<li><strong>61 tests passing</strong> in 4.39s (encryption, hashing, password gen, settings, DB CRUD, import/export, duplicates, backup, key guards).</li>
-<li><strong>No debug artifacts</strong>: zero <code>print()</code> in production code (main.py output is CLI by design).</li>
+<li><strong>71 tests passing</strong> in ~5s — encryption, hashing, password gen, settings, DB CRUD, import/export, duplicates, backup, duress, copy-buttons.</li>
+<li><strong>STRUCTURE.md layout complete</strong>: <code>core/</code> (engine, password) + <code>shared/</code> (database, models) + <code>gui/</code>. Verified <code>core/</code> never imports <code>gui/</code>.</li>
+<li><strong>No debug artifacts</strong>: zero <code>print()</code> in production (CLI output in <code>__main__.py</code> is by design).</li>
 <li><strong>No lines &gt; 100 chars</strong>, no trailing whitespace, all file headers present.</li>
-<li><strong>DB discipline intact</strong>: parameterized queries, <code>PRAGMA journal_mode=WAL</code>, context manager protocol, <code>sqlite3.Row</code> access, whitelist-guarded ALTER TABLE.</li>
-<li><strong>No secrets committed</strong>: <code>.master.key</code>, DB files, settings all gitignored.</li>
-<li><strong>Import guard</strong>: all import methods raise <code>RuntimeError</code> if vault is locked.</li>
-<li><strong>Zero <code>except Exception</code> / bare <code>except:</code></strong> — all error handling narrowed to concrete exception types (OSError, ValueError, TypeError, csv.Error, shutil.Error, sqlite3.Error, InvalidToken, RuntimeError).</li>
+<li><strong>DB discipline</strong>: parameterized queries, <code>PRAGMA journal_mode=WAL</code>, context manager, <code>sqlite3.Row</code>, whitelist-guarded ALTER TABLE (f-string uses fixed internal set, not user input).</li>
+<li><strong>Maps added</strong>: <code>maps/architecture.md</code>, <code>maps/imports.mmd</code>, <code>maps/database.mmd</code> — validated against the real import graph (all edges match).</li>
+<li><strong>No secrets committed</strong>: <code>.master.key</code>, DB files, settings, sessions.md, COST.md, project_audit/, scripts/ all gitignored.</li>
 </ul>
-<h3 id="minor-notes-not-findings">Minor Notes (not findings)</h3>
-<ul>
-<li><code>aethervault/data/</code> and <code>src/data/</code> both contain runtime backups — both paths are gitignored; consistent with <code>core_logic.py:DATA_DIR</code>.</li>
-<li><code>main.py</code> <code>print()</code> calls are CLI output (upgrade/version), intentional per prior audit.</li>
-</ul>
+<h3 id="findings">Findings</h3>
+<h3 id="p1">P1</h3>
+<ol>
+<li><strong>F15 — Missing startup integrity check</strong> <code>[x] Fixed</code></li>
+<li><strong>File</strong>: <code>aethervault/shared/database.py</code> (<code>_connect()</code>), <code>aethervault/gui/app.py</code> (<code>__init__</code>)</li>
+<li><strong>Issue</strong>: AGENTS.md Critical Rules require "Run startup integrity checks with automatic recovery." No <code>PRAGMA integrity_check</code> (or equivalent) runs at startup or on DB connect. Checklist 5.x implies connection robustness; a corrupted DB would fail cryptically at first query rather than at startup with a recoverable error.</li>
+<li><strong>Fix</strong>: <code>_connect()</code> now runs <code>PRAGMA integrity_check</code>. On failure it notifies via <code>error_handler</code> and auto-recovers from the most recent <code>.db.bak</code> (copy + re-check). No backup → <code>conn=None</code> (safe fail). 3 regression tests added. Verified live: corrupt DB recovered, <code>secret</code> intact.</li>
+</ol>
+<h3 id="p3">P3</h3>
+<ol>
+<li><strong>F16 — <code>requires-python</code> is <code>&gt;=3.9</code>, checklist prefers 3.10+</strong> <code>[x] Fixed</code></li>
+<li><strong>File</strong>: <code>pyproject.toml</code></li>
+<li><strong>Issue</strong>: Checklist 9.1 (Environment) wants Python 3.10+. Project supported 3.9+.</li>
+<li><strong>Fix</strong>: Raised <code>requires-python</code> to <code>&gt;=3.10</code>; dropped Python 3.9 from the CI matrix (<code>ci.yml</code> now 3.10–3.12); updated USER_GUIDE system requirements.</li>
+</ol>
 <h2 id="map-health">Map Health</h2>
 <table>
 <thead>
@@ -2011,24 +1954,29 @@ files + 6 scripts against <code>alignment_checklist.md</code>:</p>
 </thead>
 <tbody>
 <tr>
-<td><code>docs/sys/ARCHITECTURE.md</code></td>
+<td><code>maps/architecture.md</code></td>
 <td>✅ OK</td>
-<td>Matches current <code>aethervault/</code> layout + CI/CD pipeline</td>
+<td>Tree matches current <code>core/</code>+<code>shared/</code>+<code>gui/</code> layout; all 12 modules mapped</td>
 </tr>
 <tr>
-<td><code>docs/sys/aethervault.mmd</code></td>
+<td><code>maps/imports.mmd</code></td>
+<td>✅ OK</td>
+<td>Every edge validated against real imports; no ghosts, no missing</td>
+</tr>
+<tr>
+<td><code>maps/database.mmd</code></td>
+<td>✅ OK</td>
+<td>17/17 schema columns mapped</td>
+</tr>
+<tr>
+<td><code>aethervault/docs/sys/aethervault.mmd</code></td>
 <td>✅ OK</td>
 <td>Present, describes UI/DB flow accurately</td>
 </tr>
 <tr>
-<td><code>docs/sys/PLAN.md</code></td>
+<td><code>docs/sys/ARCHITECTURE.md</code></td>
 <td>✅ OK</td>
-<td>All items complete</td>
-</tr>
-<tr>
-<td><code>docs/sys/TASKS.md</code></td>
-<td>✅ OK</td>
-<td>All tasks complete</td>
+<td>Matches restructured layout</td>
 </tr>
 </tbody>
 </table>
@@ -2084,6 +2032,13 @@ files + 6 scripts against <code>alignment_checklist.md</code>:</p>
 </tr>
 </tbody>
 </table>
+<h2 id="post-duress-test-verification-2026-08-01">Post-Duress-Test Verification (2026-08-01)</h2>
+<p>Live test of the duress wipe on a full copy of the real vault (429 creds):
+- Duress password set → entered at login → vault + backups + keys destroyed (data/ → 0 files), fake "Invalid password" dialog + silent exit.
+- Manual backup (<code>~/aethervault-backup-2026-08-01/</code>) + NAS copy both preserved 429 creds.
+- Restore from manual backup → 429 creds, logged in successfully.
+- Fixed a real bug found during testing: <code>QInputDialog.getText()</code> returns <code>(text, ok)</code> in PySide6; the duress setup unpacked them backwards, causing a silent <code>AttributeError</code> after the master prompt. Swap fixed + verified with real modal dialogs.
+- Cleanup: test dirs removed; manual backup removed after successful restore (NAS remains as long-term copy).</p>
 <h2 id="audit-log">Audit Log</h2>
 <table>
 <thead>
@@ -2119,21 +2074,22 @@ files + 6 scripts against <code>alignment_checklist.md</code>:</p>
 </tr>
 <tr>
 <td>2026-08-01</td>
-<td>Remediated F12 + F13: removed all unused imports (AST-verified); narrowed all 22 <code>except Exception</code> blocks to specific types. Added <code>import csv</code> + <code>InvalidToken</code> imports. 42/42 checks pass, 61 tests pass. Score: A.</td>
+<td>Remediated F12 + F13: removed all unused imports (AST-verified); narrowed all 22 <code>except Exception</code> blocks to specific types. 42/42 checks pass, 61 tests pass. Score: A.</td>
 </tr>
 <tr>
 <td>2026-08-01</td>
-<td>Re-audit (session 20): Post-duress-test pass. 42/42 checklist checks pass. New code clean (no bare except, no f-string SQL, no unused imports, headers OK). 9 functions &gt; 50 lines are pre-existing/UI-builders, none &gt; 75 in logic. 69 tests pass. Score: A.</td>
+<td>Re-audit (session 20): Post-duress-test pass. 42/42 checklist checks pass. 9 functions &gt; 50 lines are pre-existing/UI-builders, none &gt; 75 in logic. 69 tests pass. Score: A.</td>
+</tr>
+<tr>
+<td>2026-08-05</td>
+<td>Post-restructure re-audit: STRUCTURE.md layout verified, maps/ added + validated, line-length enforced (PEP 8). 40/42 checks pass. 2 new findings: F15 (startup integrity check, P1), F16 (python floor, P3). 71 tests pass. Score: A−.</td>
+</tr>
+<tr>
+<td>2026-08-05</td>
+<td>Remediated F15 + F16: added <code>PRAGMA integrity_check</code> + auto-recovery from backup in <code>DatabaseManager._connect()</code> (3 regression tests, suite 71→74); raised <code>requires-python</code> to 3.10+, dropped 3.9 from CI. 42/42 checks pass, 74 tests pass. Score: A.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="post-duress-test-verification-2026-08-01">Post-Duress-Test Verification (2026-08-01)</h2>
-<p>Live test of the duress wipe on a full copy of the real vault (429 creds):
-- Duress password set → entered at login → vault + backups + keys destroyed (data/ → 0 files), fake "Invalid password" dialog + silent exit.
-- Manual backup (<code>~/aethervault-backup-2026-08-01/</code>) + NAS copy both preserved 429 creds.
-- Restore from manual backup → 429 creds, logged in successfully.
-- Fixed a real bug found during testing: <code>QInputDialog.getText()</code> returns <code>(text, ok)</code> in PySide6; the duress setup unpacked them backwards, causing a silent <code>AttributeError</code> after the master prompt. Swap fixed + verified with real modal dialogs.
-- Cleanup: test dirs removed; manual backup removed after successful restore (NAS remains as long-term copy).</p>
 <hr />
 <h2 id="future-dev-ideas">Future Dev Ideas</h2>
 <blockquote>
@@ -2184,6 +2140,6 @@ discussing with AI. No structured format required.</p>
 <li>Project total (from COST.md): see COST.md</li>
 </ul>
 <hr />
-<p><em>Generated on 2026-08-05 15:40 CT by <code>scripts/build_reference.py</code></em></p>
+<p><em>Generated on 2026-08-05 16:10 CT by <code>scripts/build_reference.py</code></em></p>
 </body>
 </html>

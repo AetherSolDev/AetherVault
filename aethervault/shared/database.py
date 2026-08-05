@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
+# Last Edited: 2026-08-05 16:05 CT (America/Chicago)
 # Path: aethervault/shared/database.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
@@ -84,15 +84,104 @@ class DatabaseManager:
             self.encryption_key = b""
 
     def _connect(self):
-        """Establish connection to the SQLite database."""
+        """Establish connection to the SQLite database and verify its integrity."""
         try:
             Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
             self.conn = sqlite3.connect(self.db_path)
             self.conn.row_factory = sqlite3.Row
             self.cursor = self.conn.cursor()
-            self.cursor.execute("PRAGMA journal_mode=WAL;")
+            try:
+                self.cursor.execute("PRAGMA journal_mode=WAL;")
+            except sqlite3.Error:
+                # Corrupt or locked DB — fall through to the integrity check,
+                # which will attempt automatic recovery.
+                pass
+            self._check_integrity()
         except sqlite3.Error as e:
             self.error_handler("Database Error", f"Could not connect to database: {e}")
+
+    def _check_integrity(self):
+        """Run PRAGMA integrity_check; on failure, recover from the latest backup.
+
+        A corrupted vault would otherwise fail cryptically on the first query.
+        If a backup exists, it is copied over the damaged DB and the check is
+        re-run. On repeated failure the connection is closed so callers fail
+        safely instead of reading garbage."""
+        if not self.conn:
+            return
+        try:
+            result = self.cursor.execute("PRAGMA integrity_check").fetchone()
+        except sqlite3.Error as e:
+            self.error_handler(
+                "Integrity Check", f"Could not run integrity check: {e}"
+            )
+            result = None
+        if result and result[0] == "ok":
+            return
+        self._recover_from_backup()
+
+    def _recover_from_backup(self):
+        """Copy the most recent backup over the corrupt DB and reconnect."""
+        self.error_handler(
+            "Integrity Check",
+            "The vault database failed its integrity check and needs recovery.",
+        )
+        backup = self._find_latest_backup()
+        if not backup:
+            self.error_handler(
+                "Integrity Check", "No backup available to recover the vault."
+            )
+            if self.conn:
+                self.conn.close()
+            self.conn = None
+            self.cursor = None
+            return
+        try:
+            if self.conn:
+                self.conn.close()
+            shutil.copyfile(backup, self.db_path)
+            self.conn = sqlite3.connect(self.db_path)
+            self.conn.row_factory = sqlite3.Row
+            self.cursor = self.conn.cursor()
+            result = self.cursor.execute("PRAGMA integrity_check").fetchone()
+            if result and result[0] == "ok":
+                self.error_handler(
+                    "Integrity Check",
+                    f"Vault recovered from backup: {os.path.basename(backup)}",
+                )
+            else:
+                self.error_handler(
+                    "Integrity Check",
+                    "Recovery failed — the backup is also corrupt.",
+                )
+                if self.conn:
+                    self.conn.close()
+                self.conn = None
+                self.cursor = None
+        except (OSError, sqlite3.Error) as e:
+            self.error_handler(
+                "Integrity Check", f"Recovery failed: {e}"
+            )
+            if self.conn:
+                self.conn.close()
+            self.conn = None
+            self.cursor = None
+
+    def _find_latest_backup(self) -> Optional[str]:
+        """Return the most recent .db.bak backup path, or None if none exist."""
+        from aethervault.core.engine import DB_BACKUP_PATH
+
+        candidates = []
+        if os.path.exists(DB_BACKUP_PATH):
+            candidates.append(DB_BACKUP_PATH)
+        db_dir = os.path.dirname(self.db_path)
+        if os.path.isdir(db_dir):
+            for name in os.listdir(db_dir):
+                if name.startswith("aethervault_") and name.endswith(".db.bak"):
+                    candidates.append(os.path.join(db_dir, name))
+        if not candidates:
+            return None
+        return max(candidates, key=lambda p: os.path.getmtime(p))
 
     def __enter__(self):
         """Context manager entry — returns self for use in 'with' blocks."""
