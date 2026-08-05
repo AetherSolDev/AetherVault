@@ -22,7 +22,7 @@
   <img src="https://img.shields.io/badge/python-3.10+-blue?logo=python" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/license-GPLv3-blue" alt="GPLv3">
   <img src="https://img.shields.io/badge/PySide6-6.5+-green" alt="PySide6 6.5+">
-  <img src="https://img.shields.io/pypi/v/aethervault-py?logo=pypi&logoColor=white&color=3776AB" alt="PyPI">
+  <img src="https://img.shields.io/pypi/v/aethervault-py?logo=pypi&logoColor=white&color=3776AB&cacheSeconds=3600" alt="PyPI">
   <img src="https://github.com/AetherSolDev/AetherVault/actions/workflows/build.yml/badge.svg" alt="Build">
 </p>
 
