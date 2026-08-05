@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-05 15:17 CT (America/Chicago)
+# Last Edited: 2026-08-05 16:21 CT (America/Chicago)
 # Path: MANIFEST.in
 # Purpose: Include package data files in the source distribution for pip builds.
 
@@ -8,4 +8,3 @@ include aethervault/docs/USER_GUIDE.html
 include aethervault/assets/aethersol.ico
 include aethervault/assets/aethersol_logo.png
 include aethervault/assets/main.png
-recursive-include aethervault/docs/sys *.md
