@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-05 17:33 CT (America/Chicago)
+# Last Edited: 2026-08-05 17:34 CT (America/Chicago)
 # Path: .github/workflows/publish-pypi.yml
 # Purpose: Build and publish AetherVault to PyPI via trusted publishing on version tags.
 
@@ -36,24 +36,13 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
           REF_TYPE: ${{ github.ref_type }}
-        run: python - "$TAG" "$REF_TYPE" <<'EOF'
-import os, re, sys
-from pathlib import Path
-tag, ref_type = sys.argv[1], sys.argv[2]
-if ref_type == "tag":
-    version = tag.lstrip("v")
-    p = Path("pyproject.toml")
-    text = p.read_text()
-    text = re.sub(r'^version\s*=\s*"[^"]+"', f'version = "{version}"', text,
-                  count=1, flags=re.M)
-    p.write_text(text)
-    print(f"Set version to {version}")
-else:
-    print("Manual dispatch — using committed version:")
-    for line in Path("pyproject.toml").read_text().splitlines():
-        if line.startswith("version"):
-            print(" ", line)
-EOF
+        run: |
+          if [ "$REF_TYPE" = "tag" ]; then
+            python -c "import re; p='pyproject.toml'; t=open(p).read(); t=re.sub(r'^version\s*=\s*\"[^\"]+\"', 'version = \"${TAG#v}\"', t, count=1, flags=re.M); open(p,'w').write(t); print('Set version to ${TAG#v}')"
+          else
+            echo "Manual dispatch — using committed version:"
+            grep '^version' pyproject.toml
+          fi
 
       - name: Build package
         run: python -m build
