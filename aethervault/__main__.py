@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-01 01:55 CT (America/Chicago)
+# Last Edited: 2026-08-05 17:50 CT (America/Chicago)
 # Path: aethervault/__main__.py
 # Purpose: Application entry point with CLI switches (--version, --debug, --upgrade, --foreground).
 
@@ -27,6 +27,8 @@ GITHUB_TAGS_API = "https://api.github.com/repos/AetherSolDev/AetherVault/tags"
 GIT_REPO_URL = "https://github.com/AetherSolDev/AetherVault.git"
 RELEASES_URL = "https://github.com/AetherSolDev/AetherVault/releases/latest"
 
+PYPI_DIST_NAME = "aethervault-py"
+
 
 def _is_git_repo() -> bool:
     """Return True if PROJECT_ROOT contains a .git directory."""
@@ -39,6 +41,16 @@ def _get_pip_command() -> str:
     if in_venv:
         return os.path.join(sys.prefix, "bin", "pip")
     return "pip"
+
+
+def _installed_from_pypi() -> bool:
+    """Return True if the app was installed from PyPI (distribution 'aethervault-py')."""
+    try:
+        from importlib.metadata import distribution
+        dist = distribution(PYPI_DIST_NAME)
+        return dist is not None
+    except Exception:
+        return False
 
 
 def _fetch_latest_tag() -> Optional[str]:
@@ -103,12 +115,19 @@ def _perform_upgrade(latest_tag: str) -> bool:
                 return False
             print("done")
         else:
-            print("1. Upgrading via pip ...", end=" ", flush=True)
             pip_cmd = _get_pip_command()
-            result = subprocess.run(
-                [pip_cmd, "install", "--upgrade", f"git+{GIT_REPO_URL}"],
-                capture_output=True, text=True, timeout=120,
-            )
+            if _installed_from_pypi():
+                print("1. Upgrading via PyPI ...", end=" ", flush=True)
+                result = subprocess.run(
+                    [pip_cmd, "install", "--upgrade", PYPI_DIST_NAME],
+                    capture_output=True, text=True, timeout=120,
+                )
+            else:
+                print("1. Upgrading via git ...", end=" ", flush=True)
+                result = subprocess.run(
+                    [pip_cmd, "install", "--upgrade", f"git+{GIT_REPO_URL}"],
+                    capture_output=True, text=True, timeout=120,
+                )
             if result.returncode != 0:
                 print("FAILED")
                 print(result.stderr)

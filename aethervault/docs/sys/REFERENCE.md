@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-08-05 16:27 CT from docs/sys/
+> Auto-generated on 2026-08-05 17:51 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -585,6 +585,21 @@ this exact bug. Don't repeat it.
 ## Changelog
 
 # Changelog
+
+## [6.4.0] — 2026-08-05
+
+### Added
+- **Startup integrity check (F15, P1)** — `DatabaseManager._connect()` runs `PRAGMA integrity_check`; on failure it notifies the user and auto-recovers from the most recent `.db.bak`. No backup → safe fail. 3 regression tests (suite 71 → 74).
+- **PyPI publishing** — `publish-pypi.yml` builds sdist/wheel and uploads via trusted publishing on `v*` tags. Distribution name `aethervault-py` (the name `aethervault` collides with an existing PyPI package).
+
+### Changed
+- **Package restructure (C10)** — `core_logic.py` → `aethervault/core/engine.py` + `core/password.py`; `db_manager.py` → `aethervault/shared/database.py`; `CredentialEntry` → `aethervault/shared/models.py`. STRUCTURE.md canonical layout.
+- **Python floor 3.10+ (F16)** — `requires-python` `>=3.9` → `>=3.10`; CI matrix dropped 3.9.
+- **README** — rewritten in AetherPod format: ASCII banner, badges, demo GIF + screenshot gallery.
+- **Internal docs excluded from PyPI package** — `docs/sys/` + `project_audit/` no longer ship in wheel/sdist.
+
+### Fixed
+- **Copy Password button copied the Category field** — late-binding lambda; captured with default arg. 2 regression tests.
 
 ## [Unreleased] — 2026-08-05 (audit remediation F14 + F15)
 
@@ -1621,4 +1636,4 @@ Append a new entry at the top of the log at the end of every session (see
 
 ---
 
-*Generated on 2026-08-05 16:27 CT by `scripts/build_reference.py`*
+*Generated on 2026-08-05 17:51 CT by `scripts/build_reference.py`*

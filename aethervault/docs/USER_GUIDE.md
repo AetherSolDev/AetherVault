@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-05 16:27 CT (America/Chicago)
+# Last Edited: 2026-08-05 17:51 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -61,7 +61,7 @@ aethervault
 | `aethervault` | Launch GUI (auto-detaches from terminal on Unix) |
 | `aethervault --version` | Show installed version |
 | `aethervault --debug` | Launch with debug logging to terminal |
-| `aethervault --upgrade` / `-u` | Check for updates and auto-upgrade via git pull or pip |
+| `aethervault --upgrade` / `-u` | Check for updates and auto-upgrade (pip install aethervault-py, or git pull for source installs) |
 | `aethervault --foreground` / `-f` | Keep terminal attached (for debugging) |
 
 ### Standalone Executable

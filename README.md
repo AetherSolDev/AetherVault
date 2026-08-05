@@ -147,7 +147,7 @@ aethervault --help     # CLI usage
 | `aethervault` | Launch the GUI (auto-detaches on Unix) |
 | `aethervault --version` | Show installed version |
 | `aethervault --debug` | Launch with debug logging |
-| `aethervault --upgrade` / `-u` | Check for updates and auto-upgrade |
+| `aethervault --upgrade` / `-u` | Check for updates and auto-upgrade (pip install aethervault-py) |
 | `aethervault --foreground` / `-f` | Keep terminal attached (debugging) |
 
 ---
