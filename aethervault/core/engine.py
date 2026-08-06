@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-05 15:35 CT (America/Chicago)
+# Last Edited: 2026-08-06 14:19 CT (America/Chicago)
 # Path: aethervault/core/engine.py
 # Purpose: Encryption, hashing, key derivation, backup/wipe, and settings management.
 
@@ -108,7 +108,7 @@ def load_master_password(file_path: str) -> Optional[str]:
     """Read the stored master password hash from disk, or return None."""
     if os.path.exists(file_path):
         try:
-            with open(file_path, "r") as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 return f.read().strip()
         except OSError:
             return None
@@ -119,7 +119,7 @@ def store_master_password(password: str) -> bool:
     """Hash and persist the master password to the master key file."""
     hashed_pass = hash_password(password)
     try:
-        with open(MASTER_KEY_FILE, "w") as f:
+        with open(MASTER_KEY_FILE, "w", encoding="utf-8") as f:
             f.write(hashed_pass)
         return True
     except OSError:
@@ -135,7 +135,7 @@ def store_duress_password(password: str) -> bool:
     """Hash and persist the duress password to the duress key file."""
     hashed_pass = hash_password(password)
     try:
-        with open(DURESS_KEY_FILE, "w") as f:
+        with open(DURESS_KEY_FILE, "w", encoding="utf-8") as f:
             f.write(hashed_pass)
         return True
     except OSError:
@@ -211,7 +211,7 @@ def wipe_vault() -> bool:
 def load_settings() -> dict:
     """Load application settings from the JSON settings file, falling back to defaults."""
     try:
-        with open(APP_SETTINGS_FILE, "r") as f:
+        with open(APP_SETTINGS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {"lockout_minutes": DEFAULT_LOCKOUT_MINUTES, "theme": "dark"}
@@ -220,7 +220,7 @@ def load_settings() -> dict:
 def save_settings(settings: dict):
     """Persist application settings to the JSON settings file."""
     try:
-        with open(APP_SETTINGS_FILE, "w") as f:
+        with open(APP_SETTINGS_FILE, "w", encoding="utf-8") as f:
             json.dump(settings, f, indent=4)
     except IOError as e:
         logger.error("Error saving settings: %s", e)
