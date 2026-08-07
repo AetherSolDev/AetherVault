@@ -18,7 +18,7 @@ jobs:
     name: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-15-intel, macos-latest]
+        os: [ubuntu-latest, windows-latest]
         include:
           - os: ubuntu-latest
             artifact_name: aethervault-linux-x86_64
@@ -26,12 +26,6 @@ jobs:
           - os: windows-latest
             artifact_name: aethervault-windows-x86_64
             asset_name: aethervault-windows-x86_64.exe
-          - os: macos-15-intel
-            artifact_name: aethervault-macos-x86_64
-            asset_name: aethervault-macos-x86_64
-          - os: macos-latest
-            artifact_name: aethervault-macos-arm64
-            asset_name: aethervault-macos-arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -72,3 +66,60 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ matrix.asset_name }}
+
+  macos:
+    name: macOS (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: macos-15-intel
+          - arch: arm64
+            runner: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build .app with PyInstaller
+        run: pyinstaller --noconfirm aethervault-mac.spec
+
+      - name: Ad-hoc codesign (required on Apple Silicon)
+        run: codesign --force --deep --sign - dist/AetherVault.app
+
+      - name: Verify codesign
+        run: codesign --verify --verbose=2 dist/AetherVault.app
+
+      - name: Create .app.zip
+        run: ditto -c -k --keepParent dist/AetherVault.app dist/AetherVault.app.zip
+
+      - name: Create DMG
+        run: |
+          hdiutil create -volname AetherVault -srcfolder dist/AetherVault.app -ov -format UDZO \
+            dist/AetherVault-${{ matrix.arch }}.dmg
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aethervault-macos-${{ matrix.arch }}
+          path: |
+            dist/AetherVault.app.zip
+            dist/AetherVault-${{ matrix.arch }}.dmg
+          if-no-files-found: error
+
+      - name: Upload to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/AetherVault.app.zip
+            dist/AetherVault-${{ matrix.arch }}.dmg

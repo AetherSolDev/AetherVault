@@ -1,6 +1,6 @@
 # docs — Technical Reference
 
-> Auto-generated on 2026-08-05 18:00 CT from docs/sys/
+> Auto-generated on 2026-08-06 22:06 CT from docs/sys/
 > Source: `scripts/build_reference.py`
 
 ## Table of Contents
@@ -187,6 +187,12 @@ encryption via `cryptography` library. Master password hashed with PBKDF2-SHA256
 
 ## Gotchas
 
+- **All text `open()` calls must pass `encoding="utf-8"`** — Windows defaults to cp1252 and
+  crashes on non-ASCII bytes (AetherTime hit this). Binary mode (`r+b`) must NOT pass `encoding`.
+- **Frozen data dir is platform-aware** — `aethervault/__init__.py` `_frozen_data_root()`:
+  Windows/macOS single-file exe → `data/` next to the exe; Linux AppImage →
+  `~/.local/share/AetherVault`; unwritable app dir → per-user fallback. Do NOT revert to
+  `os.getcwd()` — Finder/LaunchServices don't reliably set cwd and AppImage mounts are ephemeral.
 - `WindowDeactivate` now resets activity timer (does NOT immediately lock) — fixed in session 4
 - `sectionClicked` sort signal connected once in `create_main_content`, not on every `update_list_view`
 - Password strength bar row is tracked independently via `row` counter to avoid grid cell collision
@@ -237,6 +243,7 @@ this exact bug. Don't repeat it.
 | CI build (all platforms) | Push to `main`, then Actions → Build → "Run workflow" (`workflow_dispatch`), or publish a Release |
 | Publish a Release with binaries | `gh release create vX.Y.Z --generate-notes` → `build.yml` auto-attaches 4 executables on `release: published` |
 | Data files location | `aethervault/docs/`, `aethervault/assets/` (inside package for pip compat) |
+| **Frozen data dir** | Windows/macOS exe → `data/` next to exe; Linux AppImage → `~/.local/share/AetherVault` (see `_frozen_data_root()` in `__init__.py`) |
 
 **Key rule:** Data files must live inside `aethervault/` to survive a non-editable pip install.
 
@@ -260,6 +267,21 @@ this exact bug. Don't repeat it.
 | **vCard export** | planned | `File > Export Contacts (vCard)` — filter entries with non-empty phone/address, write `.vcf` (vCard 3.0). Covers 99% of real use. hCard/meCard not worth implementing. See session 2026-07-27 for full analysis. |
 
 ## Session History Summary
+
+- **2026-08-06 (session 26)**: **v6.4.1 release published.** Tag `v6.4.1` existed locally but no
+  GitHub release was created → `Latest` was v6.4.0 and the F16 binaries weren't downloadable.
+  Created the release at `v6.4.1` (points at F16 fix `8eb0f54`); `build.yml` auto-attached all 4
+  executables. Also manually dispatched Build for artifact-only runs. Workflows: CI (job `test`,
+  pytest), Build (4-OS PyInstaller), Publish to PyPI. Noted Node 20 deprecation on
+  checkout@v4/setup-python@v5/upload-artifact@v4/gh-release@v2 (non-blocking).
+
+- **2026-08-06 (session 25)**: **Cross-platform hardening (F16) — aligned with AetherTime.** Added
+  `encoding="utf-8"` to all text `open()` calls in `core/engine.py` (6) + portable-marker write in
+  `__init__.py` (Windows cp1252 crash class). Made frozen `PROJECT_ROOT` platform-aware via
+  `_frozen_data_root()`: Windows/macOS single-file exe → `data/` next to exe; Linux AppImage →
+  `~/.local/share/AetherVault`; unwritable app dir → per-user fallback. Verified all 3 platform
+  branches by simulation. `os.fork()` detach runs before `QApplication` — safe, left unchanged.
+  Version 6.4.0 → 6.4.1. 74/74 tests pass; compileall clean; engine round-trip verified.
 
 - **2026-08-05 (session 24)**: **Release v6.4.0 + PyPI + README.** Tagged/released v6.4.0 (4 binaries: Linux, macOS arm64/x86_64, Windows). Published `aethervault-py` 6.4.0 to PyPI via trusted publishing; fixed publish workflow YAML bug (heredoc broke parsing) + CI Qt deps + badge cache-bust. Rewrote README in AetherPod format; captured full-screen demo GIF incl. password health report (dialogs grabbed via `activeWindow().grab()`). Captured format in kit `README_FORMAT.md`. Made `-u` PyPI-aware (`importlib.metadata` → `pip install --upgrade aethervault-py`; source/git keeps git path; exe users redownload). 74 tests pass.
 - **2026-08-05 (session 23)**: **Package restructure (C10).** Split `core_logic.py` → `aethervault/core/engine.py` (encryption/hashing/keys/backup/wipe/settings) + `aethervault/core/password.py` (score/gen); `db_manager.py` → `aethervault/shared/database.py` (DatabaseManager); `CredentialEntry` → `aethervault/shared/models.py`. Updated all importers (GUI + 6 test files), deleted old modules, fixed test monkeypatch targets (`aethervault.core.engine.*`). 71 tests pass; app launches. STRUCTURE.md layout now complete.
@@ -316,6 +338,7 @@ this exact bug. Don't repeat it.
 - [x] A15 — CI/CD build & release pipeline (GitHub Actions)
 
 ## BUGS
+- [x] F16 — Windows crash risk: bare `open()` without `encoding="utf-8"` + frozen data dir not platform-aware (fixed 2026-08-06)
 - [x] F0 — `resource_path()` references `sys._MEIPASS` without `sys` import at module level
 - [x] F1 — `find_and_remove_duplicates()` calls backup before docstring (wrong execution order)
 - [x] F2 — `assets/kiss_icon.ico` referenced but no `assets/` directory exists
@@ -353,6 +376,18 @@ this exact bug. Don't repeat it.
 # AetherVault Tasks
 
 ## P0 — Critical (security/stability)
+
+- [x] F16 — Cross-platform hardening (encoding + frozen data dir) — aligned with AetherTime
+  - **ID**: fix-cross-platform-hardening
+  - **Tags**: bug, cross-platform, windows, macos, packaging
+  - **Details**: Added `encoding="utf-8"` to all text `open()` calls in `core/engine.py` (6) +
+    portable-marker write in `__init__.py` (Windows cp1252 crash class). Made frozen
+    `PROJECT_ROOT` platform-aware via `_frozen_data_root()`: Windows/macOS single-file exe → `data/`
+    next to exe; Linux AppImage → `~/.local/share/AetherVault`; unwritable app dir → per-user
+    fallback. Verified all 3 branches by simulation. `os.fork()` detach runs before `QApplication`
+    (safe, unchanged). Version 6.4.0 → 6.4.1.
+  - **Files**: `aethervault/__init__.py`, `aethervault/core/engine.py`, `aethervault/docs/sys/*`
+  - **Acceptance**: 74 tests pass; compileall clean; engine round-trip (master/duress/settings) verified.
 
 - [x] R1 — Release v6.4.0 + PyPI publishing + README/GIF
   - **ID**: release-6.4.0-pypi
@@ -593,6 +628,35 @@ this exact bug. Don't repeat it.
 ## Changelog
 
 # Changelog
+
+## [Unreleased] — 2026-08-06 (release operations)
+
+### Added
+- **v6.4.1 GitHub release published** — tag `v6.4.1` had no GitHub release, so `Latest` pointed at
+  v6.4.0 and the F16 fixes weren't downloadable. Created the release; `build.yml` attached the 4
+  executables (Linux x86_64, macOS arm64 + x86_64, Windows x86_64). Manual `workflow_dispatch`
+  of Build also verified (artifacts only, no release).
+
+### Notes
+- Node 20 actions deprecation (checkout@v4, setup-python@v5, upload-artifact@v4,
+  softprops/action-gh-release@v2) — non-blocking; bump on next workflow edit.
+
+## [6.4.1] — 2026-08-06
+
+### Fixed
+- **Windows crash risk from bare `open()` calls (F16)** — `.master.key`, `.duress.key`, and
+  `.app_settings.json` are now read/written with `encoding="utf-8"` (same class as AetherTime's
+  `charmap`/cp1252 crash; Windows defaults to cp1252 and would throw on any non-ASCII byte).
+- **Frozen data dir is now platform-aware (F16)** — `PROJECT_ROOT` for a frozen build is no longer
+  `os.getcwd()`. Windows/macOS single-file executables keep `data/` next to the exe (deterministic
+  regardless of how it's launched); Linux AppImage uses `~/.local/share/AetherVault` (stable path
+  vs the ephemeral `/tmp/.mount_*`); unwritable app dirs (e.g. `/Applications`, `Program Files`)
+  fall back to a per-user path. Mirrors AetherTime's proven data-dir fix.
+- Portable-mode marker write now uses `encoding="utf-8"`.
+
+### Notes
+- `os.fork()`/`os.setsid()` detach (Unix) runs before `QApplication` — safe on macOS; effectively
+  a no-op on a single-file `.app`. Left unchanged.
 
 ## [6.4.0] — 2026-08-05
 
@@ -859,6 +923,32 @@ this exact bug. Don't repeat it.
 
 # AetherVault Bug Tracker
 
+## F16 — Windows crash risk: bare open() + frozen data dir not platform-aware
+
+- **Status**: Fixed
+- **Fixed**: 2026-08-06
+- **Found**: 2026-08-06 (cross-platform audit, aligned with AetherTime)
+- **Priority**: P1
+- **Tags**: bug, cross-platform, windows, macos
+- **Description**: Two related portability gaps found while aligning AetherVault with
+  AetherTime's cross-platform hardening:
+  1. **Bare `open()` calls** (no `encoding="utf-8"`) on `.master.key`, `.duress.key`, and
+     `.app_settings.json` — the same class as AetherTime's `charmap`/cp1252 Windows crash. If any
+     of these files ever contains a non-ASCII byte, Windows (default cp1252) would throw
+     `UnicodeDecodeError`/`UnicodeEncodeError`.
+  2. **Frozen `PROJECT_ROOT` was `os.getcwd()`** — on a double-clicked macOS/Windows executable,
+     `cwd` is not reliably set (Finder/LaunchServices can set it to `/` or leave it undefined), so
+     `DATA_DIR = PROJECT_ROOT/data` could land in an unwritable root or an ephemeral location.
+     Linux AppImage `--onefile` runs from an ephemeral `/tmp/.mount_*` that can vanish on exit.
+- **Root Cause**: `aethervault/core/engine.py` used `open(...)` without `encoding="utf-8"`;
+  `aethervault/__init__.py` set `PROJECT_ROOT = os.getcwd()` for all frozen builds.
+- **Fix**: Added `encoding="utf-8"` to all 6 text `open()` calls in `engine.py` + the portable
+  marker write in `__init__.py` (binary wipe `open(path, "r+b")` unchanged — encoding is invalid
+  in binary mode). Added `_frozen_data_root()` in `__init__.py`: Windows/macOS single-file exe →
+  data next to the exe; Linux AppImage → `~/.local/share/AetherVault`; unwritable app dir →
+  per-user fallback (mirrors AetherTime's proven pattern).
+- **Files**: `aethervault/core/engine.py`, `aethervault/__init__.py`
+
 ## F15 — No startup integrity check on the vault database
 
 - **Status**: Fixed
@@ -995,7 +1085,7 @@ this exact bug. Don't repeat it.
 
 | Date | Timeline | Model | Cost |
 |------|----------|-------|------|
-| 2026-08-05 | 2026-07-24 (13 days) | multi-model | $0.63 |
+| 2026-08-06 | 2026-07-24 (14 days) | multi-model | $2.40 |
 
 ## Cost Breakdown
 
@@ -1012,25 +1102,34 @@ this exact bug. Don't repeat it.
 | 2026-07-25 | Recall query | deepseek-v4-flash | 126,654 | 17,150 | $0.03 |
 | 2026-08-01 | Run app audit with project_kit | deepseek-v4-flash | 172,419 | 101,844 | $0.32 |
 | 2026-08-05 | Project kit vs structure gap analysis | deepseek-v4-flash | 305,168 | 89,784 | $0.21 |
+| 2026-08-05 | Project kit vs structure gap analysis | deepseek-v4-flash | 932,461 | 228,694 | $0.87 |
+| 2026-08-05 | Project kit vs structure gap analysis | deepseek-v4-flash | 933,794 | 229,896 | $0.88 |
+| 2026-08-06 | GitHub CI rebuild failure investigation | deepseek-v4-flash | 42,711 | 3,266 | $0.01 |
+| 2026-08-06 | Recall previous context | deepseek-v4-flash | 30,184 | 3,934 | $0.01 |
 
 ---
 
 ## Model Pricing Reference
 
 ```
-## Model Pricing Reference (as of 2026-07-30)
+## Model Pricing Reference (as of 2026-08-06)
 
-> DeepSeek prices verified 2026-07-30 against api-docs.deepseek.com
-> (deepseek-v4-flash: $0.14 input / $0.28 output per 1M tokens). Gemini
-> values are from the Google Vertex AI model pricing table.
+> DeepSeek prices verified 2026-08-06 against api-docs.deepseek.com
+> (deepseek-v4-flash: $0.14 input / $0.28 output per 1M tokens, cache hit
+> $0.0028). Gemini values are from the Google Vertex AI model pricing table.
 
 | Model | Input ($/M tokens) | Output ($/M tokens) |
 |---|---|---|
-| DeepSeek V4 Flash (off-peak) | $0.14 | $0.28 |
-| DeepSeek V4 Flash (peak) | $0.28 | $0.56 |
+| DeepSeek V4 Flash (cache miss) | $0.14 | $0.28 |
+| DeepSeek V4 Flash (cache hit) | $0.0028 | $0.28 |
+| DeepSeek V4 Pro (cache miss) | $0.435 | $0.87 |
+| DeepSeek V4 Pro (cache hit) | $0.003625 | $0.87 |
 | Gemini 2.5 Flash-Lite | $0.10 | $0.40 |
 | Gemini 2.5 Flash | $0.25 | $1.00 |
 | Ollama (local) | $0 (compute only) | $0 |
+
+> ⚠️ DeepSeek announced a near-term overall API price increase — "plan your
+> usage accordingly." Watch for updated pricing.
 
 ### Peak Hours
 - DeepSeek peak: 9:00–12:00 & 14:00–18:00 Beijing time (UTC+8)
@@ -1478,8 +1577,8 @@ flowchart TD
     CI -->|must pass| BUILD
     BUILD --> LIN[aethervault-linux-x86_64]
     BUILD --> WIN[aethervault-windows-x86_64.exe]
-    BUILD --> MACA[aethervault-macos-arm64]
-    BUILD --> MACX[aethervault-macos-x86_64]
+    BUILD --> MACA[AetherVault-arm64.dmg + AetherVault.app.zip]
+    BUILD --> MACX[AetherVault-x86_64.dmg + AetherVault.app.zip]
     BUILD --> ATTACH[Attach binaries to the Release]
 ```
 
@@ -1617,6 +1716,79 @@ Append a new entry at the top of the log at the end of every session (see
 `save session` protocol in `instructions/memory.md`). This file lives in
 `aethervault/docs/sys/` and is NOT tracked by git.
 
+## 2026-08-06 — v6.4.1 release published with binaries
+
+### Completed
+- **v6.4.1 release live on GitHub** — created release at tag `v6.4.1`
+  (https://github.com/AetherSolDev/AetherVault/releases/tag/v6.4.1). The tag
+  existed locally but no GitHub release had been created, so `Latest` pointed at
+  v6.4.0 and the F16 fixes weren't downloadable. Release now ships the 4
+  binaries: `aethervault-linux-x86_64`, `aethervault-macos-arm64`,
+  `aethervault-macos-x86_64`, `aethervault-windows-x86_64.exe` (auto-attached by
+  `build.yml` on `release: published`). Tag commit verified = F16 fix commit
+  (`8eb0f54`) before publishing.
+- **Manual Build dispatch** — `gh workflow run "Build" --ref main` builds the 4
+  executables as run artifacts (not attached to a release). Dispatched, all 4
+  jobs green. Distinguish from CI (job name `test`, pytest on push/PR).
+- **Workflow landscape clarified** — repo has 3 active workflows: CI (pytest,
+  job `test`), Build (PyInstaller 4-OS executables, `release: published` +
+  `workflow_dispatch`), Publish to PyPI (`v*` tags).
+- **Non-blocking warning noted** — Node 20 deprecation on `actions/checkout@v4`,
+  `setup-python@v5`, `upload-artifact@v4`, `softprops/action-gh-release@v2`
+  (forced to Node 24). Bump to v5/v6/v5 when next editing workflows.
+
+### In Progress
+- None — session complete
+
+### Blocked
+- None
+
+### Key Decisions
+- Created release on `v6.4.1` (F16 fix commit) rather than HEAD — HEAD `e219f8f`
+  is only a "Trigger CI re-run" commit with no code change. Binaries build from
+  the tag's tree.
+- Manual Build dispatches leave binaries as artifacts; only a Release triggers
+  auto-attachment to the release page. Use a release for user-facing downloads.
+
+### Cost
+- Model(s) used: deepseek-v4-flash (off-peak)
+- Tokens — input / output: (run `scripts/update_cost.py`)
+- Peak or off-peak: off-peak
+- $ cost this session: ~$0.02
+- Project total (from COST.md): $2.40
+
+## 2026-08-06 — Cross-platform hardening (F16), aligned with AetherTime
+
+### Completed
+- **Windows crash class eliminated (F16)** — added `encoding="utf-8"` to all 6 text `open()`
+  calls in `aethervault/core/engine.py` (`.master.key`, `.duress.key`, `.app_settings.json`) +
+  portable-marker write in `aethervault/__init__.py`. Windows defaults to cp1252 and crashes on
+  non-ASCII bytes (AetherTime hit this exact bug).
+- **Frozen data dir platform-aware (F16)** — `_frozen_data_root()` in `aethervault/__init__.py`:
+  Windows/macOS single-file exe → `data/` next to the exe (deterministic, vs `os.getcwd()` which
+  Finder/LaunchServices don't set reliably); Linux AppImage → `~/.local/share/AetherVault`
+  (stable vs ephemeral `/tmp/.mount_*`); unwritable app dir (`/Applications`, Program Files) →
+  per-user fallback. Mirrors AetherTime's proven data-dir fix. Verified all 3 branches via
+  simulation.
+- **Version 6.4.0 → 6.4.1** — `aethervault/__init__.py` + `pyproject.toml`.
+- **`os.fork()`/`os.setsid()` detach reviewed** — runs before `QApplication`, safe on macOS,
+  effectively a no-op on a single-file `.app`. Left unchanged.
+- **Lessons captured in project_kit** — new `instructions/CROSS_PLATFORM.md` (timezone/`tzset`,
+  `encoding='utf-8'`, frozen data dir, `os.fork` guard, platform table), `pyproject.toml`
+  template, `new_project.md` + `packaging.md` cross-platform steps.
+
+### In Progress
+- None — session complete (code committed in AetherVault repo)
+
+### Blocked
+- None
+
+### Key Decisions
+- Data-dir policy for frozen builds: exe-adjacent on Win/macOS, per-user on Linux, per-user
+  fallback if the app dir isn't writable.
+- Binary `open(..., "r+b")` (wipe) correctly takes NO `encoding` — only text mode needs it.
+- `os.fork()` detach stays (no change): guarded to non-Windows, before Qt init.
+
 ## 2026-08-05 — Release v6.4.0, PyPI publishing, README/GIF, upgrade fix
 
 ### Completed
@@ -1676,4 +1848,4 @@ Append a new entry at the top of the log at the end of every session (see
 
 ---
 
-*Generated on 2026-08-05 18:00 CT by `scripts/build_reference.py`*
+*Generated on 2026-08-06 22:06 CT by `scripts/build_reference.py`*

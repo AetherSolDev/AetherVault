@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-06 14:19 CT (America/Chicago)
+# Last Edited: 2026-08-06 22:05 CT (America/Chicago)
 # Path: aethervault/__init__.py
 # Purpose: Package init for AetherVault source. Defines PROJECT_ROOT and portable mode.
 
@@ -24,6 +24,10 @@ def _frozen_data_root() -> str:
       be removed on exit -> use a stable per-user path instead
     """
     if sys.platform == "linux":
+        root = os.path.join(os.path.expanduser("~"), ".local", "share", "AetherVault")
+    elif sys.platform == "darwin" and ".app/Contents/MacOS" in os.path.realpath(sys.executable):
+        # .app bundle (DMG install) — the bundle itself may sit in a read-only
+        # DMG or be replaced on update; keep data in the per-user home dir.
         root = os.path.join(os.path.expanduser("~"), ".local", "share", "AetherVault")
     else:
         root = os.path.dirname(os.path.realpath(sys.executable))

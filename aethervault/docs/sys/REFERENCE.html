@@ -41,7 +41,7 @@
 <body>
 <h1 id="docs-technical-reference">docs — Technical Reference</h1>
 <blockquote>
-<p>Auto-generated on 2026-08-05 18:00 CT from docs/sys/
+<p>Auto-generated on 2026-08-06 22:06 CT from docs/sys/
 Source: <code>scripts/build_reference.py</code></p>
 </blockquote>
 <h2 id="table-of-contents">Table of Contents</h2>
@@ -298,6 +298,12 @@ encryption via <code>cryptography</code> library. Master password hashed with PB
 </table>
 <h2 id="gotchas">Gotchas</h2>
 <ul>
+<li><strong>All text <code>open()</code> calls must pass <code>encoding="utf-8"</code></strong> — Windows defaults to cp1252 and
+  crashes on non-ASCII bytes (AetherTime hit this). Binary mode (<code>r+b</code>) must NOT pass <code>encoding</code>.</li>
+<li><strong>Frozen data dir is platform-aware</strong> — <code>aethervault/__init__.py</code> <code>_frozen_data_root()</code>:
+  Windows/macOS single-file exe → <code>data/</code> next to the exe; Linux AppImage →
+  <code>~/.local/share/AetherVault</code>; unwritable app dir → per-user fallback. Do NOT revert to
+  <code>os.getcwd()</code> — Finder/LaunchServices don't reliably set cwd and AppImage mounts are ephemeral.</li>
 <li><code>WindowDeactivate</code> now resets activity timer (does NOT immediately lock) — fixed in session 4</li>
 <li><code>sectionClicked</code> sort signal connected once in <code>create_main_content</code>, not on every <code>update_list_view</code></li>
 <li>Password strength bar row is tracked independently via <code>row</code> counter to avoid grid cell collision</li>
@@ -370,6 +376,10 @@ this exact bug. Don't repeat it.</p>
 <td>Data files location</td>
 <td><code>aethervault/docs/</code>, <code>aethervault/assets/</code> (inside package for pip compat)</td>
 </tr>
+<tr>
+<td><strong>Frozen data dir</strong></td>
+<td>Windows/macOS exe → <code>data/</code> next to exe; Linux AppImage → <code>~/.local/share/AetherVault</code> (see <code>_frozen_data_root()</code> in <code>__init__.py</code>)</td>
+</tr>
 </tbody>
 </table>
 <p><strong>Key rule:</strong> Data files must live inside <code>aethervault/</code> to survive a non-editable pip install.</p>
@@ -405,7 +415,26 @@ this exact bug. Don't repeat it.</p>
 </table>
 <h2 id="session-history-summary">Session History Summary</h2>
 <ul>
-<li><strong>2026-08-05 (session 24)</strong>: <strong>Release v6.4.0 + PyPI + README.</strong> Tagged/released v6.4.0 (4 binaries: Linux, macOS arm64/x86_64, Windows). Published <code>aethervault-py</code> 6.4.0 to PyPI via trusted publishing; fixed publish workflow YAML bug (heredoc broke parsing) + CI Qt deps + badge cache-bust. Rewrote README in AetherPod format; captured full-screen demo GIF incl. password health report (dialogs grabbed via <code>activeWindow().grab()</code>). Captured format in kit <code>README_FORMAT.md</code>. Made <code>-u</code> PyPI-aware (<code>importlib.metadata</code> → <code>pip install --upgrade aethervault-py</code>; source/git keeps git path; exe users redownload). 74 tests pass.</li>
+<li>
+<p><strong>2026-08-06 (session 26)</strong>: <strong>v6.4.1 release published.</strong> Tag <code>v6.4.1</code> existed locally but no
+  GitHub release was created → <code>Latest</code> was v6.4.0 and the F16 binaries weren't downloadable.
+  Created the release at <code>v6.4.1</code> (points at F16 fix <code>8eb0f54</code>); <code>build.yml</code> auto-attached all 4
+  executables. Also manually dispatched Build for artifact-only runs. Workflows: CI (job <code>test</code>,
+  pytest), Build (4-OS PyInstaller), Publish to PyPI. Noted Node 20 deprecation on
+  checkout@v4/setup-python@v5/upload-artifact@v4/gh-release@v2 (non-blocking).</p>
+</li>
+<li>
+<p><strong>2026-08-06 (session 25)</strong>: <strong>Cross-platform hardening (F16) — aligned with AetherTime.</strong> Added
+  <code>encoding="utf-8"</code> to all text <code>open()</code> calls in <code>core/engine.py</code> (6) + portable-marker write in
+  <code>__init__.py</code> (Windows cp1252 crash class). Made frozen <code>PROJECT_ROOT</code> platform-aware via
+  <code>_frozen_data_root()</code>: Windows/macOS single-file exe → <code>data/</code> next to exe; Linux AppImage →
+  <code>~/.local/share/AetherVault</code>; unwritable app dir → per-user fallback. Verified all 3 platform
+  branches by simulation. <code>os.fork()</code> detach runs before <code>QApplication</code> — safe, left unchanged.
+  Version 6.4.0 → 6.4.1. 74/74 tests pass; compileall clean; engine round-trip verified.</p>
+</li>
+<li>
+<p><strong>2026-08-05 (session 24)</strong>: <strong>Release v6.4.0 + PyPI + README.</strong> Tagged/released v6.4.0 (4 binaries: Linux, macOS arm64/x86_64, Windows). Published <code>aethervault-py</code> 6.4.0 to PyPI via trusted publishing; fixed publish workflow YAML bug (heredoc broke parsing) + CI Qt deps + badge cache-bust. Rewrote README in AetherPod format; captured full-screen demo GIF incl. password health report (dialogs grabbed via <code>activeWindow().grab()</code>). Captured format in kit <code>README_FORMAT.md</code>. Made <code>-u</code> PyPI-aware (<code>importlib.metadata</code> → <code>pip install --upgrade aethervault-py</code>; source/git keeps git path; exe users redownload). 74 tests pass.</p>
+</li>
 <li><strong>2026-08-05 (session 23)</strong>: <strong>Package restructure (C10).</strong> Split <code>core_logic.py</code> → <code>aethervault/core/engine.py</code> (encryption/hashing/keys/backup/wipe/settings) + <code>aethervault/core/password.py</code> (score/gen); <code>db_manager.py</code> → <code>aethervault/shared/database.py</code> (DatabaseManager); <code>CredentialEntry</code> → <code>aethervault/shared/models.py</code>. Updated all importers (GUI + 6 test files), deleted old modules, fixed test monkeypatch targets (<code>aethervault.core.engine.*</code>). 71 tests pass; app launches. STRUCTURE.md layout now complete.</li>
 <li><strong>2026-08-05 (session 22)</strong>: <strong>Kit alignment + bug fixes.</strong> Restored <code>project_kit/</code> from NAS, compared vs project (gap analysis). Licensing: added "How to Decide: GPL3 vs MIT+EULA" to kit LICENSING.md, moved EULA→instructions/. Brand assets: <code>aethersol.ico</code>/<code>aethersol_logo.png</code> into <code>project_kit/assets/</code> + <code>instructions/ASSETS.md</code>. Aligned project: added <code>sessions.md</code>, <code>FUTURE_DEV_IDEAS.md</code>, <code>aethervault.txt</code>, <code>project_audit/</code>; synced <code>instructions/</code>; updated <code>AGENTS.md</code>; removed stale <code>kiss/</code>. <strong>Fixed copy/paste bug</strong> (F14): Copy Password button captured the loop variable → copied Category field; fixed with default-arg lambda; 2 regression tests; suite 69→71. Tray/window icon now <code>aethersol.ico</code>.</li>
 <li><strong>2026-07-24 (session 1)</strong>: Initial project audit. Set up project scaffolding with New_Project_init template system. Created AGENTS.md, docs/sys/, USER_GUIDE.md, instructions/, scripts/, .repomixignore. Identified 3 bugs and 5 planned changes.</li>
@@ -460,6 +489,7 @@ this exact bug. Don't repeat it.</p>
 </ul>
 <h2 id="bugs">BUGS</h2>
 <ul>
+<li>[x] F16 — Windows crash risk: bare <code>open()</code> without <code>encoding="utf-8"</code> + frozen data dir not platform-aware (fixed 2026-08-06)</li>
 <li>[x] F0 — <code>resource_path()</code> references <code>sys._MEIPASS</code> without <code>sys</code> import at module level</li>
 <li>[x] F1 — <code>find_and_remove_duplicates()</code> calls backup before docstring (wrong execution order)</li>
 <li>[x] F2 — <code>assets/kiss_icon.ico</code> referenced but no <code>assets/</code> directory exists</li>
@@ -497,7 +527,22 @@ this exact bug. Don't repeat it.</p>
 <h1 id="aethervault-tasks">AetherVault Tasks</h1>
 <h2 id="p0-critical-securitystability">P0 — Critical (security/stability)</h2>
 <ul>
-<li>[x] R1 — Release v6.4.0 + PyPI publishing + README/GIF</li>
+<li>[x] F16 — Cross-platform hardening (encoding + frozen data dir) — aligned with AetherTime</li>
+<li><strong>ID</strong>: fix-cross-platform-hardening</li>
+<li><strong>Tags</strong>: bug, cross-platform, windows, macos, packaging</li>
+<li><strong>Details</strong>: Added <code>encoding="utf-8"</code> to all text <code>open()</code> calls in <code>core/engine.py</code> (6) +
+    portable-marker write in <code>__init__.py</code> (Windows cp1252 crash class). Made frozen
+    <code>PROJECT_ROOT</code> platform-aware via <code>_frozen_data_root()</code>: Windows/macOS single-file exe → <code>data/</code>
+    next to exe; Linux AppImage → <code>~/.local/share/AetherVault</code>; unwritable app dir → per-user
+    fallback. Verified all 3 branches by simulation. <code>os.fork()</code> detach runs before <code>QApplication</code>
+    (safe, unchanged). Version 6.4.0 → 6.4.1.</li>
+<li><strong>Files</strong>: <code>aethervault/__init__.py</code>, <code>aethervault/core/engine.py</code>, <code>aethervault/docs/sys/*</code></li>
+<li>
+<p><strong>Acceptance</strong>: 74 tests pass; compileall clean; engine round-trip (master/duress/settings) verified.</p>
+</li>
+<li>
+<p>[x] R1 — Release v6.4.0 + PyPI publishing + README/GIF</p>
+</li>
 <li><strong>ID</strong>: release-6.4.0-pypi</li>
 <li><strong>Tags</strong>: release, ci, docs, packaging</li>
 <li><strong>Details</strong>: Bumped to 6.4.0; tagged + released with 4 binaries (Linux, macOS arm64/x86_64, Windows). Published <code>aethervault-py</code> to PyPI via trusted publishing (fixed workflow YAML heredoc bug + CI Qt deps + badge cache). Rewrote README in AetherPod format with full-screen demo GIF incl. password health report. Made <code>-u</code> PyPI-aware. Captured README format in kit <code>README_FORMAT.md</code>.</li>
@@ -816,8 +861,39 @@ this exact bug. Don't repeat it.</p>
 <hr />
 <h2 id="changelog">Changelog</h2>
 <h1 id="changelog_1">Changelog</h1>
-<h2 id="640-2026-08-05">[6.4.0] — 2026-08-05</h2>
+<h2 id="unreleased-2026-08-06-release-operations">[Unreleased] — 2026-08-06 (release operations)</h2>
 <h3 id="added">Added</h3>
+<ul>
+<li><strong>v6.4.1 GitHub release published</strong> — tag <code>v6.4.1</code> had no GitHub release, so <code>Latest</code> pointed at
+  v6.4.0 and the F16 fixes weren't downloadable. Created the release; <code>build.yml</code> attached the 4
+  executables (Linux x86_64, macOS arm64 + x86_64, Windows x86_64). Manual <code>workflow_dispatch</code>
+  of Build also verified (artifacts only, no release).</li>
+</ul>
+<h3 id="notes">Notes</h3>
+<ul>
+<li>Node 20 actions deprecation (checkout@v4, setup-python@v5, upload-artifact@v4,
+  softprops/action-gh-release@v2) — non-blocking; bump on next workflow edit.</li>
+</ul>
+<h2 id="641-2026-08-06">[6.4.1] — 2026-08-06</h2>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li><strong>Windows crash risk from bare <code>open()</code> calls (F16)</strong> — <code>.master.key</code>, <code>.duress.key</code>, and
+  <code>.app_settings.json</code> are now read/written with <code>encoding="utf-8"</code> (same class as AetherTime's
+  <code>charmap</code>/cp1252 crash; Windows defaults to cp1252 and would throw on any non-ASCII byte).</li>
+<li><strong>Frozen data dir is now platform-aware (F16)</strong> — <code>PROJECT_ROOT</code> for a frozen build is no longer
+  <code>os.getcwd()</code>. Windows/macOS single-file executables keep <code>data/</code> next to the exe (deterministic
+  regardless of how it's launched); Linux AppImage uses <code>~/.local/share/AetherVault</code> (stable path
+  vs the ephemeral <code>/tmp/.mount_*</code>); unwritable app dirs (e.g. <code>/Applications</code>, <code>Program Files</code>)
+  fall back to a per-user path. Mirrors AetherTime's proven data-dir fix.</li>
+<li>Portable-mode marker write now uses <code>encoding="utf-8"</code>.</li>
+</ul>
+<h3 id="notes_1">Notes</h3>
+<ul>
+<li><code>os.fork()</code>/<code>os.setsid()</code> detach (Unix) runs before <code>QApplication</code> — safe on macOS; effectively
+  a no-op on a single-file <code>.app</code>. Left unchanged.</li>
+</ul>
+<h2 id="640-2026-08-05">[6.4.0] — 2026-08-05</h2>
+<h3 id="added_1">Added</h3>
 <ul>
 <li><strong>Startup integrity check (F15, P1)</strong> — <code>DatabaseManager._connect()</code> runs <code>PRAGMA integrity_check</code>; on failure it notifies the user and auto-recovers from the most recent <code>.db.bak</code>. No backup → safe fail. 3 regression tests (suite 71 → 74).</li>
 <li><strong>PyPI publishing</strong> — <code>publish-pypi.yml</code> builds sdist/wheel and uploads via trusted publishing on <code>v*</code> tags. Distribution name <code>aethervault-py</code> (the name <code>aethervault</code> collides with an existing PyPI package).</li>
@@ -829,17 +905,17 @@ this exact bug. Don't repeat it.</p>
 <li><strong>README</strong> — rewritten in AetherPod format: ASCII banner, badges, demo GIF + screenshot gallery.</li>
 <li><strong>Internal docs excluded from PyPI package</strong> — <code>docs/sys/</code> + <code>project_audit/</code> no longer ship in wheel/sdist.</li>
 </ul>
-<h3 id="fixed">Fixed</h3>
+<h3 id="fixed_1">Fixed</h3>
 <ul>
 <li><strong>Copy Password button copied the Category field</strong> — late-binding lambda; captured with default arg. 2 regression tests.</li>
 <li><strong><code>aethervault -u</code> for PyPI installs</strong> — previously always ran <code>pip install --upgrade git+&lt;repo&gt;</code>, which fails for PyPI users. Now detects install source via <code>importlib.metadata</code>: <code>aethervault-py</code> present → <code>pip install --upgrade aethervault-py</code>; source/git installs keep the git path. Executable (exe) installs can't self-upgrade — documented in README (redownload from Releases).</li>
 </ul>
-<h3 id="notes">Notes</h3>
+<h3 id="notes_2">Notes</h3>
 <ul>
 <li><strong>v6.4.0 published</strong> — <code>aethervault-py</code> 6.4.0 live on PyPI (wheel + sdist) via trusted publishing; 4 release binaries (Linux, macOS arm64/x86_64, Windows). CI + publish workflows fixed (Qt deps, YAML heredoc bug, badge cache).</li>
 </ul>
 <h2 id="unreleased-2026-08-05-audit-remediation-f14-f15">[Unreleased] — 2026-08-05 (audit remediation F14 + F15)</h2>
-<h3 id="added_1">Added</h3>
+<h3 id="added_2">Added</h3>
 <ul>
 <li><strong>Startup integrity check (F14, P1)</strong> — <code>DatabaseManager._connect()</code> now runs <code>PRAGMA integrity_check</code>. On failure it notifies the user and automatically recovers from the most recent <code>.db.bak</code> backup (copy over + re-check). If no backup exists, the connection fails safely (<code>conn=None</code>) instead of crashing. 3 regression tests added (<code>test_recover_from_backup_when_corrupt</code>, <code>test_no_backup_fails_safely</code>, <code>test_integrity_check_passes_on_valid_db</code>). Suite: 71 → 74.</li>
 </ul>
@@ -853,7 +929,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong>Package restructure to <code>core/</code> + <code>shared/</code> (C10)</strong> — split <code>core_logic.py</code> → <code>aethervault/core/engine.py</code> (encryption, hashing, key derivation, backup/wipe, settings) + <code>aethervault/core/password.py</code> (<code>score_password</code>, <code>generate_strong_password</code>); <code>db_manager.py</code> → <code>aethervault/shared/database.py</code> (DatabaseManager); <code>CredentialEntry</code> → <code>aethervault/shared/models.py</code>. Updated all importers (GUI modules + 6 test files) and test monkeypatch targets (<code>aethervault.core.engine.*</code>). Deleted old flat modules. Matches STRUCTURE.md canonical layout. 71 tests pass; app launches.</li>
 </ul>
 <h2 id="unreleased-2026-08-05-template-alignment">[Unreleased] — 2026-08-05 (template alignment)</h2>
-<h3 id="fixed_1">Fixed</h3>
+<h3 id="fixed_2">Fixed</h3>
 <ul>
 <li><strong>Copy Password button copied the Category field instead of the password</strong> — <code>credential_form.py</code> used <code>lambda: self.copy_requested.emit(line_edit.text(), ...)</code> where <code>line_edit</code> was the loop variable, which after the form loop points to the last field (<code>category</code>). The classic late-binding closure bug. Fixed by capturing with a default arg: <code>lambda checked, le=line_edit: ...</code>. Verified on real X11: clicking Copy now places the actual decrypted password on the clipboard. Added <code>tests/test_credential_form.py</code> (2 regression tests). Suite: 69 → 71.</li>
 </ul>
@@ -864,12 +940,12 @@ this exact bug. Don't repeat it.</p>
 <li><strong>Brand assets</strong> — <code>aethervault.ico</code> deleted, <code>aethersol.ico</code> + <code>aethersol_logo.png</code> added; kit <code>project_kit/assets/</code> + <code>instructions/ASSETS.md</code> created.</li>
 </ul>
 <h2 id="631-2026-08-01">[6.3.1] — 2026-08-01</h2>
-<h3 id="fixed_2">Fixed</h3>
+<h3 id="fixed_3">Fixed</h3>
 <ul>
 <li><strong>Duress password setup aborted after master prompt</strong> — <code>QInputDialog.getText()</code> in PySide6 returns <code>(text, ok)</code> (text first, bool second). The duress setup unpacked them as <code>(ok, text)</code>, so the master field held a bool and <code>verify_password()</code> raised <code>AttributeError</code>, silently stopping the flow before the duress prompt. Now the second prompt (or clear) appears correctly. Verified end-to-end with real modal dialogs; live duress wipe test + restore passed.</li>
 </ul>
 <h2 id="630-2026-08-01">[6.3.0] — 2026-08-01</h2>
-<h3 id="added_2">Added</h3>
+<h3 id="added_3">Added</h3>
 <ul>
 <li><strong>Duress password (optional)</strong> — if entered at the login screen, cryptographically destroys the vault and all backups (<code>wipe_vault()</code>): master/duress key files are deleted FIRST (crypto erasure), then all <code>.db</code>, <code>.db-wal</code>, <code>.db-shm</code>, <code>.db.bak</code>, <code>aethervault_*.db.bak</code>, and <code>.app_settings.json</code> are overwritten with random data and removed. After wiping it shows a fake "Invalid password" dialog and exits — indistinguishable from a failed login. Configured via Settings → Duress Password (requires the master password to set/clear). Stored as a PBKDF2 hash in <code>data/.duress.key</code>; checked before the master password with identical PBKDF2 cost so timing is indistinguishable.</li>
 <li><strong>Backup rotation</strong> — <code>rotate_backups()</code> keeps the 5 most recent timestamped backups and prunes the rest (pre-op + manual backup paths), keeping wipe time bounded.</li>
@@ -905,13 +981,13 @@ this exact bug. Don't repeat it.</p>
 <li><strong>Re-audit</strong> — 42/42 checklist checks pass, score back to A. 61 tests pass.</li>
 </ul>
 <h2 id="unreleased-2026-07-30-session-15">[Unreleased] — 2026-07-30 (session 15)</h2>
-<h3 id="added_3">Added</h3>
+<h3 id="added_4">Added</h3>
 <ul>
 <li><strong>GitHub Releases delivery</strong> — <code>build.yml</code> builds single-file executables for Windows, Linux, and macOS (Intel + Apple Silicon) and auto-attaches them to the Release on <code>release: published</code> (<code>softprops/action-gh-release</code>). Manual runs via <code>workflow_dispatch</code> still upload workflow artifacts.</li>
 <li><strong>README quick-download table</strong> — one-click links to the latest binaries via <code>/releases/latest/download/...</code>, plus a Build status badge.</li>
 <li><strong>First release with binaries</strong> — <code>v6.2.1</code> published with 4 pre-built executables (Linux 86MB, Windows 54MB, macOS Intel 43MB, macOS ARM 40MB).</li>
 </ul>
-<h3 id="fixed_3">Fixed</h3>
+<h3 id="fixed_4">Fixed</h3>
 <ul>
 <li><strong><code>create_pre_op_backup()</code> on fresh checkouts</strong> — now creates the backup directory (<code>os.makedirs</code>) before <code>copyfile</code>. Previously the write to <code>src/data/</code> raised <code>FileNotFoundError</code> when that dir was absent (e.g., CI checkout), which the test error-handler lambda swallowed → <code>test_create_pre_op_backup_creates_file</code> failed on CI only.</li>
 <li><strong><code>build.yml</code> Linux system deps</strong> — <code>libgl1-mesa-glx</code> no longer exists on Ubuntu 24.04 runners; replaced with <code>libgl1</code> + <code>libxkbcommon-x11-0</code> and added <code>libxcb-icccm4</code> / <code>libxcb-keysyms1</code> / <code>libxcb-shape0</code> so the Qt xcb libraries bundle into the onefile.</li>
@@ -930,12 +1006,12 @@ this exact bug. Don't repeat it.</p>
 <li><strong><code>ci.yml</code></strong> — green across Python 3.9–3.12 (61 tests) after the backup-dir fix.</li>
 </ul>
 <h2 id="621-2026-07-27">[6.2.1] — 2026-07-27</h2>
-<h3 id="fixed_4">Fixed</h3>
+<h3 id="fixed_5">Fixed</h3>
 <ul>
 <li><strong>Encryption key guard</strong> — <code>import_from_csv()</code>, <code>execute_import()</code>, and <code>preview_import()</code> now raise <code>RuntimeError</code> upfront if the vault is locked (no encryption key set), instead of firing a flood of per-row error dialogs from <code>save_credential()</code> / <code>update_credential()</code>.</li>
 <li><strong><code>find_and_remove_duplicates()</code> SQL</strong> — simplified to a single <code>DELETE ... WHERE db_id NOT IN (SELECT MIN(db_id)...)</code> query, fixing a "SQL statements in progress" transaction error on Python 3.14.</li>
 </ul>
-<h3 id="added_4">Added</h3>
+<h3 id="added_5">Added</h3>
 <ul>
 <li><strong>Test suite expansion</strong> — 39 new tests across <code>test_core_logic.py</code> (24 tests: encryption roundtrip, key derivation, password hashing, password generation, settings persistence) and <code>test_db_manager.py</code> (15 tests: <code>import_from_csv</code>, export, duplicate removal, backup, and encryption-key-not-set guards for all import methods).</li>
 </ul>
@@ -952,7 +1028,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong><code>build.yml</code></strong> — fixed stale <code>src/main.py</code> entry point → uses <code>aethervault.spec</code>; added Linux (<code>ubuntu-latest</code>) build target.</li>
 </ul>
 <h2 id="620-2026-07-27">[6.2.0] — 2026-07-27</h2>
-<h3 id="added_5">Added</h3>
+<h3 id="added_6">Added</h3>
 <ul>
 <li><strong>Auto-detach from terminal</strong> — <code>main.py</code> forks on Unix to release the terminal so users don't need <code>aethervault &amp;</code>. <code>--foreground</code> / <code>-f</code> flag keeps terminal attached for debugging.</li>
 </ul>
@@ -961,7 +1037,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong>CLI reference</strong> updated in README and USER_GUIDE with <code>--foreground</code> flag</li>
 </ul>
 <h2 id="610-2026-07-27">[6.1.0] — 2026-07-27</h2>
-<h3 id="added_6">Added</h3>
+<h3 id="added_7">Added</h3>
 <ul>
 <li><strong>Version bump criteria</strong> documented in AGENTS.md — SemVer from conventional commit types</li>
 <li><strong>Import conflict system</strong> — <code>preview_import()</code> scans for title+username collisions; <code>execute_import()</code> with per-entry resolution (Keep Vault / Use Import) or bulk import and review later</li>
@@ -983,7 +1059,7 @@ this exact bug. Don't repeat it.</p>
 <li><strong><code>CredentialTable</code></strong> — added <code>time_last_used</code> and <code>time_password_changed</code> columns</li>
 <li><strong><code>New_Project_init/AGENTS.md</code></strong> — added versioning section, updated safety.md with NAS mount check and trash directory</li>
 </ul>
-<h3 id="fixed_5">Fixed</h3>
+<h3 id="fixed_6">Fixed</h3>
 <ul>
 <li><strong>All 12 audit findings</strong> resolved (score C→A)</li>
 <li>Duplicate password scoring logic eliminated (was in 2 places, now one <code>score_password()</code>)</li>
@@ -992,7 +1068,7 @@ this exact bug. Don't repeat it.</p>
 <li><code>show_password_health()</code> reduced 82→64 lines via <code>score_password()</code> reuse</li>
 </ul>
 <h2 id="2026-07-24-session-3">2026-07-24 (session 3)</h2>
-<h3 id="added_7">Added</h3>
+<h3 id="added_8">Added</h3>
 <ul>
 <li>Project scaffolding with template system (AGENTS.md, docs/, instructions/, scripts/)</li>
 <li>System documentation: PLAN, ARCHITECTURE, KNOWLEDGE, TASKS, BUGS, COST, mermaid diagram</li>
@@ -1018,19 +1094,19 @@ this exact bug. Don't repeat it.</p>
 <li>Updated <code>requirements.txt</code> with actual runtime dependencies</li>
 <li><strong>C3</strong>: Created <code>venv/</code> symlink → <code>kiss/</code> for standardized virtual env name</li>
 </ul>
-<h3 id="added_8">Added</h3>
+<h3 id="added_9">Added</h3>
 <ul>
 <li><strong>A3</strong>: Portable mode detection and config — <code>.portable</code> marker file, toggle in Settings menu, status bar indicator</li>
 <li><strong>A2</strong>: System tray icon with quick-lock — tray menu (Show Window, Lock Vault, Quit), minimize-to-tray on close</li>
 </ul>
-<h3 id="fixed_6">Fixed</h3>
+<h3 id="fixed_7">Fixed</h3>
 <ul>
 <li><strong>F0</strong>: <code>resource_path()</code> missing <code>sys</code> import — added <code>import sys</code> at module level</li>
 <li><strong>F1</strong>: <code>find_and_remove_duplicates()</code> backup call ordering — moved <code>create_pre_op_backup()</code> after docstring</li>
 <li><strong>F2</strong>: Created <code>assets/</code> directory (icon optionally placed there, gracefully handled)</li>
 </ul>
 <h2 id="2026-07-24-session-4">2026-07-24 (session 4)</h2>
-<h3 id="added_9">Added</h3>
+<h3 id="added_10">Added</h3>
 <ul>
 <li><strong>Category filter</strong> dropdown (QComboBox next to search) with dynamic population from credentials</li>
 <li><strong>Tag filter</strong> dropdown — parses comma-separated tags, filters entries</li>
@@ -1055,7 +1131,7 @@ this exact bug. Don't repeat it.</p>
 <li>Custom fields table: removed max-height cap, added stretch factor (1:2 with form grid)</li>
 <li>Sort signal moved to <code>create_main_content</code> (connected once, not on every refresh)</li>
 </ul>
-<h3 id="fixed_7">Fixed</h3>
+<h3 id="fixed_8">Fixed</h3>
 <ul>
 <li>Password strength bar: hidden by Email QLineEdit in same grid cell — fixed with independent row counter</li>
 <li>File → Quit minimized to tray instead of quitting — now calls <code>_quit_application()</code> directly</li>
@@ -1085,7 +1161,7 @@ this exact bug. Don't repeat it.</p>
 <li>Deleted stale files: root <code>password_manager.db</code>, <code>src/data/aetherlock.db</code>, <code>src/data/aetherlock.db.bak</code>, <code>src/data/kiss_vault_*.db.bak</code></li>
 </ul>
 <h2 id="2026-07-24-session-5">2026-07-24 (session 5)</h2>
-<h3 id="added_10">Added</h3>
+<h3 id="added_11">Added</h3>
 <ul>
 <li>Docstrings added to all modules, classes, and functions across 9 source files (~129 items)</li>
 <li>GitHub Actions CI workflow (<code>.github/workflows/build.yml</code>) — builds Windows + macOS executables on release</li>
@@ -1100,6 +1176,32 @@ this exact bug. Don't repeat it.</p>
 <hr />
 <h2 id="bug-tracker">Bug Tracker</h2>
 <h1 id="aethervault-bug-tracker">AetherVault Bug Tracker</h1>
+<h2 id="f16-windows-crash-risk-bare-open-frozen-data-dir-not-platform-aware">F16 — Windows crash risk: bare open() + frozen data dir not platform-aware</h2>
+<ul>
+<li><strong>Status</strong>: Fixed</li>
+<li><strong>Fixed</strong>: 2026-08-06</li>
+<li><strong>Found</strong>: 2026-08-06 (cross-platform audit, aligned with AetherTime)</li>
+<li><strong>Priority</strong>: P1</li>
+<li><strong>Tags</strong>: bug, cross-platform, windows, macos</li>
+<li><strong>Description</strong>: Two related portability gaps found while aligning AetherVault with
+  AetherTime's cross-platform hardening:</li>
+<li><strong>Bare <code>open()</code> calls</strong> (no <code>encoding="utf-8"</code>) on <code>.master.key</code>, <code>.duress.key</code>, and
+     <code>.app_settings.json</code> — the same class as AetherTime's <code>charmap</code>/cp1252 Windows crash. If any
+     of these files ever contains a non-ASCII byte, Windows (default cp1252) would throw
+     <code>UnicodeDecodeError</code>/<code>UnicodeEncodeError</code>.</li>
+<li><strong>Frozen <code>PROJECT_ROOT</code> was <code>os.getcwd()</code></strong> — on a double-clicked macOS/Windows executable,
+     <code>cwd</code> is not reliably set (Finder/LaunchServices can set it to <code>/</code> or leave it undefined), so
+     <code>DATA_DIR = PROJECT_ROOT/data</code> could land in an unwritable root or an ephemeral location.
+     Linux AppImage <code>--onefile</code> runs from an ephemeral <code>/tmp/.mount_*</code> that can vanish on exit.</li>
+<li><strong>Root Cause</strong>: <code>aethervault/core/engine.py</code> used <code>open(...)</code> without <code>encoding="utf-8"</code>;
+  <code>aethervault/__init__.py</code> set <code>PROJECT_ROOT = os.getcwd()</code> for all frozen builds.</li>
+<li><strong>Fix</strong>: Added <code>encoding="utf-8"</code> to all 6 text <code>open()</code> calls in <code>engine.py</code> + the portable
+  marker write in <code>__init__.py</code> (binary wipe <code>open(path, "r+b")</code> unchanged — encoding is invalid
+  in binary mode). Added <code>_frozen_data_root()</code> in <code>__init__.py</code>: Windows/macOS single-file exe →
+  data next to the exe; Linux AppImage → <code>~/.local/share/AetherVault</code>; unwritable app dir →
+  per-user fallback (mirrors AetherTime's proven pattern).</li>
+<li><strong>Files</strong>: <code>aethervault/core/engine.py</code>, <code>aethervault/__init__.py</code></li>
+</ul>
 <h2 id="f15-no-startup-integrity-check-on-the-vault-database">F15 — No startup integrity check on the vault database</h2>
 <ul>
 <li><strong>Status</strong>: Fixed</li>
@@ -1243,10 +1345,10 @@ this exact bug. Don't repeat it.</p>
 </thead>
 <tbody>
 <tr>
-<td>2026-08-05</td>
-<td>2026-07-24 (13 days)</td>
+<td>2026-08-06</td>
+<td>2026-07-24 (14 days)</td>
 <td>multi-model</td>
-<td>$0.63</td>
+<td>$2.40</td>
 </tr>
 </tbody>
 </table>
@@ -1351,23 +1453,60 @@ this exact bug. Don't repeat it.</p>
 <td>89,784</td>
 <td>$0.21</td>
 </tr>
+<tr>
+<td>2026-08-05</td>
+<td>Project kit vs structure gap analysis</td>
+<td>deepseek-v4-flash</td>
+<td>932,461</td>
+<td>228,694</td>
+<td>$0.87</td>
+</tr>
+<tr>
+<td>2026-08-05</td>
+<td>Project kit vs structure gap analysis</td>
+<td>deepseek-v4-flash</td>
+<td>933,794</td>
+<td>229,896</td>
+<td>$0.88</td>
+</tr>
+<tr>
+<td>2026-08-06</td>
+<td>GitHub CI rebuild failure investigation</td>
+<td>deepseek-v4-flash</td>
+<td>42,711</td>
+<td>3,266</td>
+<td>$0.01</td>
+</tr>
+<tr>
+<td>2026-08-06</td>
+<td>Recall previous context</td>
+<td>deepseek-v4-flash</td>
+<td>30,184</td>
+<td>3,934</td>
+<td>$0.01</td>
+</tr>
 </tbody>
 </table>
 <hr />
 <h2 id="model-pricing-reference">Model Pricing Reference</h2>
-<pre><code>## Model Pricing Reference (as of 2026-07-30)
+<pre><code>## Model Pricing Reference (as of 2026-08-06)
 
-&gt; DeepSeek prices verified 2026-07-30 against api-docs.deepseek.com
-&gt; (deepseek-v4-flash: $0.14 input / $0.28 output per 1M tokens). Gemini
-&gt; values are from the Google Vertex AI model pricing table.
+&gt; DeepSeek prices verified 2026-08-06 against api-docs.deepseek.com
+&gt; (deepseek-v4-flash: $0.14 input / $0.28 output per 1M tokens, cache hit
+&gt; $0.0028). Gemini values are from the Google Vertex AI model pricing table.
 
 | Model | Input ($/M tokens) | Output ($/M tokens) |
 |---|---|---|
-| DeepSeek V4 Flash (off-peak) | $0.14 | $0.28 |
-| DeepSeek V4 Flash (peak) | $0.28 | $0.56 |
+| DeepSeek V4 Flash (cache miss) | $0.14 | $0.28 |
+| DeepSeek V4 Flash (cache hit) | $0.0028 | $0.28 |
+| DeepSeek V4 Pro (cache miss) | $0.435 | $0.87 |
+| DeepSeek V4 Pro (cache hit) | $0.003625 | $0.87 |
 | Gemini 2.5 Flash-Lite | $0.10 | $0.40 |
 | Gemini 2.5 Flash | $0.25 | $1.00 |
 | Ollama (local) | $0 (compute only) | $0 |
+
+&gt; ⚠️ DeepSeek announced a near-term overall API price increase — &quot;plan your
+&gt; usage accordingly.&quot; Watch for updated pricing.
 
 ### Peak Hours
 - DeepSeek peak: 9:00–12:00 &amp; 14:00–18:00 Beijing time (UTC+8)
@@ -1805,8 +1944,8 @@ flowchart TD
     CI --&gt;|must pass| BUILD
     BUILD --&gt; LIN[aethervault-linux-x86_64]
     BUILD --&gt; WIN[aethervault-windows-x86_64.exe]
-    BUILD --&gt; MACA[aethervault-macos-arm64]
-    BUILD --&gt; MACX[aethervault-macos-x86_64]
+    BUILD --&gt; MACA[AetherVault-arm64.dmg + AetherVault.app.zip]
+    BUILD --&gt; MACX[AetherVault-x86_64.dmg + AetherVault.app.zip]
     BUILD --&gt; ATTACH[Attach binaries to the Release]
 </code></pre>
 <p>```</p>
@@ -2139,14 +2278,26 @@ discussing with AI. No structured format required.</p>
 <p>Append a new entry at the top of the log at the end of every session (see
 <code>save session</code> protocol in <code>instructions/memory.md</code>). This file lives in
 <code>aethervault/docs/sys/</code> and is NOT tracked by git.</p>
-<h2 id="2026-08-05-release-v640-pypi-publishing-readmegif-upgrade-fix">2026-08-05 — Release v6.4.0, PyPI publishing, README/GIF, upgrade fix</h2>
+<h2 id="2026-08-06-v641-release-published-with-binaries">2026-08-06 — v6.4.1 release published with binaries</h2>
 <h3 id="completed">Completed</h3>
 <ul>
-<li><strong>Release v6.4.0</strong> — integrity check, core/shared restructure, python floor 3.10, PyPI publishing, AetherPod-format README + demo GIF. Tagged + released; 4 binaries attached (Linux, macOS arm64 + x86_64, Windows).</li>
-<li><strong>PyPI live</strong> — <code>aethervault-py</code> 6.4.0 published via trusted publishing (wheel + sdist). Fixed publish workflow YAML bug (heredoc broke parsing → moved to YAML-safe <code>python -c</code> inline). Fixed CI (Qt system deps for GUI tests). Badge cache-bust fix (GitHub cached "not found" pre-publish).</li>
-<li><strong>README/GIF</strong> — rewrote README in AetherPod format (banner, badges, screenshots-first). Captured demo GIF at full-screen: login → vault → entries → edit (strength meter) → search → generator → <strong>health report</strong> (reused + too-short findings). Fixed seed key-derivation bug (used raw pw vs stored hash). Health dialog captured via <code>activeWindow().grab()</code> (main-window grab misses dialogs).</li>
-<li><strong>README format captured in project_kit</strong> — <code>instructions/README_FORMAT.md</code> (house style, demo-GIF recipe, dialog-grab gotcha), linked from kit AGENTS.md + new_project.md.</li>
-<li><strong><code>aethervault -u</code> PyPI-aware</strong> — detects <code>aethervault-py</code> dist via importlib.metadata → <code>pip install --upgrade aethervault-py</code>; source/git installs keep git path. Binary/exe users must redownload (added README note).</li>
+<li><strong>v6.4.1 release live on GitHub</strong> — created release at tag <code>v6.4.1</code>
+  (https://github.com/AetherSolDev/AetherVault/releases/tag/v6.4.1). The tag
+  existed locally but no GitHub release had been created, so <code>Latest</code> pointed at
+  v6.4.0 and the F16 fixes weren't downloadable. Release now ships the 4
+  binaries: <code>aethervault-linux-x86_64</code>, <code>aethervault-macos-arm64</code>,
+  <code>aethervault-macos-x86_64</code>, <code>aethervault-windows-x86_64.exe</code> (auto-attached by
+  <code>build.yml</code> on <code>release: published</code>). Tag commit verified = F16 fix commit
+  (<code>8eb0f54</code>) before publishing.</li>
+<li><strong>Manual Build dispatch</strong> — <code>gh workflow run "Build" --ref main</code> builds the 4
+  executables as run artifacts (not attached to a release). Dispatched, all 4
+  jobs green. Distinguish from CI (job name <code>test</code>, pytest on push/PR).</li>
+<li><strong>Workflow landscape clarified</strong> — repo has 3 active workflows: CI (pytest,
+  job <code>test</code>), Build (PyInstaller 4-OS executables, <code>release: published</code> +
+  <code>workflow_dispatch</code>), Publish to PyPI (<code>v*</code> tags).</li>
+<li><strong>Non-blocking warning noted</strong> — Node 20 deprecation on <code>actions/checkout@v4</code>,
+  <code>setup-python@v5</code>, <code>upload-artifact@v4</code>, <code>softprops/action-gh-release@v2</code>
+  (forced to Node 24). Bump to v5/v6/v5 when next editing workflows.</li>
 </ul>
 <h3 id="in-progress">In Progress</h3>
 <ul>
@@ -2158,12 +2309,80 @@ discussing with AI. No structured format required.</p>
 </ul>
 <h3 id="key-decisions_1">Key Decisions</h3>
 <ul>
+<li>Created release on <code>v6.4.1</code> (F16 fix commit) rather than HEAD — HEAD <code>e219f8f</code>
+  is only a "Trigger CI re-run" commit with no code change. Binaries build from
+  the tag's tree.</li>
+<li>Manual Build dispatches leave binaries as artifacts; only a Release triggers
+  auto-attachment to the release page. Use a release for user-facing downloads.</li>
+</ul>
+<h3 id="cost">Cost</h3>
+<ul>
+<li>Model(s) used: deepseek-v4-flash (off-peak)</li>
+<li>Tokens — input / output: (run <code>scripts/update_cost.py</code>)</li>
+<li>Peak or off-peak: off-peak</li>
+<li>$ cost this session: ~$0.02</li>
+<li>Project total (from COST.md): $2.40</li>
+</ul>
+<h2 id="2026-08-06-cross-platform-hardening-f16-aligned-with-aethertime">2026-08-06 — Cross-platform hardening (F16), aligned with AetherTime</h2>
+<h3 id="completed_1">Completed</h3>
+<ul>
+<li><strong>Windows crash class eliminated (F16)</strong> — added <code>encoding="utf-8"</code> to all 6 text <code>open()</code>
+  calls in <code>aethervault/core/engine.py</code> (<code>.master.key</code>, <code>.duress.key</code>, <code>.app_settings.json</code>) +
+  portable-marker write in <code>aethervault/__init__.py</code>. Windows defaults to cp1252 and crashes on
+  non-ASCII bytes (AetherTime hit this exact bug).</li>
+<li><strong>Frozen data dir platform-aware (F16)</strong> — <code>_frozen_data_root()</code> in <code>aethervault/__init__.py</code>:
+  Windows/macOS single-file exe → <code>data/</code> next to the exe (deterministic, vs <code>os.getcwd()</code> which
+  Finder/LaunchServices don't set reliably); Linux AppImage → <code>~/.local/share/AetherVault</code>
+  (stable vs ephemeral <code>/tmp/.mount_*</code>); unwritable app dir (<code>/Applications</code>, Program Files) →
+  per-user fallback. Mirrors AetherTime's proven data-dir fix. Verified all 3 branches via
+  simulation.</li>
+<li><strong>Version 6.4.0 → 6.4.1</strong> — <code>aethervault/__init__.py</code> + <code>pyproject.toml</code>.</li>
+<li><strong><code>os.fork()</code>/<code>os.setsid()</code> detach reviewed</strong> — runs before <code>QApplication</code>, safe on macOS,
+  effectively a no-op on a single-file <code>.app</code>. Left unchanged.</li>
+<li><strong>Lessons captured in project_kit</strong> — new <code>instructions/CROSS_PLATFORM.md</code> (timezone/<code>tzset</code>,
+  <code>encoding='utf-8'</code>, frozen data dir, <code>os.fork</code> guard, platform table), <code>pyproject.toml</code>
+  template, <code>new_project.md</code> + <code>packaging.md</code> cross-platform steps.</li>
+</ul>
+<h3 id="in-progress_1">In Progress</h3>
+<ul>
+<li>None — session complete (code committed in AetherVault repo)</li>
+</ul>
+<h3 id="blocked_1">Blocked</h3>
+<ul>
+<li>None</li>
+</ul>
+<h3 id="key-decisions_2">Key Decisions</h3>
+<ul>
+<li>Data-dir policy for frozen builds: exe-adjacent on Win/macOS, per-user on Linux, per-user
+  fallback if the app dir isn't writable.</li>
+<li>Binary <code>open(..., "r+b")</code> (wipe) correctly takes NO <code>encoding</code> — only text mode needs it.</li>
+<li><code>os.fork()</code> detach stays (no change): guarded to non-Windows, before Qt init.</li>
+</ul>
+<h2 id="2026-08-05-release-v640-pypi-publishing-readmegif-upgrade-fix">2026-08-05 — Release v6.4.0, PyPI publishing, README/GIF, upgrade fix</h2>
+<h3 id="completed_2">Completed</h3>
+<ul>
+<li><strong>Release v6.4.0</strong> — integrity check, core/shared restructure, python floor 3.10, PyPI publishing, AetherPod-format README + demo GIF. Tagged + released; 4 binaries attached (Linux, macOS arm64 + x86_64, Windows).</li>
+<li><strong>PyPI live</strong> — <code>aethervault-py</code> 6.4.0 published via trusted publishing (wheel + sdist). Fixed publish workflow YAML bug (heredoc broke parsing → moved to YAML-safe <code>python -c</code> inline). Fixed CI (Qt system deps for GUI tests). Badge cache-bust fix (GitHub cached "not found" pre-publish).</li>
+<li><strong>README/GIF</strong> — rewrote README in AetherPod format (banner, badges, screenshots-first). Captured demo GIF at full-screen: login → vault → entries → edit (strength meter) → search → generator → <strong>health report</strong> (reused + too-short findings). Fixed seed key-derivation bug (used raw pw vs stored hash). Health dialog captured via <code>activeWindow().grab()</code> (main-window grab misses dialogs).</li>
+<li><strong>README format captured in project_kit</strong> — <code>instructions/README_FORMAT.md</code> (house style, demo-GIF recipe, dialog-grab gotcha), linked from kit AGENTS.md + new_project.md.</li>
+<li><strong><code>aethervault -u</code> PyPI-aware</strong> — detects <code>aethervault-py</code> dist via importlib.metadata → <code>pip install --upgrade aethervault-py</code>; source/git installs keep git path. Binary/exe users must redownload (added README note).</li>
+</ul>
+<h3 id="in-progress_2">In Progress</h3>
+<ul>
+<li>None — session complete</li>
+</ul>
+<h3 id="blocked_2">Blocked</h3>
+<ul>
+<li>None</li>
+</ul>
+<h3 id="key-decisions_3">Key Decisions</h3>
+<ul>
 <li>PyPI distribution name = <code>aethervault-py</code> (the name <code>aethervault</code> collides with existing <code>aether-vault</code> on PyPI)</li>
 <li><code>-u</code> upgrade path branches on install source: PyPI dist / git checkout / git-URL fallback</li>
 <li>Standalone executables cannot self-upgrade — README documents manual redownload</li>
 <li>Trusted publisher claims: project <code>aethervault-py</code>, owner <code>AetherSolDev</code>, repo <code>AetherVault</code>, workflow <code>publish-pypi.yml</code>, env <code>pypi</code></li>
 </ul>
-<h3 id="cost">Cost</h3>
+<h3 id="cost_1">Cost</h3>
 <ul>
 <li>Model(s) used: deepseek-v4-flash (off-peak)</li>
 <li>Tokens — input / output: (run <code>scripts/update_cost.py</code>)</li>
@@ -2172,31 +2391,31 @@ discussing with AI. No structured format required.</p>
 <li>Project total (from COST.md): see COST.md</li>
 </ul>
 <h2 id="2026-08-05-kit-alignment-brand-assets-copypaste-bug">2026-08-05 — Kit alignment, brand assets, copy/paste bug</h2>
-<h3 id="completed_1">Completed</h3>
+<h3 id="completed_3">Completed</h3>
 <ul>
 <li>Restored <code>project_kit/</code> from NAS; compared kit vs project structure (gaps documented)</li>
 <li>Licensing: added "How to Decide: GPL3 vs MIT + EULA" to kit LICENSING.md; moved EULA.md → instructions/EULA.md</li>
 <li>Brand assets: copied <code>aethersol.ico</code> + <code>aethersol_logo.png</code> into <code>project_kit/assets/</code>; wrote <code>instructions/ASSETS.md</code></li>
 <li>Phase 0: removed stale <code>kiss/</code> venv; baseline 69 tests pass</li>
 </ul>
-<h3 id="in-progress_1">In Progress</h3>
+<h3 id="in-progress_3">In Progress</h3>
 <ul>
 <li>Phase 1: adding missing template structure (sessions.md, FUTURE_DEV_IDEAS.md, project_audit/, instructions sync, aethervault.txt)</li>
 <li>Phase 1b: icon &amp; branding (pending)</li>
 <li>Phase 3a/3b: copy/paste bug investigation (pending)</li>
 </ul>
-<h3 id="blocked_1">Blocked</h3>
+<h3 id="blocked_3">Blocked</h3>
 <ul>
 <li>None</li>
 </ul>
-<h3 id="key-decisions_2">Key Decisions</h3>
+<h3 id="key-decisions_4">Key Decisions</h3>
 <ul>
 <li>License decision note lives at TOP of LICENSING.md (per-project: MIT+EULA commercial / GPL3 open-source)</li>
 <li>EULA template moved to <code>instructions/</code> — the kit root keeps only MIT <code>LICENSE</code></li>
 <li>Asset usage guide lives at <code>instructions/ASSETS.md</code> (discoverable from AGENTS.md + new_project.md)</li>
 <li>Tray icon should use the packaged <code>.ico</code>, not the hand-drawn "K" placeholder</li>
 </ul>
-<h3 id="cost_1">Cost</h3>
+<h3 id="cost_2">Cost</h3>
 <ul>
 <li>Model(s) used: deepseek-v4-flash (session start)</li>
 <li>Tokens — input / output: (run <code>scripts/update_cost.py</code> at session end)</li>
@@ -2205,6 +2424,6 @@ discussing with AI. No structured format required.</p>
 <li>Project total (from COST.md): see COST.md</li>
 </ul>
 <hr />
-<p><em>Generated on 2026-08-05 18:00 CT by <code>scripts/build_reference.py</code></em></p>
+<p><em>Generated on 2026-08-06 22:06 CT by <code>scripts/build_reference.py</code></em></p>
 </body>
 </html>

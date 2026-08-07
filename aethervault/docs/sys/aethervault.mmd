@@ -438,7 +438,7 @@ flowchart TD
     CI -->|must pass| BUILD
     BUILD --> LIN[aethervault-linux-x86_64]
     BUILD --> WIN[aethervault-windows-x86_64.exe]
-    BUILD --> MACA[aethervault-macos-arm64]
-    BUILD --> MACX[aethervault-macos-x86_64]
+    BUILD --> MACA[AetherVault-arm64.dmg + AetherVault.app.zip]
+    BUILD --> MACX[AetherVault-x86_64.dmg + AetherVault.app.zip]
     BUILD --> ATTACH[Attach binaries to the Release]
 ```

@@ -77,11 +77,12 @@ No Python or pip needed. Grab the binary for your platform from the
 |----------|----------|
 | Windows (x86_64) | [aethervault-windows-x86_64.exe](https://github.com/AetherSolDev/AetherVault/releases/latest/download/aethervault-windows-x86_64.exe) |
 | Linux (x86_64) | [aethervault-linux-x86_64](https://github.com/AetherSolDev/AetherVault/releases/latest/download/aethervault-linux-x86_64) |
-| macOS (Apple Silicon) | [aethervault-macos-arm64](https://github.com/AetherSolDev/AetherVault/releases/latest/download/aethervault-macos-arm64) |
-| macOS (Intel) | [aethervault-macos-x86_64](https://github.com/AetherSolDev/AetherVault/releases/latest/download/aethervault-macos-x86_64) |
+| macOS (Apple Silicon) | [AetherVault-arm64.dmg](https://github.com/AetherSolDev/AetherVault/releases/latest/download/AetherVault-arm64.dmg) |
+| macOS (Intel) | [AetherVault-x86_64.dmg](https://github.com/AetherSolDev/AetherVault/releases/latest/download/AetherVault-x86_64.dmg) |
 
 > The binaries are unsigned, so Windows SmartScreen and macOS Gatekeeper may warn on first run.
-> Windows: click **More info → Run anyway**. macOS: `xattr -d com.apple.quarantine aethervault-macos`.
+> Windows: click **More info → Run anyway**. macOS: right-click the .app → **Open** (or
+> `xattr -dr com.apple.quarantine AetherVault.app`) if Gatekeeper blocks it.
 > Linux: the binary expects standard Qt/X11 system libraries.
 > **Executable installs** — to update, download the new binary from the
 > [Releases](https://github.com/AetherSolDev/AetherVault/releases) page
