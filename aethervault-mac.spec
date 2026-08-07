@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 # Created: 2026-08-06
-# Last Edited: 2026-08-06 22:05 CT (America/Chicago)
+# Last Edited: 2026-08-06 22:38 CT (America/Chicago)
 # Path: aethervault-mac.spec
 # Purpose: PyInstaller spec for building the macOS .app bundle (onedir + BUNDLE).
 
