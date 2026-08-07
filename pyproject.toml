@@ -1,5 +1,5 @@
 # Created: 2026-07-25
-# Last Edited: 2026-08-06 14:19 CT (America/Chicago)
+# Last Edited: 2026-08-06 22:24 CT (America/Chicago)
 # Path: pyproject.toml
 # Purpose: Build configuration for pip-installable AetherVault package with CLI entry point.
 
@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aethervault-py"
-version = "6.4.1"
+version = "6.5.0"
 description = "A secure, local-first password manager with AES-256 encryption"
 authors = [
     {name = "AetherVault Team"},
