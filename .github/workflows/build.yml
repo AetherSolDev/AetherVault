@@ -99,6 +99,9 @@ jobs:
       - name: Verify codesign
         run: codesign --verify --verbose=2 dist/AetherVault.app
 
+      - name: Smoke-test bundled binary
+        run: dist/AetherVault.app/Contents/MacOS/aethervault --version
+
       - name: Create .app.zip
         run: ditto -c -k --keepParent dist/AetherVault.app dist/AetherVault-${{ matrix.arch }}.app.zip
 
