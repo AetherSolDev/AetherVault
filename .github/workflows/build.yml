@@ -104,8 +104,24 @@ jobs:
 
       - name: Create DMG
         run: |
-          hdiutil create -volname AetherVault -srcfolder dist/AetherVault.app -ov -format UDZO \
-            dist/AetherVault-${{ matrix.arch }}.dmg
+          # Build the DMG from a staging dir (app + /Applications symlink). The
+          # staging dir avoids hdiutil "Resource busy" flakiness seen with
+          # -srcfolder when the volume is still settling. Retry a few times in
+          # case hdiutil transiently fails on shared runners.
+          mkdir -p dmg-staging
+          cp -R dist/AetherVault.app dmg-staging/
+          ln -s /Applications dmg-staging/Applications
+          for i in 1 2 3; do
+            if hdiutil create -volname AetherVault \
+                -srcfolder dmg-staging \
+                -ov -format UDZO \
+                dist/AetherVault-${{ matrix.arch }}.dmg; then
+              exit 0
+            fi
+            echo "hdiutil attempt $i failed, retrying..."
+            sleep 5
+          done
+          exit 1
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
