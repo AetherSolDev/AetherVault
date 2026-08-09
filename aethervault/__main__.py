@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-05 17:50 CT (America/Chicago)
+# Last Edited: 2026-08-09 06:36 CT (America/Chicago)
 # Path: aethervault/__main__.py
 # Purpose: Application entry point with CLI switches (--version, --debug, --upgrade, --foreground).
 
@@ -162,8 +162,24 @@ def check_for_upgrades() -> bool:
     return _perform_upgrade(latest_tag)
 
 
+def _should_detach(foreground: bool, platform: str, stdin) -> bool:
+    """Return True when the terminal auto-detach should run.
+
+    Linux only — macOS never forks (Qt/AppKit apps are multi-threaded, so the
+    fork child crashes in CarbonCore/libdispatch; the .app bundle already
+    detaches when launched via Finder/DMG), and Windows needs no detach.
+    Requiring an attached TTY keeps a desktop-launched app from forking at all.
+    """
+    return (
+        not foreground
+        and platform == "linux"
+        and stdin is not None
+        and stdin.isatty()
+    )
+
+
 def detach_from_terminal():
-    """Fork and release the terminal (Unix only). Parent exits, child continues."""
+    """Fork and release the terminal (Linux only). Parent exits, child continues."""
     try:
         pid = os.fork()
         if pid > 0:
@@ -218,7 +234,7 @@ def run():
             format="%(levelname)s:%(name)s:%(message)s",
         )
 
-    if not args.foreground and sys.platform != "win32":
+    if _should_detach(args.foreground, sys.platform, sys.stdin):
         detach_from_terminal()
 
     app = QApplication(sys.argv)

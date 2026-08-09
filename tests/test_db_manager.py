@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-05 16:05 CT (America/Chicago)
+# Last Edited: 2026-08-07 10:24 CT (America/Chicago)
 # Path: tests/test_db_manager.py
 # Purpose: Integration tests for DatabaseManager CRUD operations.
 
@@ -145,6 +145,49 @@ class TestDatabaseManager:
 
         n = temp_db.import_from_csv(str(csv_path))
         assert n == 0
+
+    def test_import_from_csv_derives_title_from_url(self, temp_db, tmp_path):
+        import csv
+        csv_path = tmp_path / "test.csv"
+        with open(csv_path, "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["url", "username", "password"])
+            w.writerow(["https://www.example.com/login", "user1", "pass123"])
+
+        n = temp_db.import_from_csv(str(csv_path))
+        assert n == 1
+        loaded = temp_db.load_all_credentials()
+        assert len(loaded) == 1
+        assert loaded[0].title == "example.com"
+        assert loaded[0].url == "https://www.example.com/login"
+        assert loaded[0].password == "pass123"
+
+    def test_preview_import_derives_title_from_url(self, temp_db, tmp_path):
+        import csv
+        csv_path = tmp_path / "test.csv"
+        with open(csv_path, "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["url", "username", "password"])
+            w.writerow(["http://10.0.0.130:8080", "bmunoz", "Houston1"])
+
+        preview = temp_db.preview_import(str(csv_path))
+        assert preview["total_rows"] == 1
+        assert preview["non_conflict_count"] == 1
+        assert len(preview["conflicts"]) == 0
+
+    def test_execute_import_derives_title_from_url(self, temp_db, tmp_path):
+        import csv
+        csv_path = tmp_path / "test.csv"
+        with open(csv_path, "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["url", "username", "password"])
+            w.writerow(["https://watch.plex.tv", "user1", "Houston1"])
+
+        n = temp_db.execute_import(str(csv_path), {})
+        assert n == 1
+        loaded = temp_db.load_all_credentials()
+        assert len(loaded) == 1
+        assert loaded[0].title == "watch.plex.tv"
 
     def test_import_from_csv_file_not_found(self, temp_db):
         with pytest.raises(FileNotFoundError):

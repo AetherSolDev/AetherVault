@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-05 16:05 CT (America/Chicago)
+# Last Edited: 2026-08-07 10:24 CT (America/Chicago)
 # Path: aethervault/shared/database.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
@@ -12,6 +12,7 @@ import sqlite3
 import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 
 from aethervault.core.engine import (
     decrypt_data,
@@ -421,15 +422,37 @@ class DatabaseManager:
                 col_map[canonical] = header
         return col_map
 
+    @staticmethod
+    def _title_from_url(url: str) -> str:
+        """Derive a readable title from a URL, used when the CSV lacks a title column."""
+        url = (url or "").strip()
+        if not url:
+            return "Unnamed"
+        parsed = urlparse(url)
+        host = parsed.hostname or parsed.netloc or url
+        if host.lower().startswith("www."):
+            host = host[4:]
+        return host or "Unnamed"
+
+    @staticmethod
+    def _derive_title(row_data: Dict[str, str], col_map: Dict[str, str]) -> None:
+        """Fill missing title from the url column so no-title CSVs still import."""
+        if "title" not in col_map:
+            row_data["title"] = DatabaseManager._title_from_url(
+                row_data.get("url", "")
+            )
+
     def import_from_csv(self, file_path: str) -> int:
         """Import credentials from a CSV file, inserting or updating as needed.
         Handles varying column names across browsers via alias mapping.
+        CSVs without a title column fall back to the url field as the title.
         Returns the count of imported entries."""
         if not self.encryption_key:
             raise RuntimeError("Encryption key not set. Please unlock the vault first.")
         self.create_pre_op_backup("Import")
         imported_count = 0
-        required = {"title", "password"}
+        required = {"password"}
+        title_sources = {"title", "url"}
         try:
             with open(file_path, mode="r", newline="", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
@@ -437,11 +460,11 @@ class DatabaseManager:
                     self.error_handler("Import Error", "CSV file has no headers.")
                     return 0
                 col_map = self._build_column_map(reader.fieldnames)
-                if not required.issubset(col_map):
-                    missing = required - set(col_map)
+                if not required.issubset(col_map) or not title_sources.intersection(col_map):
+                    missing = sorted(set(col_map) - required) if required.issubset(col_map) else sorted(required - set(col_map))
                     self.error_handler(
                         "Import Error",
-                        f"CSV missing required columns: {', '.join(sorted(missing))}. "
+                        f"CSV missing required columns: {', '.join(missing)}. "
                         f"Found headers: {', '.join(reader.fieldnames)}",
                     )
                     return 0
@@ -449,6 +472,7 @@ class DatabaseManager:
                     entry_data = {}
                     for canonical, header in col_map.items():
                         entry_data[canonical] = row.get(header) or ""
+                    self._derive_title(entry_data, col_map)
                     entry = CredentialEntry(**entry_data)
                     try:
                         db_id = int(entry_data.get("db_id") or 0)
@@ -481,7 +505,8 @@ class DatabaseManager:
             key = (e.title.lower().strip(), e.username.lower().strip())
             existing_by_key[key] = e
 
-        required = {"title", "password"}
+        required = {"password"}
+        title_sources = {"title", "url"}
         conflicts = []
         non_conflict_count = 0
         try:
@@ -490,12 +515,13 @@ class DatabaseManager:
                 if not reader.fieldnames:
                     return {"total_rows": 0, "conflicts": [], "non_conflict_count": 0}
                 col_map = self._build_column_map(reader.fieldnames)
-                if not required.issubset(col_map):
+                if not required.issubset(col_map) or not title_sources.intersection(col_map):
                     return {"total_rows": 0, "conflicts": [], "non_conflict_count": 0}
                 for row in reader:
                     entry_data = {}
                     for canonical, header in col_map.items():
                         entry_data[canonical] = row.get(header) or ""
+                    self._derive_title(entry_data, col_map)
                     key = (
                         entry_data.get("title", "").lower().strip(),
                         entry_data.get("username", "").lower().strip(),
@@ -529,7 +555,8 @@ class DatabaseManager:
             raise RuntimeError("Encryption key not set. Please unlock the vault first.")
         self.create_pre_op_backup("Import")
         imported_count = 0
-        required = {"title", "password"}
+        required = {"password"}
+        title_sources = {"title", "url"}
 
         existing = self.load_all_credentials()
         existing_by_key = {}
@@ -543,12 +570,13 @@ class DatabaseManager:
                 if not reader.fieldnames:
                     return 0
                 col_map = self._build_column_map(reader.fieldnames)
-                if not required.issubset(col_map):
+                if not required.issubset(col_map) or not title_sources.intersection(col_map):
                     return 0
                 for row in reader:
                     entry_data = {}
                     for canonical, header in col_map.items():
                         entry_data[canonical] = row.get(header) or ""
+                    self._derive_title(entry_data, col_map)
                     key = (
                         entry_data.get("title", "").lower().strip(),
                         entry_data.get("username", "").lower().strip(),

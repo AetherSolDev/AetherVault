@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-05 17:34 CT (America/Chicago)
+# Last Edited: 2026-08-07 12:07 CT (America/Chicago)
 # Path: .github/workflows/publish-pypi.yml
 # Purpose: Build and publish AetherVault to PyPI via trusted publishing on version tags.
 
@@ -20,10 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: pypi
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
