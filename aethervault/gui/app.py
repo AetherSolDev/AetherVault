@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
+# Last Edited: 2026-08-11 14:02 CT (America/Chicago)
 # Path: aethervault/gui/app.py
 # Purpose: Main application window — coordinates auth, menus, CRUD, import/export.
 
@@ -568,7 +568,8 @@ class PySidePWManager(QMainWindow):
         )
         if reply == QMessageBox.Yes:
             path, _ = QFileDialog.getOpenFileName(
-                self, "Select Backup", os.path.expanduser("~"), "Database files (*.db)"
+                self, "Select Backup", os.path.expanduser("~"),
+                "Backup files (*.db *.db.bak)",
             )
             if path:
                 self.db_manager.conn.close()
