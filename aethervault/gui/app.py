@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-11 14:02 CT (America/Chicago)
+# Last Edited: 2026-08-11 15:07 CT (America/Chicago)
 # Path: aethervault/gui/app.py
 # Purpose: Main application window — coordinates auth, menus, CRUD, import/export.
 
@@ -49,11 +49,13 @@ from aethervault.core.engine import (
     DB_PATH,
     DEFAULT_LOCKOUT_MINUTES,
     MASTER_KEY_FILE,
+    checkpoint_database,
     clear_duress_password,
     get_timestamped_backup_path,
     load_duress_password,
     load_master_password,
     load_settings,
+    mirror_backup,
     rotate_backups,
     save_settings,
     store_duress_password,
@@ -543,6 +545,30 @@ class PySidePWManager(QMainWindow):
         self.is_editing = False
         self.status_bar.showMessage(f"Imported/updated {n} entries.", 5000)
 
+    def set_remote_backup_folder(self):
+        """Let the user choose (or clear) a remote backup destination folder."""
+        current = self.settings.get("remote_backup_dir", "")
+        dlg = QFileDialog.getExistingDirectory(
+            self, "Select Remote Backup Folder",
+            current or os.path.expanduser("~"),
+        )
+        if not dlg:
+            reply = QMessageBox.question(
+                self, "Clear Remote Backup",
+                "No folder chosen. Clear the remote backup setting?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
+            )
+            if reply == QMessageBox.Yes:
+                self.settings["remote_backup_dir"] = ""
+                save_settings(self.settings)
+                self.status_bar.showMessage("Remote backup disabled.", 5000)
+            return
+        self.settings["remote_backup_dir"] = dlg
+        save_settings(self.settings)
+        self.status_bar.showMessage(
+            f"Remote backup folder set → {dlg}", 5000
+        )
+
     def handle_backup(self):
         if not os.path.exists(DB_PATH):
             QMessageBox.warning(self, "No Vault", "Nothing to back up.")
@@ -550,8 +576,22 @@ class PySidePWManager(QMainWindow):
         backup_path = get_timestamped_backup_path()
         try:
             self.db_manager.conn.close()
+            checkpoint_database(DB_PATH)
             shutil.copyfile(DB_PATH, backup_path)
             rotate_backups()
+            remote = self.settings.get("remote_backup_dir", "")
+            if remote:
+                remote_path = mirror_backup(backup_path, remote)
+                if remote_path:
+                    self.status_bar.showMessage(
+                        f"Vault backed up → {os.path.basename(backup_path)} "
+                        f"(+ remote)", 5000
+                    )
+                    return
+                self.status_bar.showMessage(
+                    f"Vault backed up locally but remote mirror failed: {remote}", 5000
+                )
+                return
             self.status_bar.showMessage(
                 f"Vault backed up → {os.path.basename(backup_path)}", 5000
             )
@@ -679,6 +719,10 @@ class PySidePWManager(QMainWindow):
         self.portable_action.setChecked(is_portable())
         self.portable_action.triggered.connect(self.toggle_portable_mode)
         sm.addAction(self.portable_action)
+        sm.addSeparator()
+        self.remote_backup_action = QAction("&Remote Backup Folder...", self)
+        self.remote_backup_action.triggered.connect(self.set_remote_backup_folder)
+        sm.addAction(self.remote_backup_action)
         sm.addSeparator()
         self.duress_action = QAction("&Duress Password...", self)
         self.duress_action.triggered.connect(self.setup_duress_password)

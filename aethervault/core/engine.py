@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-06 14:19 CT (America/Chicago)
+# Last Edited: 2026-08-11 15:07 CT (America/Chicago)
 # Path: aethervault/core/engine.py
 # Purpose: Encryption, hashing, key derivation, backup/wipe, and settings management.
 
@@ -10,6 +10,8 @@ import hashlib
 import json
 import logging
 import os
+import shutil
+import sqlite3
 import time
 from typing import Optional
 
@@ -170,6 +172,57 @@ def rotate_backups(max_files: int = BACKUP_MAX_FILES) -> int:
     return len(stale)
 
 
+def checkpoint_database(db_path: str) -> bool:
+    """Checkpoint a WAL-mode SQLite database so its data is fully in the main file.
+
+    A running vault in WAL mode keeps recent writes in the -wal file; copying only
+    the .db would produce a backup missing those writes. Opening a temporary read-only
+    connection and running wal_checkpoint(TRUNCATE) forces all WAL content into the
+    main database file before it is copied."""
+    try:
+        conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    except sqlite3.Error:
+        return False
+    try:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        conn.close()
+        return True
+    except sqlite3.Error:
+        conn.close()
+        return False
+
+
+def mirror_backup(
+    backup_path: str,
+    remote_dir: str,
+    max_files: int = BACKUP_MAX_FILES,
+) -> Optional[str]:
+    """Copy a timestamped backup to a remote directory, rotating old copies.
+
+    The remote copy keeps the same timestamped filename as the local backup so it can
+    be restored from AetherVault's Restore dialog. The remote directory must exist and
+    be writable; a missing/unwritable remote is a non-fatal mirror failure (the local
+    backup still succeeded). Returns the remote path on success, None on failure."""
+    if not remote_dir:
+        return None
+    try:
+        os.makedirs(remote_dir, exist_ok=True)
+        remote_path = os.path.join(remote_dir, os.path.basename(backup_path))
+        shutil.copy2(backup_path, remote_path)
+        backups = sorted(
+            f for f in os.listdir(remote_dir)
+            if f.startswith("aethervault_") and f.endswith(".db.bak")
+        )
+        for stale in backups[:-max_files] if max_files > 0 else []:
+            try:
+                os.remove(os.path.join(remote_dir, stale))
+            except OSError:
+                pass
+        return remote_path
+    except (OSError, shutil.Error):
+        return None
+
+
 def _overwrite_and_remove(path: str):
     """Overwrite a file with random bytes then delete it (defense-in-depth wipe)."""
     try:
@@ -214,7 +267,11 @@ def load_settings() -> dict:
         with open(APP_SETTINGS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        return {"lockout_minutes": DEFAULT_LOCKOUT_MINUTES, "theme": "dark"}
+        return {
+            "lockout_minutes": DEFAULT_LOCKOUT_MINUTES,
+            "theme": "dark",
+            "remote_backup_dir": "",
+        }
 
 
 def save_settings(settings: dict):

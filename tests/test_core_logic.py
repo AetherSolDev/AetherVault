@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
+# Last Edited: 2026-08-11 15:07 CT (America/Chicago)
 # Path: tests/test_core_logic.py
 # Purpose: Unit tests for encryption, hashing, password generation, and settings.
 
@@ -12,12 +12,14 @@ import tempfile
 import pytest
 
 from aethervault.core.engine import (
+    checkpoint_database,
     decrypt_data,
     derive_encryption_key,
     encrypt_data,
     hash_password,
     load_master_password,
     load_settings,
+    mirror_backup,
     save_settings,
     store_master_password,
     verify_password,
@@ -167,7 +169,11 @@ class TestSettingsPersistence:
             settings_path = os.path.join(tmpdir, ".nonexistent.json")
             monkeypatch.setattr("aethervault.core.engine.APP_SETTINGS_FILE", settings_path)
             loaded = load_settings()
-            assert loaded == {"lockout_minutes": 3, "theme": "dark"}
+            assert loaded == {
+                "lockout_minutes": 3,
+                "theme": "dark",
+                "remote_backup_dir": "",
+            }
 
     def test_invalid_json_returns_defaults(self, monkeypatch):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -176,4 +182,65 @@ class TestSettingsPersistence:
             with open(settings_path, "w") as f:
                 f.write("not json")
             loaded = load_settings()
-            assert loaded == {"lockout_minutes": 3, "theme": "dark"}
+            assert loaded == {
+                "lockout_minutes": 3,
+                "theme": "dark",
+                "remote_backup_dir": "",
+            }
+
+
+class TestBackupMirror:
+    def test_checkpoint_database_noop_on_missing_file(self):
+        assert checkpoint_database("/nonexistent/nope.db") is False
+
+    def test_checkpoint_database_on_valid_db(self, tmp_path):
+        import sqlite3
+        db_path = str(tmp_path / "test.db")
+        conn = sqlite3.connect(db_path)
+        conn.execute("CREATE TABLE t (x INTEGER)")
+        conn.execute("INSERT INTO t VALUES (1)")
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.commit()
+        conn.execute("INSERT INTO t VALUES (2)")
+        conn.commit()
+        conn.close()
+
+        assert checkpoint_database(db_path) is True
+        # After TRUNCATE checkpoint, the WAL file should be empty/absent of data.
+        wal = db_path + "-wal"
+        assert not os.path.exists(wal) or os.path.getsize(wal) == 0
+
+    def test_mirror_backup_copies_file(self, tmp_path):
+        src = tmp_path / "aethervault_2026.08.11_120000.db.bak"
+        src.write_bytes(b"backup-data")
+        remote = tmp_path / "remote"
+        result = mirror_backup(str(src), str(remote))
+        assert result is not None
+        assert os.path.exists(result)
+        assert os.path.basename(result) == os.path.basename(str(src))
+        assert (remote / os.path.basename(str(src))).read_bytes() == b"backup-data"
+
+    def test_mirror_backup_rotates(self, tmp_path):
+        remote = tmp_path / "remote"
+        remote.mkdir()
+        for i in range(7):
+            f = remote / f"aethervault_2026.08.1{i}_120000.db.bak"
+            f.write_bytes(b"x")
+        src = tmp_path / "aethervault_2026.08.20_120000.db.bak"
+        src.write_bytes(b"new")
+        mirror_backup(str(src), str(remote), max_files=5)
+        remaining = [f for f in os.listdir(remote) if f.endswith(".db.bak")]
+        assert len(remaining) == 5
+        assert os.path.basename(str(src)) in remaining
+
+    def test_mirror_backup_empty_remote_disabled(self, tmp_path):
+        src = tmp_path / "aethervault_2026.08.11_120000.db.bak"
+        src.write_bytes(b"data")
+        assert mirror_backup(str(src), "") is None
+
+    def test_mirror_backup_creates_missing_remote_dir(self, tmp_path):
+        src = tmp_path / "aethervault_2026.08.11_120000.db.bak"
+        src.write_bytes(b"data")
+        remote = tmp_path / "nested" / "remote"
+        assert mirror_backup(str(src), str(remote)) is not None
+        assert os.path.exists(remote)

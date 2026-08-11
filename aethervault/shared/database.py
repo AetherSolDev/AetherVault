@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-11 13:17 CT (America/Chicago)
+# Last Edited: 2026-08-11 15:07 CT (America/Chicago)
 # Path: aethervault/shared/database.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
@@ -15,10 +15,13 @@ from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from aethervault.core.engine import (
+    checkpoint_database,
     decrypt_data,
     derive_encryption_key,
     encrypt_data,
     get_timestamped_backup_path,
+    load_settings,
+    mirror_backup,
     rotate_backups,
 )
 from aethervault.shared.models import CredentialEntry
@@ -343,10 +346,13 @@ class DatabaseManager:
         try:
             if self.conn:
                 self.conn.close()
+            checkpoint_database(self.db_path)
             backup_path = get_timestamped_backup_path()
             os.makedirs(os.path.dirname(backup_path), exist_ok=True)
             shutil.copyfile(self.db_path, backup_path)
             rotate_backups()
+            remote = load_settings().get("remote_backup_dir", "")
+            mirror_backup(backup_path, remote)
             self._connect()
             return backup_path
         except OSError as e:

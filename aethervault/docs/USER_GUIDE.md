@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-05 17:51 CT (America/Chicago)
+# Last Edited: 2026-08-11 15:07 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -143,6 +143,26 @@ All files are stored in the application directory:
 | `data/.master.key` | Master password hash (PBKDF2) |
 | `data/.duress.key` | Duress password hash (PBKDF2, optional) |
 | `data/.app_settings.json` | Application settings (unencrypted) |
+
+### Remote Backup Folder
+
+In addition to local backups, AetherVault can mirror every backup to a second
+location — a NAS share, USB drive, or any other mounted folder — as a
+dual-backup safety copy.
+
+- **Set it up:** `Settings > Remote Backup Folder...` and pick a directory. The
+  choice is saved and reused for all future backups.
+- **What happens:** every manual backup (`File > Backup`) and every automatic
+  pre-operation backup (before import, duplicate removal, etc.) is also copied
+  to the folder, rotated to keep the 5 most recent copies — matching the local
+  rotation.
+- **Security:** the remote copy is the same encrypted `.db.bak` file, so it is
+  safe to leave on a NAS or shared drive. The **duress wipe does not touch the
+  remote folder** — it survives as your recovery copy.
+- **Clear it:** run `Settings > Remote Backup Folder...` again and click
+  **Cancel** with no folder selected, then confirm "Clear".
+- **Restore from it:** use `File > Restore Vault` and navigate to the folder —
+  the `.db.bak` filter is enabled.
 
 ## Troubleshooting
 
