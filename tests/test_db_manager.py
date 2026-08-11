@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-07 10:24 CT (America/Chicago)
+# Last Edited: 2026-08-11 13:17 CT (America/Chicago)
 # Path: tests/test_db_manager.py
 # Purpose: Integration tests for DatabaseManager CRUD operations.
 
@@ -117,7 +117,7 @@ class TestDatabaseManager:
         loaded = temp_db.load_all_credentials()
         assert len(loaded) == 2
 
-    def test_import_from_csv_updates_existing(self, temp_db, tmp_path):
+    def test_import_from_csv_ignores_db_id_column(self, temp_db, tmp_path):
         import csv
         saved_id = temp_db.save_credential(CredentialEntry(title="Old", password="old_pass"))
         assert saved_id is not None
@@ -131,9 +131,46 @@ class TestDatabaseManager:
         n = temp_db.import_from_csv(str(csv_path))
         assert n == 1
         loaded = temp_db.load_all_credentials()
-        assert loaded[0].title == "Updated"
-        assert loaded[0].password == "new_pass"
-        assert len(loaded) == 1
+        assert len(loaded) == 2
+        imported = [e for e in loaded if e.title == "Updated"]
+        assert len(imported) == 1
+        assert imported[0].password == "new_pass"
+        assert imported[0].db_id != saved_id
+
+    def test_import_export_roundtrip_into_other_vault_preserves_all(self, tmp_path):
+        """Importing an export from vault A into vault B must insert every row
+        as new, never overwrite B's rows or drop rows by a foreign db_id."""
+        import csv
+
+        db_a = str(tmp_path / "vault_a.db")
+        db_b = str(tmp_path / "vault_b.db")
+        err = lambda t, m: None
+        dm_a = DatabaseManager(db_a, err)
+        dm_a.set_encryption_key("test_key_placeholder_12345678901234567890")
+        for title, user in [("Alpha", "a"), ("Beta", "b"), ("Gamma", "c")]:
+            dm_a.save_credential(CredentialEntry(title=title, username=user, password=f"pw_{title.lower()}"))
+        exported = dm_a.load_all_credentials()
+        csv_path = str(tmp_path / "export.csv")
+        dm_a.export_to_csv(csv_path, exported)
+        dm_a.conn.close()
+
+        dm_b = DatabaseManager(db_b, err)
+        dm_b.set_encryption_key("test_key_placeholder_12345678901234567890")
+        dm_b.save_credential(CredentialEntry(title="ExistingOne", username="e1", password="orig1"))
+        dm_b.save_credential(CredentialEntry(title="ExistingTwo", username="e2", password="orig2"))
+
+        n = dm_b.import_from_csv(csv_path)
+        assert n == 3
+
+        after = dm_b.load_all_credentials()
+        by_title = {e.title: e for e in after}
+        assert len(after) == 5
+        assert by_title["Alpha"].password == "pw_alpha"
+        assert by_title["Beta"].password == "pw_beta"
+        assert by_title["Gamma"].password == "pw_gamma"
+        assert by_title["ExistingOne"].password == "orig1"
+        assert by_title["ExistingTwo"].password == "orig2"
+        dm_b.conn.close()
 
     def test_import_from_csv_missing_title_returns_zero(self, temp_db, tmp_path):
         import csv

@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-07 10:24 CT (America/Chicago)
+# Last Edited: 2026-08-11 13:17 CT (America/Chicago)
 # Path: aethervault/shared/database.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
@@ -474,17 +474,12 @@ class DatabaseManager:
                         entry_data[canonical] = row.get(header) or ""
                     self._derive_title(entry_data, col_map)
                     entry = CredentialEntry(**entry_data)
-                    try:
-                        db_id = int(entry_data.get("db_id") or 0)
-                    except ValueError:
-                        db_id = 0
-                    entry.db_id = db_id
-                    if entry.db_id and entry.db_id > 0:
-                        self.update_credential(entry)
+                    # A CSV export includes db_id, but that id is only valid in the
+                    # vault it came from. Importing into another vault must always
+                    # insert a new row, never update by the foreign id.
+                    entry.db_id = None
+                    if self.save_credential(entry) is not None:
                         imported_count += 1
-                    else:
-                        if self.save_credential(entry) is not None:
-                            imported_count += 1
             return imported_count
         except FileNotFoundError:
             self.error_handler("Import Error", f"File not found: {file_path}")
