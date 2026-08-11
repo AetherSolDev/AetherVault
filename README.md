@@ -97,21 +97,36 @@ No Python or pip needed. Grab the binary for your platform from the
 
 AetherVault is on **PyPI** (`aethervault-py`) and published to GitHub Releases on every version tag.
 
-**Option 1 — pip (recommended, all platforms):**
+**Option 1 — pipx (recommended):**
+```bash
+sudo apt install pipx          # Debian/Ubuntu; pacman -S python-pipx on Arch
+pipx install aethervault-py
+pipx ensurepath                # adds ~/.local/bin to PATH if needed
+aethervault
+```
+pipx installs each app in its own virtual environment, so no system-Python
+modification is needed and the `aethervault` command is available everywhere.
+
+**Option 2 — pip (all platforms):**
 ```bash
 pip install aethervault-py
-# or
-pip install --user aethervault-py
 ```
+> On modern Linux distros (Ubuntu 23.04+, Debian 12+, Fedora, Arch), the
+> OS-managed Python blocks pip with a **PEP 668 "externally-managed-environment"**
+> error. In that case either use pipx above, a virtual environment (Option 3), or
+> install into your user site:
+> ```bash
+> pip install --user --break-system-packages aethervault-py
+> ```
 
-**Option 2 — Global install (editable):**
+**Option 3 — Global install (editable):**
 ```bash
 git clone https://github.com/AetherSolDev/AetherVault.git
 cd AetherVault
 pip install --user --break-system-packages -e .
 ```
 
-**Option 3 — Virtual environment:**
+**Option 4 — Virtual environment:**
 ```bash
 git clone https://github.com/AetherSolDev/AetherVault.git
 cd AetherVault
@@ -120,7 +135,7 @@ source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -e .
 ```
 
-**Option 4 — Build yourself (PyInstaller):**
+**Option 5 — Build yourself (PyInstaller):**
 ```bash
 pip install pyinstaller
 pyinstaller aethervault.spec
@@ -152,7 +167,7 @@ aethervault --help     # CLI usage
 | `aethervault` | Launch the GUI (auto-detaches on Unix) |
 | `aethervault --version` | Show installed version |
 | `aethervault --debug` | Launch with debug logging |
-| `aethervault --upgrade` / `-u` | Check for updates and auto-upgrade (pip install aethervault-py) |
+| `aethervault --upgrade` / `-u` | Check for updates and auto-upgrade (`pip install --upgrade aethervault-py`; pipx installs: `pipx upgrade aethervault-py`) |
 | `aethervault --foreground` / `-f` | Keep terminal attached (debugging) |
 
 ---
