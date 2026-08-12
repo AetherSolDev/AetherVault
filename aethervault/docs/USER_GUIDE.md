@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-11 15:07 CT (America/Chicago)
+# Last Edited: 2026-08-12 16:33 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -88,7 +88,11 @@ A pre-built executable is available (see Releases). No Python installation requi
 
 ### Credential Management
 - Add, edit, and delete credential entries
-- Fields: Title, URL, Username, Email, Password, Phone, Address, Category, Notes
+- Fields: Title, URL, Username, Email, Password, Phone, Address, Category, Tags
+- **Notes** — click the **▶ Notes** toggle to expand the rich-text editor (with B/I/U
+  formatting); a preview of the first line shows when collapsed
+- **Custom Fields** — click **Custom Fields...** to open a dialog for adding extra
+  field/value pairs (e.g. API keys, recovery codes); the field count shows next to the button
 - Search/filter by title, username, URL, category, or notes
 
 ### Strong Password Generator

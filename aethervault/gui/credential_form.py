@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
+# Last Edited: 2026-08-12 16:33 CT (America/Chicago)
 # Path: aethervault/gui/credential_form.py
 # Purpose: Credential detail/edit form widget for the right panel.
 
@@ -10,20 +10,21 @@ import json
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
+    QDialog,
     QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
     QTextEdit,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
 from aethervault.shared.models import CredentialEntry
 from aethervault.gui.click_to_copy_filter import ClickToCopyFilter
+from aethervault.gui.dialogs import CustomFieldsDialog
 from aethervault.gui.password_strength import PasswordStrengthBar
 
 
@@ -40,6 +41,8 @@ class CredentialForm(QWidget):
         self.is_form_modified = False
         self.is_editing = False
         self.input_fields = {}
+        self._custom_fields_json = "[]"
+        self._notes_expanded = False
         self._build_ui()
 
     def _build_ui(self):
@@ -123,10 +126,28 @@ class CredentialForm(QWidget):
         form_grid.addWidget(self.tags_entry, tags_row, 1, 1, 2)
         row += 1
 
-        notes_row = row
-        form_grid.addWidget(QLabel("Notes:"), notes_row, 0, alignment=Qt.AlignTop)
-        notes_container = QWidget()
-        notes_container_layout = QVBoxLayout(notes_container)
+        form_grid.setColumnMinimumWidth(0, 90)
+        form_grid.setColumnStretch(1, 1)
+        form_grid.setVerticalSpacing(4)
+        layout.addLayout(form_grid, stretch=2)
+
+        # Notes — collapsible section with preview
+        self.notes_toggle = QToolButton()
+        self.notes_toggle.setText("\u25b6 Notes")  # ▶ Notes
+        self.notes_toggle.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.notes_toggle.setCheckable(True)
+        self.notes_toggle.setAutoRaise(True)
+        self.notes_toggle.clicked.connect(self._toggle_notes)
+        layout.addWidget(self.notes_toggle)
+
+        self.notes_preview = QLabel()
+        self.notes_preview.setWordWrap(True)
+        self.notes_preview.setTextFormat(Qt.PlainText)
+        self.notes_preview.setStyleSheet("color: gray;")
+        layout.addWidget(self.notes_preview)
+
+        self.notes_container = QWidget()
+        notes_container_layout = QVBoxLayout(self.notes_container)
         notes_container_layout.setContentsMargins(0, 0, 0, 0)
         notes_container_layout.setSpacing(2)
         nt = QHBoxLayout()
@@ -155,7 +176,8 @@ class CredentialForm(QWidget):
         nt.addStretch()
         notes_container_layout.addLayout(nt)
         self.notes_entry = QTextEdit()
-        self.notes_entry.textChanged.connect(self._on_field_modified)
+        self.notes_entry.textChanged.connect(self._on_notes_changed)
+        self.notes_entry.setMinimumHeight(120)
         self.notes_entry.installEventFilter(
             ClickToCopyFilter(
                 self,
@@ -164,32 +186,20 @@ class CredentialForm(QWidget):
             )
         )
         notes_container_layout.addWidget(self.notes_entry)
-        form_grid.addWidget(notes_container, notes_row, 1, 1, 2)
+        layout.addWidget(self.notes_container)
+        self.notes_container.hide()
 
-        form_grid.setColumnMinimumWidth(0, 90)
-        form_grid.setColumnStretch(1, 1)
-        form_grid.setVerticalSpacing(4)
-        layout.addLayout(form_grid, stretch=2)
-
-        cf_label = QLabel("Custom Fields:")
-        layout.addWidget(cf_label)
-        self.custom_fields_table = QTableWidget()
-        self.custom_fields_table.setColumnCount(2)
-        self.custom_fields_table.setHorizontalHeaderLabels(["Field", "Value"])
-        self.custom_fields_table.horizontalHeader().setStretchLastSection(True)
-        self.custom_fields_table.horizontalHeader().setFixedHeight(50)
-        self.custom_fields_table.verticalHeader().hide()
-        self.custom_fields_table.setMinimumHeight(80)
-        layout.addWidget(self.custom_fields_table, stretch=1)
-        cf_buttons = QHBoxLayout()
-        self.cf_add_btn = QPushButton("+ Add Field")
-        self.cf_add_btn.clicked.connect(self._add_custom_field_row)
-        self.cf_remove_btn = QPushButton("- Remove Selected")
-        self.cf_remove_btn.clicked.connect(self._remove_custom_field_row)
-        cf_buttons.addWidget(self.cf_add_btn)
-        cf_buttons.addWidget(self.cf_remove_btn)
-        cf_buttons.addStretch()
-        layout.addLayout(cf_buttons)
+        # Custom Fields — button opens dialog
+        cf_row = QHBoxLayout()
+        self.cf_btn = QPushButton("Custom Fields...")
+        self.cf_btn.setToolTip("Edit custom fields for this entry")
+        self.cf_btn.clicked.connect(self._open_custom_fields_dialog)
+        self.cf_count_label = QLabel()
+        self.cf_count_label.setStyleSheet("color: gray;")
+        cf_row.addWidget(self.cf_btn)
+        cf_row.addWidget(self.cf_count_label)
+        cf_row.addStretch()
+        layout.addLayout(cf_row)
 
         fbl = QHBoxLayout()
         self.save_btn = QPushButton("Save")
@@ -205,6 +215,40 @@ class CredentialForm(QWidget):
 
         self.gen_pass_btn.hide()
         self._set_readonly(True)
+
+    def _toggle_notes(self):
+        """Expand or collapse the notes editor section."""
+        self._notes_expanded = self.notes_toggle.isChecked()
+        self.notes_toggle.setText("\u25bc Notes" if self._notes_expanded else "\u25b6 Notes")
+        self.notes_container.setVisible(self._notes_expanded)
+        self.notes_preview.setVisible(not self._notes_expanded)
+
+    def _on_notes_changed(self):
+        self._update_notes_preview()
+        self._on_field_modified()
+
+    def _update_notes_preview(self):
+        text = self.notes_entry.toPlainText().strip()
+        if text:
+            single = " ".join(text.split())
+            self.notes_preview.setText(single[:80] + ("..." if len(single) > 80 else ""))
+        else:
+            self.notes_preview.setText("No notes.")
+
+    def _open_custom_fields_dialog(self):
+        dlg = CustomFieldsDialog(self._custom_fields_json, self)
+        if dlg.exec() == QDialog.Accepted:
+            self._custom_fields_json = dlg.get_custom_fields_json()
+            self._update_cf_count()
+            self._on_field_modified()
+
+    def _update_cf_count(self):
+        try:
+            pairs = json.loads(self._custom_fields_json)
+            count = len(pairs) if isinstance(pairs, list) else 0
+        except (json.JSONDecodeError, TypeError):
+            count = 0
+        self.cf_count_label.setText(f"({count} field{'s' if count != 1 else ''})")
 
     def _toggle_password_visibility(self, checked):
         if checked:
@@ -226,7 +270,7 @@ class CredentialForm(QWidget):
     def get_form_data(self) -> dict:
         data = {k: e.text() for k, e in self.input_fields.items()}
         data["notes"] = self.notes_entry.toHtml()
-        data["custom_fields"] = self._custom_fields_to_json()
+        data["custom_fields"] = self._custom_fields_json
         data["db_id"] = self.current_entry_id
         return data
 
@@ -239,7 +283,9 @@ class CredentialForm(QWidget):
         self.notes_entry.blockSignals(True)
         self.notes_entry.setText(entry.notes or "")
         self.notes_entry.blockSignals(False)
-        self._custom_fields_from_entry(entry.custom_fields or "")
+        self._custom_fields_json = entry.custom_fields or "[]"
+        self._update_cf_count()
+        self._update_notes_preview()
         self.current_entry_id = entry.db_id
         self.is_form_modified = False
         if self.password_entry_ref.echoMode() == QLineEdit.EchoMode.Normal:
@@ -254,7 +300,9 @@ class CredentialForm(QWidget):
         self.notes_entry.blockSignals(True)
         self.notes_entry.clear()
         self.notes_entry.blockSignals(False)
-        self.custom_fields_table.setRowCount(0)
+        self._custom_fields_json = "[]"
+        self._update_cf_count()
+        self._update_notes_preview()
         if self.password_entry_ref.echoMode() == QLineEdit.EchoMode.Normal:
             self.password_entry_ref.setEchoMode(QLineEdit.EchoMode.Password)
             self.toggle_pass_btn.setChecked(False)
@@ -266,11 +314,9 @@ class CredentialForm(QWidget):
             le.setReadOnly(ro)
         self.notes_entry.setReadOnly(ro)
         self.toggle_pass_btn.setEnabled(not ro)
-        self.custom_fields_table.setEditTriggers(
-            QTableWidget.NoEditTriggers if ro else QTableWidget.DoubleClicked
-        )
-        self.cf_add_btn.setVisible(not ro)
-        self.cf_remove_btn.setVisible(not ro)
+        self.notes_toggle.setEnabled(True)
+        self.cf_btn.setEnabled(True)
+        self.cf_btn.setVisible(True)
         for btn in [self.notes_bold_btn, self.notes_italic_btn, self.notes_underline_btn]:
             btn.setVisible(not ro)
 
@@ -308,44 +354,3 @@ class CredentialForm(QWidget):
     def set_password(self, password: str):
         self.password_entry_ref.setText(password)
         self._on_field_modified()
-
-    def _add_custom_field_row(self):
-        r = self.custom_fields_table.rowCount()
-        self.custom_fields_table.insertRow(r)
-        self.custom_fields_table.setItem(r, 0, QTableWidgetItem(""))
-        self.custom_fields_table.setItem(r, 1, QTableWidgetItem(""))
-        self._on_field_modified()
-
-    def _remove_custom_field_row(self):
-        r = self.custom_fields_table.currentRow()
-        if r >= 0:
-            self.custom_fields_table.removeRow(r)
-            self._on_field_modified()
-
-    def _custom_fields_from_entry(self, raw: str):
-        self.custom_fields_table.setRowCount(0)
-        if not raw:
-            return
-        try:
-            pairs = json.loads(raw)
-        except (json.JSONDecodeError, TypeError):
-            return
-        if not isinstance(pairs, list):
-            return
-        for pair in pairs:
-            if isinstance(pair, dict):
-                r = self.custom_fields_table.rowCount()
-                self.custom_fields_table.insertRow(r)
-                self.custom_fields_table.setItem(r, 0, QTableWidgetItem(pair.get("field", "")))
-                self.custom_fields_table.setItem(r, 1, QTableWidgetItem(pair.get("value", "")))
-
-    def _custom_fields_to_json(self) -> str:
-        pairs = []
-        for r in range(self.custom_fields_table.rowCount()):
-            f = self.custom_fields_table.item(r, 0)
-            v = self.custom_fields_table.item(r, 1)
-            pairs.append({
-                "field": f.text() if f else "",
-                "value": v.text() if v else "",
-            })
-        return json.dumps(pairs)

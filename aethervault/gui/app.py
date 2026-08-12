@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-11 15:07 CT (America/Chicago)
+# Last Edited: 2026-08-12 16:33 CT (America/Chicago)
 # Path: aethervault/gui/app.py
 # Purpose: Main application window — coordinates auth, menus, CRUD, import/export.
 
@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QMenuBar,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QSplitter,
     QStackedWidget,
     QStatusBar,
@@ -84,7 +85,7 @@ class PySidePWManager(QMainWindow):
         super().__init__()
         self.setWindowTitle("AetherVault")
         self.resize(1100, 700)
-        self.setMinimumSize(750, 500)
+        self.setMinimumSize(700, 460)
 
         icon_path = resource_path(os.path.join("assets", "aethersol.ico"))
         if os.path.exists(icon_path):
@@ -283,6 +284,7 @@ class PySidePWManager(QMainWindow):
         self.status_bar.showMessage(f"Vault unlocked.{mode}", 5000)
         self.credential_table.search_entry.setFocus()
         self.reset_activity_timer()
+        QTimer.singleShot(0, self._restore_splitter_sizes)
 
     # --- Theme ---
 
@@ -332,15 +334,37 @@ class PySidePWManager(QMainWindow):
         self.credential_form.copy_requested.connect(self.copy_to_clipboard)
         self.credential_form.generate_password_requested.connect(self.show_password_generator)
 
-        self.credential_table.setMinimumWidth(300)
-        self.credential_form.setMinimumWidth(400)
-        self.credential_form.setMaximumWidth(700)
+        self.form_scroll = QScrollArea()
+        self.form_scroll.setWidget(self.credential_form)
+        self.form_scroll.setWidgetResizable(True)
+        self.form_scroll.setFrameShape(QFrame.NoFrame)
+
         self.main_content_splitter.addWidget(self.credential_table)
-        self.main_content_splitter.addWidget(self.credential_form)
-        self.main_content_splitter.setSizes([500, 500])
+        self.main_content_splitter.addWidget(self.form_scroll)
         self.main_content_splitter.setStretchFactor(0, 1)
         self.main_content_splitter.setStretchFactor(1, 1)
+        saved = self.settings.get("splitter_sizes")
+        if isinstance(saved, list) and len(saved) == 2:
+            QTimer.singleShot(0, self._restore_splitter_sizes)
+        self.credential_table.setMinimumWidth(0)
+        self._splitter_save_timer = QTimer(self)
+        self._splitter_save_timer.setSingleShot(True)
+        self._splitter_save_timer.timeout.connect(self._persist_splitter_sizes)
+        self.main_content_splitter.splitterMoved.connect(
+            lambda pos, idx: self._splitter_save_timer.start(500)
+        )
         self.main_index = self.stacked_widget.addWidget(self.main_content_splitter)
+
+    def _restore_splitter_sizes(self):
+        saved = self.settings.get("splitter_sizes")
+        if isinstance(saved, list) and len(saved) == 2:
+            self.main_content_splitter.setSizes([int(s) for s in saved])
+
+    def _persist_splitter_sizes(self):
+        sizes = self.main_content_splitter.sizes()
+        if len(sizes) == 2:
+            self.settings["splitter_sizes"] = sizes
+            save_settings(self.settings)
 
     def _on_entry_selected(self, db_id: int):
         if db_id < 0:

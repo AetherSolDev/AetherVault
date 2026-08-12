@@ -1,22 +1,28 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-01 01:30 CT (America/Chicago)
+# Last Edited: 2026-08-12 16:33 CT (America/Chicago)
 # Path: aethervault/gui/dialogs.py
 # Purpose: Dialog classes for password generation and documentation viewing.
 
 """Dialog classes for password generation and documentation viewing."""
 
+import json
 import os
 import sys
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
+    QAbstractScrollArea,
     QCheckBox,
     QDialog,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QLineEdit,
     QPushButton,
     QSpinBox,
+    QTableWidget,
+    QTableWidgetItem,
     QTextEdit,
     QVBoxLayout,
     QGridLayout,
@@ -49,7 +55,8 @@ class PasswordGeneratorDialog(QDialog):
         super().__init__(parent)
         """Initialize the dialog, build the UI, and generate an initial password."""
         self.setWindowTitle("Generate Secure Password")
-        self.setFixedSize(400, 350)
+        self.setMinimumSize(400, 350)
+        self.resize(400, 350)
         self.generated_password = ""
         main_layout = QVBoxLayout(self)
 
@@ -140,6 +147,92 @@ class PasswordGeneratorDialog(QDialog):
     def get_password(self) -> str:
         """Return the accepted password, or empty string if none was accepted."""
         return self.generated_password
+
+
+class CustomFieldsDialog(QDialog):
+    """A dialog window for editing the entry's custom fields (field/value pairs)."""
+
+    def __init__(self, raw_json: str = "", parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Custom Fields")
+        self.setMinimumSize(420, 300)
+        self.resize(420, 320)
+        main_layout = QVBoxLayout(self)
+
+        main_layout.addWidget(QLabel("Add fields to store extra information:"))
+        self.table = QTableWidget()
+        self.table.setColumnCount(2)
+        self.table.setHorizontalHeaderLabels(["Field", "Value"])
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setFixedHeight(50)
+        self.table.verticalHeader().hide()
+        self.table.setMinimumHeight(150)
+        self.table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        main_layout.addWidget(self.table, stretch=1)
+
+        btn_row = QHBoxLayout()
+        self.add_btn = QPushButton("+ Add Field")
+        self.add_btn.clicked.connect(self._add_row)
+        self.remove_btn = QPushButton("- Remove Selected")
+        self.remove_btn.clicked.connect(self._remove_row)
+        btn_row.addWidget(self.add_btn)
+        btn_row.addWidget(self.remove_btn)
+        btn_row.addStretch()
+        main_layout.addLayout(btn_row)
+
+        ok_row = QHBoxLayout()
+        ok_btn = QPushButton("OK")
+        cancel_btn = QPushButton("Cancel")
+        ok_btn.clicked.connect(self.accept)
+        cancel_btn.clicked.connect(self.reject)
+        ok_row.addStretch()
+        ok_row.addWidget(ok_btn)
+        ok_row.addWidget(cancel_btn)
+        main_layout.addLayout(ok_row)
+
+        self._load_from_json(raw_json)
+
+    def _load_from_json(self, raw: str):
+        """Populate the table from a JSON array string."""
+        if not raw:
+            return
+        try:
+            pairs = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            return
+        if not isinstance(pairs, list):
+            return
+        for pair in pairs:
+            if isinstance(pair, dict):
+                r = self.table.rowCount()
+                self.table.insertRow(r)
+                self.table.setItem(r, 0, QTableWidgetItem(pair.get("field", "")))
+                self.table.setItem(r, 1, QTableWidgetItem(pair.get("value", "")))
+
+    def _add_row(self):
+        r = self.table.rowCount()
+        self.table.insertRow(r)
+        self.table.setItem(r, 0, QTableWidgetItem(""))
+        self.table.setItem(r, 1, QTableWidgetItem(""))
+
+    def _remove_row(self):
+        r = self.table.currentRow()
+        if r >= 0:
+            self.table.removeRow(r)
+
+    def get_custom_fields_json(self) -> str:
+        """Return the table contents serialized as a JSON array string."""
+        pairs = []
+        for r in range(self.table.rowCount()):
+            f = self.table.item(r, 0)
+            v = self.table.item(r, 1)
+            pairs.append({
+                "field": f.text() if f else "",
+                "value": v.text() if v else "",
+            })
+        return json.dumps(pairs)
 
 
 class DocumentationDialog(QDialog):

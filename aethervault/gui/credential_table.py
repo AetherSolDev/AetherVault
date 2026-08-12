@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
+# Last Edited: 2026-08-12 16:33 CT (America/Chicago)
 # Path: aethervault/gui/credential_table.py
 # Purpose: Credential list table widget with search, filter, and context menu.
 
@@ -41,6 +41,7 @@ class CredentialTable(QWidget):
         self.settings = {}
         self.sort_column = -1
         self.sort_order = Qt.AscendingOrder
+        self._columns_initialized = False
         self._favicon_cache: dict = {}
         self._network_manager = QNetworkAccessManager()
         self._search_text = ""
@@ -134,18 +135,19 @@ class CredentialTable(QWidget):
                 self.table.setItem(ri, ci, item)
 
         h = self.table.horizontalHeader()
-        h.setSectionResizeMode(0, QHeaderView.Interactive)
+        h.setSectionResizeMode(0, QHeaderView.Stretch)
         h.setSectionResizeMode(1, QHeaderView.Interactive)
         h.setSectionResizeMode(2, QHeaderView.Stretch)
         h.setSectionResizeMode(3, QHeaderView.Interactive)
         h.setSectionResizeMode(5, QHeaderView.Interactive)
         h.setSectionResizeMode(6, QHeaderView.Interactive)
-        h.resizeSection(0, 220)
-        h.resizeSection(1, 160)
-        h.resizeSection(3, 140)
-        h.resizeSection(5, 100)
-        h.resizeSection(6, 100)
-        h.setMinimumSectionSize(100)
+        h.setMinimumSectionSize(60)
+        if not self._columns_initialized:
+            h.resizeSection(1, 140)
+            h.resizeSection(3, 110)
+            h.resizeSection(5, 90)
+            h.resizeSection(6, 110)
+            self._columns_initialized = True
         self.table.verticalHeader().setDefaultSectionSize(32)
         self.table.verticalHeader().hide()
         self.table.horizontalHeader().setFixedHeight(50)
