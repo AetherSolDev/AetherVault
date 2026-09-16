@@ -1,5 +1,5 @@
 # Created: 2026-09-16
-# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
+# Last Edited: 2026-09-16 16:08 CT (America/Chicago)
 # Path: aethervault/gui/totp_section.py
 # Purpose: Live TOTP code + countdown widget shown in the credential form (A21).
 
@@ -65,7 +65,7 @@ class TotpSection(QWidget):
         self.countdown.setRange(0, 30)
         self.countdown.setValue(30)
         self.countdown.setTextVisible(False)
-        self.countdown.setFixedSize(120, 14)
+        self.countdown.setFixedSize(90, 12)
         self.countdown.setToolTip("Time remaining before the code changes")
         row.addWidget(self.countdown)
 

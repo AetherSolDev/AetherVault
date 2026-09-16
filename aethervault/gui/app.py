@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-09-16 14:46 CT (America/Chicago)
+# Last Edited: 2026-09-16 16:08 CT (America/Chicago)
 # Path: aethervault/gui/app.py
 # Purpose: Main application window — coordinates auth, menus, CRUD, import/export.
 
@@ -128,7 +128,7 @@ class PySidePWManager(QMainWindow):
         sb.setFixedHeight(22)
         self.setStatusBar(sb)
         self.status_bar = self.statusBar()
-        self.status_bar.showMessage("Awaiting input...")
+        self.status_bar.showMessage("Ready — double-click a cell to copy, / to search.")
 
         self._setup_system_tray()
 

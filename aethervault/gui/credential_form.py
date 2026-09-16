@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-09-16 15:37 CT (America/Chicago)
+# Last Edited: 2026-09-16 16:08 CT (America/Chicago)
 # Path: aethervault/gui/credential_form.py
 # Purpose: Credential detail/edit form widget for the right panel.
 
@@ -46,6 +46,7 @@ class CredentialForm(QWidget):
         self._notes_expanded = False
         self._totp_secret = ""
         self._recovery_codes = ""
+        self._copy_buttons = []
         self._build_ui()
 
     def _build_ui(self):
@@ -104,6 +105,7 @@ class CredentialForm(QWidget):
                     lambda checked, le=line_edit: self.copy_requested.emit(le.text(), "password")
                 )
                 al.addWidget(copy_pass_btn)
+                self._copy_buttons.append(copy_pass_btn)
                 form_grid.addLayout(al, row, 2)
                 row += 1
             else:
@@ -116,6 +118,7 @@ class CredentialForm(QWidget):
                             self.copy_requested.emit(le.text(), n)
                     )
                     form_grid.addWidget(copy_btn, row, 2)
+                    self._copy_buttons.append(copy_btn)
             if key != "password":
                 line_edit.textChanged.connect(self._on_field_modified)
             row += 1
@@ -407,6 +410,13 @@ class CredentialForm(QWidget):
         self.save_btn.setEnabled(False)
         self.is_form_modified = False
         self.input_fields["title"].setFocus()
+
+    def resizeEvent(self, event):
+        """Hide the per-field Copy buttons on narrow forms — clicking a field copies it."""
+        super().resizeEvent(event)
+        show_copy = self.width() >= 560
+        for btn in getattr(self, "_copy_buttons", []):
+            btn.setVisible(show_copy)
 
     def set_password(self, password: str):
         self.password_entry_ref.setText(password)
