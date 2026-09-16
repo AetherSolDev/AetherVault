@@ -1,5 +1,5 @@
 # Created: 2026-09-16
-# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:45 CT (America/Chicago)
 # Path: aethervault/cli.py
 # Purpose: Headless command-line interface to a vault (no GUI/PySide6 dependency).
 """Command-line interface for AetherVault.
@@ -28,6 +28,7 @@ import argparse
 import getpass
 import json
 import os
+import shutil
 import sys
 import time
 from typing import Any, Dict, List, Optional, Tuple
@@ -134,6 +135,49 @@ def _print_table(headers: List[str], rows: List[List[Any]]) -> None:
         print("  ".join(str(cell).ljust(widths[i]) for i, cell in enumerate(row)))
 
 
+def _terminal_width() -> int:
+    """Current terminal width in columns (honours ``$COLUMNS``)."""
+    return shutil.get_terminal_size(fallback=(80, 24)).columns
+
+
+def _truncate(text: str, width: int) -> str:
+    """Truncate ``text`` to ``width`` columns, appending an ellipsis when clipped."""
+    text = str(text)
+    if width <= 0:
+        return ""
+    if len(text) <= width:
+        return text
+    return text[: max(0, width - 1)] + "\u2026"
+
+
+def _print_compact(entries: List[CredentialEntry], width: int) -> None:
+    """One entry per line — for narrow (e.g. portrait phone) terminals."""
+    for entry in entries:
+        parts = [f"{entry.db_id:>3}", entry.title or "(untitled)"]
+        if entry.username:
+            parts.append(entry.username)
+        print(_truncate("  ".join(parts), width))
+
+
+def _print_entries(entries: List[CredentialEntry], args: argparse.Namespace) -> None:
+    """Print entries as JSON, a table, or a compact list depending on width/flags."""
+    if args.json:
+        print(json.dumps([_entry_dict(e, args.show_password) for e in entries],
+                         indent=2, default=str))
+        return
+    if not entries:
+        print("No entries.")
+        return
+    width = _terminal_width()
+    if getattr(args, "compact", False) or width < 72:
+        _print_compact(entries, width)
+    else:
+        _print_table(
+            ["ID", "Title", "Username", "Category", "URL"],
+            [[e.db_id, e.title, e.username, e.category, e.url] for e in entries],
+        )
+
+
 def _print_entry(entry: CredentialEntry, show_password: bool = False) -> None:
     """Print a single entry as aligned ``Field: value`` lines."""
     data = _entry_dict(entry, show_password)
@@ -172,28 +216,14 @@ def cmd_init(args: argparse.Namespace) -> int:
 def cmd_list(args: argparse.Namespace) -> int:
     with _open_vault(args) as vault:
         entries = _filter_entries(vault.list_entries(), args)
-    if args.json:
-        print(json.dumps([_entry_dict(e, args.show_password) for e in entries],
-                         indent=2, default=str))
-        return 0
-    _print_table(
-        ["ID", "Title", "Username", "Category", "URL"],
-        [[e.db_id, e.title, e.username, e.category, e.url] for e in entries],
-    )
+    _print_entries(entries, args)
     return 0
 
 
 def cmd_search(args: argparse.Namespace) -> int:
     with _open_vault(args) as vault:
         entries = _filter_entries(vault.search(args.query), args)
-    if args.json:
-        print(json.dumps([_entry_dict(e, args.show_password) for e in entries],
-                         indent=2, default=str))
-        return 0
-    _print_table(
-        ["ID", "Title", "Username", "Category", "URL"],
-        [[e.db_id, e.title, e.username, e.category, e.url] for e in entries],
-    )
+    _print_entries(entries, args)
     return 0
 
 
@@ -332,6 +362,8 @@ def _add_field_flags(parser: argparse.ArgumentParser, include_password: bool = T
 
 def _add_output_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--json", action="store_true", help="Output JSON")
+    parser.add_argument("--compact", action="store_true",
+                        help="One line per entry (auto when the terminal is narrow)")
     parser.add_argument("--show-password", action="store_true",
                         help="Include plaintext passwords in output")
 

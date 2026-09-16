@@ -1,5 +1,5 @@
 # Created: 2026-09-16
-# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:45 CT (America/Chicago)
 # Path: docs/SDK.md
 # Purpose: Reference for the headless SDK (aethervault.sdk) and CLI (aethervault.cli).
 
@@ -88,8 +88,8 @@ order).
 | Command | Description |
 |---------|-------------|
 | `init` | Create a new vault (prompts for a master password) |
-| `list [--category C] [--tag T] [--json] [--show-password]` | List all entries |
-| `search QUERY [--category C] [--tag T] [--json] [--show-password]` | Substring search |
+| `list [--category C] [--tag T] [--json] [--compact] [--show-password]` | List all entries |
+| `search QUERY [--category C] [--tag T] [--json] [--compact] [--show-password]` | Substring search |
 | `show ID [--field FIELD] [--json] [--show-password]` | Show one entry (or one raw field) |
 | `add --title T [--password P \| --generate [LEN]] [fields...] [--json]` | Add an entry |
 | `update ID [fields...] [--password P \| --generate [LEN]] [--json]` | Update fields on an entry |
@@ -101,6 +101,11 @@ order).
 
 `fields...` are any of: `--url --username --email --phone --address --category --notes
 --tags --custom_fields --totp-secret --recovery-codes`.
+
+> **Narrow terminals (phones).** `list`/`search` auto-switch between a table (wide) and a
+> one-line-per-entry compact view (narrow, under 72 columns) using the terminal width
+> (`$COLUMNS`). Force either with `--compact` (or `--json` for scripts). This makes the CLI
+> readable in a portrait Termux window as well as a landscape desktop terminal.
 
 > `--totp-secret` accepts either a bare base32 secret or a full `otpauth://` URI
 > (non-default `digits`/`period`/`algorithm` are honoured). TOTP secrets and recovery

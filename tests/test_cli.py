@@ -1,5 +1,5 @@
 # Created: 2026-09-16
-# Last Edited: 2026-09-16 14:11 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:45 CT (America/Chicago)
 # Path: tests/test_cli.py
 # Purpose: Tests for the headless command-line interface (aethervault.cli).
 
@@ -221,3 +221,54 @@ class TestHeadless:
                                 capture_output=True, text=True)
         assert result.returncode == 0, result.stderr
         assert result.stdout.strip() == "ok"
+
+
+class TestWidthAwareOutput:
+    """Portrait/landscape terminals: table on wide, compact on narrow."""
+
+    def _seed(self, vault_dir, capsys):
+        run(vault_dir, "add", "--title", "GitHub", "--username", "octocat",
+            "--password", "p")
+        run(vault_dir, "add", "--title", "Bank of Aether", "--username", "b.munoz",
+            "--password", "p")
+        capsys.readouterr()
+
+    def test_compact_when_narrow(self, vault_dir, capsys, monkeypatch):
+        monkeypatch.setattr("aethervault.cli._terminal_width", lambda: 40)
+        self._seed(vault_dir, capsys)
+        assert run(vault_dir, "list") == 0
+        out = capsys.readouterr().out
+        lines = [ln for ln in out.splitlines() if ln.strip()]
+        assert lines
+        assert all(len(ln) <= 40 for ln in lines)
+        assert any("GitHub" in ln and "octocat" in ln for ln in lines)
+        assert "ID  Title" not in out
+
+    def test_table_when_wide(self, vault_dir, capsys, monkeypatch):
+        monkeypatch.setattr("aethervault.cli._terminal_width", lambda: 120)
+        self._seed(vault_dir, capsys)
+        assert run(vault_dir, "list") == 0
+        out = capsys.readouterr().out
+        assert "ID  Title" in out
+        assert "Username" in out
+
+    def test_compact_flag_forces_compact_when_wide(self, vault_dir, capsys, monkeypatch):
+        monkeypatch.setattr("aethervault.cli._terminal_width", lambda: 120)
+        self._seed(vault_dir, capsys)
+        assert run(vault_dir, "list", "--compact") == 0
+        out = capsys.readouterr().out
+        assert "ID  Title" not in out
+        assert "GitHub" in out
+
+    def test_long_line_is_truncated(self, vault_dir, capsys, monkeypatch):
+        monkeypatch.setattr("aethervault.cli._terminal_width", lambda: 20)
+        run(vault_dir, "add", "--title", "A" * 50, "--password", "p")
+        capsys.readouterr()
+        assert run(vault_dir, "list") == 0
+        out = capsys.readouterr().out
+        assert all(len(ln) <= 20 for ln in out.splitlines())
+        assert "\u2026" in out
+
+    def test_empty_human_output(self, vault_dir, capsys):
+        assert run(vault_dir, "list") == 0
+        assert "No entries." in capsys.readouterr().out
