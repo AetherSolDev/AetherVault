@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-09-16 14:46 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:37 CT (America/Chicago)
 # Path: aethervault/gui/credential_table.py
 # Purpose: Credential list table widget with search, filter, and context menu.
 
@@ -137,6 +137,8 @@ class CredentialTable(QWidget):
                 (5, entry.time_last_used), (6, entry.time_password_changed),
             ]:
                 item = QTableWidgetItem(val)
+                if val:
+                    item.setToolTip(val)
                 if self._search_text and self._search_text in val.lower():
                     item.setBackground(highlight)
                 if ci == 0 and entry.url:
@@ -159,8 +161,8 @@ class CredentialTable(QWidget):
         if not self._columns_initialized:
             h.resizeSection(1, 140)
             h.resizeSection(3, 110)
-            h.resizeSection(5, 90)
-            h.resizeSection(6, 110)
+            h.resizeSection(5, 96)
+            h.resizeSection(6, 124)
             self._columns_initialized = True
         self.table.verticalHeader().setDefaultSectionSize(32)
         self.table.verticalHeader().hide()

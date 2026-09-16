@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:37 CT (America/Chicago)
 # Path: aethervault/gui/credential_form.py
 # Purpose: Credential detail/edit form widget for the right panel.
 
@@ -218,6 +218,8 @@ class CredentialForm(QWidget):
         self.totp_section.copy_requested.connect(self.copy_requested.emit)
         self.totp_section.remove_requested.connect(self._remove_totp)
         layout.addWidget(self.totp_section)
+
+        layout.addStretch(1)
 
         fbl = QHBoxLayout()
         self.save_btn = QPushButton("Save")
