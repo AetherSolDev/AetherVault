@@ -51,6 +51,32 @@ curl http://openwrt:8787/health                 # {"status":"ok"}
 curl -H "Authorization: Bearer $AETHERVAULT_SYNC_TOKEN" http://openwrt:8787/vault
 ```
 
+## Client usage
+
+All devices must use the **same master password** (the sync key is derived from it).
+
+```sh
+export AETHERVAULT_SYNC_TOKEN="<the token you generated>"
+
+# desktop
+aethervault-cli sync --server http://openwrt:8787 --device-id laptop
+
+# phone (Termux)
+aethervault-cli sync --server http://openwrt:8787 --device-id phone
+```
+
+Or from Python:
+
+```python
+from aethervault.sdk import Vault
+with Vault().unlock("master-password") as vault:
+    print(vault.sync("http://openwrt:8787", token="...", device_id="laptop"))
+    # {"version": 3, "entries": 12}
+```
+
+Sync is **pull → merge → push**: safe to run repeatedly; a `409` is handled internally by
+re-pulling and re-merging.
+
 ## Security model
 
 - **Zero-knowledge:** the payload is encrypted on the client with a key derived from the

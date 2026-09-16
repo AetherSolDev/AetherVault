@@ -1,5 +1,5 @@
 # Created: 2026-09-16
-# Last Edited: 2026-09-16 15:45 CT (America/Chicago)
+# Last Edited: 2026-09-16 17:53 CT (America/Chicago)
 # Path: aethervault/cli.py
 # Purpose: Headless command-line interface to a vault (no GUI/PySide6 dependency).
 """Command-line interface for AetherVault.
@@ -36,6 +36,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from aethervault import VERSION
 from aethervault.core.engine import DB_PATH, MASTER_KEY_FILE
 from aethervault.core.password import generate_strong_password
+from aethervault.core.sync import SyncError
 from aethervault.core.totp import generate_code, resolve_config
 from aethervault.sdk import Vault, VaultError
 from aethervault.shared.models import CredentialEntry
@@ -313,6 +314,14 @@ def cmd_backup(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sync(args: argparse.Namespace) -> int:
+    token = args.token or os.environ.get("AETHERVAULT_SYNC_TOKEN", "")
+    with _open_vault(args) as vault:
+        result = vault.sync(args.server, token=token, device_id=args.device_id or "")
+    print(f"Synced {result['entries']} entries (server version {result['version']}).")
+    return 0
+
+
 def cmd_totp(args: argparse.Namespace) -> int:
     with _open_vault(args) as vault:
         entry = vault.get(args.id)
@@ -437,6 +446,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_totp.add_argument("--json", action="store_true", help="Output JSON")
     p_totp.set_defaults(func=cmd_totp)
 
+    p_sync = sub.add_parser("sync", help="Sync with an AetherVault sync server")
+    p_sync.add_argument("--server", required=True,
+                        help="Server base URL, e.g. http://openwrt:8787")
+    p_sync.add_argument("--token", help="Bearer token (or AETHERVAULT_SYNC_TOKEN)")
+    p_sync.add_argument("--device-id", help="Device identifier recorded on the server")
+    p_sync.set_defaults(func=cmd_sync)
+
     return parser
 
 
@@ -456,6 +472,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         return args.func(args)
     except VaultError as e:
         print(f"error: {e}", file=sys.stderr)
+        return 1
+    except SyncError as e:
+        print(f"sync error: {e}", file=sys.stderr)
         return 1
     except OSError as e:
         print(f"error: {e}", file=sys.stderr)

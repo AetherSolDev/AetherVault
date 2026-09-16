@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from aethervault.core.engine import (
     DB_PATH,
@@ -42,6 +42,16 @@ from aethervault.core.engine import (
     hash_password,
     load_master_password,
     verify_password,
+)
+from aethervault.core.sync import (
+    SyncClient,
+    SyncError,
+    decrypt_payload,
+    derive_sync_key,
+    encrypt_payload,
+    entry_to_record,
+    merge_records,
+    payload_from_records,
 )
 from aethervault.core.totp import generate_code, resolve_config
 from aethervault.shared.database import DatabaseManager
@@ -98,6 +108,7 @@ class Vault:
         self.db_path = db_path or DB_PATH
         self.key_file = key_file or MASTER_KEY_FILE
         self._db: Optional[DatabaseManager] = None
+        self._sync_key: bytes = b""
         self.last_error: Optional[Tuple[str, str]] = None
 
     # --- lifecycle ---
@@ -150,6 +161,7 @@ class Vault:
         except OSError as e:
             raise VaultError(f"Could not write master key file: {e}") from e
         self._open_with(load_master_password(self.key_file))
+        self._sync_key = derive_sync_key(password)
 
     def unlock(self, password: str) -> "Vault":
         """Verify ``password`` and open the vault. Returns ``self`` for chaining."""
@@ -159,6 +171,7 @@ class Vault:
         if not stored or not verify_password(password, stored):
             raise AuthenticationError("Invalid master password.")
         self._open_with(stored)
+        self._sync_key = derive_sync_key(password)
         return self
 
     def lock(self) -> None:
@@ -166,6 +179,7 @@ class Vault:
         if self._db is not None:
             self._db.__exit__(None, None, None)
         self._db = None
+        self._sync_key = b""
 
     def __enter__(self) -> "Vault":
         self._require_unlocked()
@@ -287,3 +301,31 @@ class Vault:
     def import_csv(self, file_path: str) -> int:
         """Import entries from a CSV file; returns the count inserted."""
         return self._require_unlocked().import_from_csv(file_path)
+
+    def sync(self, server_url: str, token: str = "", device_id: str = "",
+             max_retries: int = 5) -> Dict[str, int]:
+        """Pull-merge-push with an AetherVault sync server.
+
+        Offline-first: local and remote entries are merged by ``entry_uuid`` (last-writer-wins
+        on ``modified_at``), the merged result is written locally, then pushed. A version
+        conflict (another device pushed first) triggers a re-pull/re-merge, up to
+        ``max_retries``. Returns ``{"version": <server version>, "entries": <count>}``.
+        """
+        db = self._require_unlocked()
+        if not self._sync_key:
+            raise VaultError("Vault must be unlocked with a master password to sync.")
+        key = self._sync_key
+        client = SyncClient(server_url, token)
+        local = [entry_to_record(e) for e in db.load_all_credentials(include_deleted=True)]
+        for _ in range(max_retries):
+            version, blob = client.pull()
+            remote = decrypt_payload(blob, key).get("entries", []) if blob else []
+            merged = merge_records(local, remote)
+            db.apply_sync_records(merged)
+            ok, new_version, _current = client.push(
+                version, encrypt_payload(payload_from_records(merged), key), device_id
+            )
+            if ok:
+                return {"version": new_version, "entries": len(merged)}
+            local = merged  # someone pushed first — retry with the merged set
+        raise SyncError("Sync failed after repeated version conflicts.")
