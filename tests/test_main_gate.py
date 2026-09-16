@@ -1,9 +1,10 @@
 # Created: 2026-08-09
-# Last Edited: 2026-08-09 06:36 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:46 CT (America/Chicago)
 # Path: tests/test_main_gate.py
-# Purpose: Regression tests for the terminal auto-detach gate in __main__.
-"""Tests for the terminal auto-detach gate in aethervault/__main__."""
+# Purpose: Regression tests for the terminal auto-detach gate and headless startup in __main__.
+"""Tests for the terminal auto-detach gate and headless startup in aethervault/__main__."""
 
+import subprocess
 import sys
 
 import pytest
@@ -42,3 +43,41 @@ class _FakeTTY:
 )
 def test_should_detach(foreground, platform, stdin, expected):
     assert _should_detach(foreground, platform, stdin) is expected
+
+
+def test_main_module_imports_without_pyside6():
+    """Importing __main__ must not pull in PySide6 (headless install support)."""
+    code = "import sys, aethervault.__main__; assert 'PySide6' not in sys.modules; print('ok')"
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "ok"
+
+
+def test_version_flag_works_headless():
+    """`python -m aethervault --version` must not need the GUI extra."""
+    result = subprocess.run(
+        [sys.executable, "-m", "aethervault", "--version"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "AetherVault v" in result.stdout
+
+
+def test_gui_launch_without_pyside6_shows_install_hint():
+    """A headless install that runs `aethervault` must fail with a helpful message."""
+    code = (
+        "import sys\n"
+        "from importlib.abc import MetaPathFinder\n"
+        "class Blocker(MetaPathFinder):\n"
+        "    def find_spec(self, name, path=None, target=None):\n"
+        "        if name == 'PySide6' or name.startswith('PySide6.'):\n"
+        "            raise ImportError('PySide6 blocked for test')\n"
+        "        return None\n"
+        "sys.meta_path.insert(0, Blocker())\n"
+        "from aethervault.__main__ import run\n"
+        "run()\n"
+    )
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert result.returncode == 1
+    assert "PySide6" in result.stderr
+    assert "aethervault-py[gui]" in result.stderr

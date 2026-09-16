@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-12 16:33 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:46 CT (America/Chicago)
 # Path: aethervault/gui/credential_table.py
 # Purpose: Credential list table widget with search, filter, and context menu.
 
@@ -55,15 +55,21 @@ class CredentialTable(QWidget):
         sl = QHBoxLayout()
         sl.addWidget(QLabel("Search:"))
         self.search_entry = QLineEdit()
-        self.search_entry.setPlaceholderText("Filter by title, username, or URL...")
+        self.search_entry.setPlaceholderText("Search title, username, URL, notes, tags...")
+        self.search_entry.setToolTip(
+            "Search title, username, URL, notes, category, and tags as you type.\n"
+            "Press / to focus this box."
+        )
         self.search_entry.textChanged.connect(self._on_search_changed)
         sl.addWidget(self.search_entry)
         self.category_filter = QComboBox()
         self.category_filter.addItem("All Categories")
+        self.category_filter.setToolTip("Show only entries in the selected category")
         self.category_filter.currentIndexChanged.connect(self._on_filter_changed)
         sl.addWidget(self.category_filter)
         self.tag_filter = QComboBox()
         self.tag_filter.addItem("All Tags")
+        self.tag_filter.setToolTip("Show only entries with the selected tag")
         self.tag_filter.currentIndexChanged.connect(self._on_filter_changed)
         sl.addWidget(self.tag_filter)
         layout.addLayout(sl)
@@ -72,6 +78,11 @@ class CredentialTable(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.SingleSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.setToolTip(
+            "Double-click a cell to copy it.\n"
+            "Click a Category cell to filter by it.\n"
+            "Right-click for more actions."
+        )
         self.table.itemSelectionChanged.connect(self._on_selection_changed)
         self.table.cellDoubleClicked.connect(self._on_cell_double_clicked)
         self.table.cellClicked.connect(self._on_cell_clicked)
@@ -82,11 +93,14 @@ class CredentialTable(QWidget):
 
         lbl = QHBoxLayout()
         self.add_btn = QPushButton("Add New")
+        self.add_btn.setToolTip("Create a new entry (Ctrl+N)")
         self.add_btn.clicked.connect(self.add_new_requested.emit)
         self.edit_btn = QPushButton("Edit")
+        self.edit_btn.setToolTip("Edit the selected entry (Ctrl+E)")
         self.edit_btn.clicked.connect(self.edit_requested.emit)
         self.edit_btn.setEnabled(False)
         self.delete_btn = QPushButton("Delete")
+        self.delete_btn.setToolTip("Delete the selected entry")
         self.delete_btn.clicked.connect(self.delete_requested.emit)
         self.delete_btn.setEnabled(False)
         lbl.addWidget(self.add_btn)

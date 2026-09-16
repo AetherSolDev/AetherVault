@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-12 16:33 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:46 CT (America/Chicago)
 # Path: aethervault/gui/credential_form.py
 # Purpose: Credential detail/edit form widget for the right panel.
 
@@ -134,6 +134,7 @@ class CredentialForm(QWidget):
         # Notes — collapsible section with preview
         self.notes_toggle = QToolButton()
         self.notes_toggle.setText("\u25b6 Notes")  # ▶ Notes
+        self.notes_toggle.setToolTip("Show or hide the notes editor for this entry")
         self.notes_toggle.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.notes_toggle.setCheckable(True)
         self.notes_toggle.setAutoRaise(True)
@@ -203,9 +204,11 @@ class CredentialForm(QWidget):
 
         fbl = QHBoxLayout()
         self.save_btn = QPushButton("Save")
+        self.save_btn.setToolTip("Save this entry (Ctrl+S)")
         self.save_btn.clicked.connect(lambda: self.save_requested.emit(self.get_form_data()))
         self.save_btn.hide()
         self.cancel_btn = QPushButton("Cancel")
+        self.cancel_btn.setToolTip("Discard changes (Esc)")
         self.cancel_btn.clicked.connect(self.cancel_requested.emit)
         self.cancel_btn.hide()
         fbl.addWidget(self.save_btn)

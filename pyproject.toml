@@ -1,5 +1,5 @@
 # Created: 2026-07-25
-# Last Edited: 2026-08-12 16:33 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:53 CT (America/Chicago)
 # Path: pyproject.toml
 # Purpose: Build configuration for pip-installable AetherVault package with CLI entry point.
 
@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aethervault-py"
-version = "6.7.0"
+version = "6.8.0"
 description = "A secure, local-first password manager with AES-256 encryption"
 authors = [
     {name = "AetherVault Team"},
@@ -18,12 +18,18 @@ license = {text = "GPL-3.0-only"}
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "PySide6>=6.5.0",
     "cryptography>=41.0.0",
 ]
 
+[project.optional-dependencies]
+# The desktop GUI needs Qt. Install with: pip install "aethervault-py[gui]"
+# The core SDK/CLI (aethervault.sdk, aethervault.cli) is headless and does NOT need PySide6,
+# so the package installs cleanly on Termux/Android and servers.
+gui = ["PySide6>=6.5.0"]
+
 [project.scripts]
 aethervault = "aethervault.__main__:run"
+aethervault-cli = "aethervault.cli:run"
 
 [tool.setuptools.packages.find]
 include = ["aethervault*"]

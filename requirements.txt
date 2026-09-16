@@ -1,10 +1,12 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-25 18:12 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:20 CT (America/Chicago)
 # Path: requirements.txt
 # Purpose: Project dependencies for AetherVault.
 
-# Application dependencies
-PySide6>=6.5.0
+# Core (SDK + CLI) — always required
 cryptography>=41.0.0
 
+# Desktop GUI only — equivalent to the pyproject "gui" extra.
+# Headless installs (Termux/Android, servers) can omit this line.
+PySide6>=6.5.0
 

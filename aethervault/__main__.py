@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-09 06:36 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:20 CT (America/Chicago)
 # Path: aethervault/__main__.py
 # Purpose: Application entry point with CLI switches (--version, --debug, --upgrade, --foreground).
 
@@ -15,11 +15,7 @@ import urllib.request
 import urllib.error
 from typing import Optional
 
-from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QApplication
-
 from aethervault import PROJECT_ROOT, VERSION
-from aethervault.gui.app import PySidePWManager
 
 GITHUB_TAGS_API = "https://api.github.com/repos/AetherSolDev/AetherVault/tags"
 
@@ -233,6 +229,24 @@ def run():
             stream=sys.stderr,
             format="%(levelname)s:%(name)s:%(message)s",
         )
+
+    # Import Qt lazily so --version/--upgrade work in a headless install
+    # (PySide6 is the optional "gui" extra). Fail with a helpful message instead
+    # of a bare ImportError when the GUI extra is not installed.
+    try:
+        from PySide6.QtCore import QTimer
+        from PySide6.QtWidgets import QApplication
+
+        from aethervault.gui.app import PySidePWManager
+    except ImportError as e:
+        print(
+            "AetherVault GUI requires PySide6, which is not installed.\n"
+            "  Install the GUI extra:    pip install 'aethervault-py[gui]'\n"
+            "  Or use the headless CLI:  python -m aethervault.cli --help\n"
+            f"({e})",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     if _should_detach(args.foreground, sys.platform, sys.stdin):
         detach_from_terminal()

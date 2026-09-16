@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-11 15:07 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:13 CT (America/Chicago)
 # Path: aethervault/core/engine.py
 # Purpose: Encryption, hashing, key derivation, backup/wipe, and settings management.
 
@@ -53,10 +53,10 @@ def derive_encryption_key(master_password_hash: str) -> bytes:
     return key
 
 
-def get_timestamped_backup_path() -> str:
-    """Return a backup file path with a human-readable timestamp."""
+def get_timestamped_backup_path(db_path: Optional[str] = None) -> str:
+    """Return a timestamped backup path beside ``db_path`` (default: the app vault)."""
     timestamp = time.strftime("%Y.%m.%d_%H%M%S")
-    db_dir = os.path.dirname(DB_PATH)
+    db_dir = os.path.dirname(db_path or DB_PATH)
     return os.path.join(db_dir, f"aethervault_{timestamp}.db.bak")
 
 
@@ -154,19 +154,22 @@ def clear_duress_password() -> bool:
         return False
 
 
-def rotate_backups(max_files: int = BACKUP_MAX_FILES) -> int:
-    """Prune timestamped .bak files in DATA_DIR, keeping the max_files most recent.
-    Returns the number of files removed."""
+def rotate_backups(
+    max_files: int = BACKUP_MAX_FILES, data_dir: Optional[str] = None
+) -> int:
+    """Prune timestamped .bak files, keeping the max_files most recent.
+    Returns the number of files removed. ``data_dir`` defaults to the app data dir."""
     if max_files <= 0:
         return 0
+    directory = data_dir or DATA_DIR
     backups = sorted(
-        f for f in os.listdir(DATA_DIR)
+        f for f in os.listdir(directory)
         if f.startswith("aethervault_") and f.endswith(".db.bak")
     )
     stale = backups[:-max_files]
     for f in stale:
         try:
-            os.remove(os.path.join(DATA_DIR, f))
+            os.remove(os.path.join(directory, f))
         except OSError:
             pass
     return len(stale)

@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-12 16:33 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:20 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -32,16 +32,26 @@ AetherVault is a portable, local password vault that stores your credentials in 
 ### System Requirements
 - **OS**: Windows 10+, Linux (any modern distro), macOS 12+
 - **Python**: 3.10+
-- **Dependencies**: PySide6, cryptography
+- **Dependencies**: cryptography (always); PySide6 (desktop GUI only)
 
 ### Install from PyPI
 
 The PyPI distribution is `aethervault-py`; the app/import/CLI name is `aethervault`.
+The desktop GUI is the **`gui` extra**; a plain install is headless (SDK + CLI only).
 
 ```bash
-pip install aethervault-py
+pip install 'aethervault-py[gui]'   # desktop app (pulls in PySide6/Qt)
 aethervault
 ```
+
+For a headless install (server, CI, or a phone via Termux on Android) — no Qt:
+
+```bash
+pip install aethervault-py          # cryptography only
+aethervault-cli --help
+```
+
+See [SDK.md](SDK.md) for the full SDK and CLI reference.
 
 ### Setup from Source
 
@@ -50,7 +60,7 @@ git clone https://github.com/AetherSolDev/AetherVault.git
 cd AetherVault
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -e .
+pip install -e '.[gui]'   # or: pip install -e .  (headless)
 aethervault
 ```
 
@@ -63,6 +73,7 @@ aethervault
 | `aethervault --debug` | Launch with debug logging to terminal |
 | `aethervault --upgrade` / `-u` | Check for updates and auto-upgrade (pip install aethervault-py, or git pull for source installs) |
 | `aethervault --foreground` / `-f` | Keep terminal attached (for debugging) |
+| `aethervault-cli <command>` | Headless CLI — see [SDK.md](SDK.md) |
 
 ### Standalone Executable
 A pre-built executable is available (see Releases). No Python installation required.

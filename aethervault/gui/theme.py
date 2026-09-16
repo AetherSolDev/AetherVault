@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-07-30 22:31 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:46 CT (America/Chicago)
 # Path: aethervault/gui/theme.py
 # Purpose: Unified theme system for AetherVault — dark/light palettes and QSS.
 
@@ -188,6 +188,12 @@ QMenu::item:selected {
 QSplitter::handle {
     background-color: #ced6e0;
 }
+QToolTip {
+    background-color: #2f3542;
+    color: #ffffff;
+    border: 1px solid #ced6e0;
+    padding: 4px 6px;
+}
 """
 
 DARK_STYLE = """
@@ -327,6 +333,12 @@ QMenu::item:selected {
 }
 QSplitter::handle {
     background-color: #555577;
+}
+QToolTip {
+    background-color: #3d3d5c;
+    color: #e8e8e8;
+    border: 1px solid #555577;
+    padding: 4px 6px;
 }
 """
 

@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-08-05 15:37 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:15 CT (America/Chicago)
 # Path: docs/sys/AetherVault.mmd
 # Purpose: Mermaid diagram and ASCII flowchart for AetherVault architecture.
 
@@ -423,7 +423,34 @@ classDiagram
         +to_dict()
     }
 
+    class Vault {
+        -db_path, key_file
+        -_db: DatabaseManager
+        +create(password)
+        +unlock(password)
+        +lock()
+        +list_entries()
+        +search(query)
+        +get(db_id)
+        +find(title, username)
+        +add(**fields)
+        +update(db_id, **fields)
+        +delete(db_id)
+        +backup()
+        +export_csv(path)
+        +import_csv(path)
+    }
+
+    class CLI {
+        +init / list / search / show
+        +add / update / delete
+        +export / import / backup
+        +--json, --vault-dir
+    }
+
     PySidePWManager --> DatabaseManager
+    Vault --> DatabaseManager : SDK (no GUI)
+    CLI ..> Vault : headless (no PySide6)
     DatabaseManager --> CredentialEntry
     DatabaseManager ..> core/engine : encrypt/decrypt
 ```

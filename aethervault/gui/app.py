@@ -1,5 +1,5 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-12 16:33 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:46 CT (America/Chicago)
 # Path: aethervault/gui/app.py
 # Purpose: Main application window — coordinates auth, menus, CRUD, import/export.
 
@@ -191,9 +191,14 @@ class PySidePWManager(QMainWindow):
         bl.setContentsMargins(0, 0, 0, 0)
         self.master_pass_entry = QLineEdit()
         self.master_pass_entry.setEchoMode(QLineEdit.Password)
+        self.master_pass_entry.setToolTip(
+            "Your master password is never stored — only a PBKDF2 hash of it.\n"
+            "If you forget it, the vault cannot be recovered."
+        )
         self.master_pass_entry.returnPressed.connect(self.action_btn_clicked)
         bl.addWidget(self.master_pass_entry)
         self.action_btn = QPushButton("Login")
+        self.action_btn.setToolTip("Unlock the vault")
         self.action_btn.clicked.connect(self.action_btn_clicked)
         bl.addWidget(self.action_btn)
         auth_layout.addWidget(block, alignment=Qt.AlignCenter)
@@ -211,10 +216,12 @@ class PySidePWManager(QMainWindow):
         if setup_mode:
             self.auth_title.setText("Setup Master Password")
             self.action_btn.setText("Set Master Password")
+            self.action_btn.setToolTip("Create the vault with this master password")
             self.master_pass_entry.setPlaceholderText("Enter new master password")
         else:
             self.auth_title.setText("Master Password")
             self.action_btn.setText("Login")
+            self.action_btn.setToolTip("Unlock the vault")
             self.master_pass_entry.setPlaceholderText("Enter Master Password")
         self.master_pass_entry.clear()
         self.master_pass_entry.setFocus()

@@ -71,7 +71,7 @@ No Python or pip needed. Grab the binary for your platform from the
 [Releases](https://github.com/AetherSolDev/AetherVault/releases) page
 (or the latest [Actions build](https://github.com/AetherSolDev/AetherVault/actions) artifacts):
 
-> Prefer a package manager? **`pip install aethervault-py`** (PyPI) works on Linux, macOS, and Windows.
+> Prefer a package manager? **`pip install 'aethervault-py[gui]'`** (PyPI) installs the desktop app on Linux, macOS, and Windows. Omit `[gui]` for the headless CLI/SDK.
 
 | Platform | Download |
 |----------|----------|
@@ -100,30 +100,31 @@ AetherVault is on **PyPI** (`aethervault-py`) and published to GitHub Releases o
 **Option 1 — pipx (recommended):**
 ```bash
 sudo apt install pipx          # Debian/Ubuntu; pacman -S python-pipx on Arch
-pipx install aethervault-py
+pipx install 'aethervault-py[gui]'
 pipx ensurepath                # adds ~/.local/bin to PATH if needed
 aethervault
 ```
 pipx installs each app in its own virtual environment, so no system-Python
 modification is needed and the `aethervault` command is available everywhere.
+The `[gui]` extra pulls in PySide6 (Qt); drop it for a headless install.
 
 **Option 2 — pip (all platforms):**
 ```bash
-pip install aethervault-py
+pip install 'aethervault-py[gui]'
 ```
 > On modern Linux distros (Ubuntu 23.04+, Debian 12+, Fedora, Arch), the
 > OS-managed Python blocks pip with a **PEP 668 "externally-managed-environment"**
 > error. In that case either use pipx above, a virtual environment (Option 3), or
 > install into your user site:
 > ```bash
-> pip install --user --break-system-packages aethervault-py
+> pip install --user --break-system-packages 'aethervault-py[gui]'
 > ```
 
 **Option 3 — Global install (editable):**
 ```bash
 git clone https://github.com/AetherSolDev/AetherVault.git
 cd AetherVault
-pip install --user --break-system-packages -e .
+pip install --user --break-system-packages -e '.[gui]'
 ```
 
 **Option 4 — Virtual environment:**
@@ -132,7 +133,7 @@ git clone https://github.com/AetherSolDev/AetherVault.git
 cd AetherVault
 python -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
-pip install -e .
+pip install -e '.[gui]'
 ```
 
 **Option 5 — Build yourself (PyInstaller):**
@@ -142,12 +143,21 @@ pyinstaller aethervault.spec
 # Output in dist/aethervault/
 ```
 
+**Option 6 — Headless CLI / SDK (no Qt):**
+```bash
+pip install aethervault-py        # cryptography only — no PySide6
+aethervault-cli --help
+```
+Use this on servers, CI, or a phone (**Termux on Android**) where Qt can't run.
+See [aethervault/docs/SDK.md](aethervault/docs/SDK.md) for the full SDK + CLI reference.
+
 ### Run
 
 ```bash
-aethervault            # Launch GUI (auto-detaches from terminal on Unix)
-aethervault --version  # Show installed version
-aethervault --help     # CLI usage
+aethervault              # Launch GUI (auto-detaches from terminal on Unix)
+aethervault-cli list     # Headless CLI — list entries
+aethervault --version    # Show installed version
+aethervault --help       # CLI usage
 ```
 
 ---
@@ -169,6 +179,7 @@ aethervault --help     # CLI usage
 | `aethervault --debug` | Launch with debug logging |
 | `aethervault --upgrade` / `-u` | Check for updates and auto-upgrade (`pip install --upgrade aethervault-py`; pipx installs: `pipx upgrade aethervault-py`) |
 | `aethervault --foreground` / `-f` | Keep terminal attached (debugging) |
+| `aethervault-cli <command>` | Headless CLI — `init`/`list`/`search`/`show`/`add`/`update`/`delete`/`export`/`import`/`backup` (see [SDK.md](aethervault/docs/SDK.md)) |
 
 ---
 

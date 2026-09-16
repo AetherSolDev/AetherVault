@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-11 15:07 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:13 CT (America/Chicago)
 # Path: aethervault/shared/database.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
@@ -172,12 +172,11 @@ class DatabaseManager:
             self.cursor = None
 
     def _find_latest_backup(self) -> Optional[str]:
-        """Return the most recent .db.bak backup path, or None if none exist."""
-        from aethervault.core.engine import DB_BACKUP_PATH
-
+        """Return the most recent .db.bak backup beside this vault, or None."""
         candidates = []
-        if os.path.exists(DB_BACKUP_PATH):
-            candidates.append(DB_BACKUP_PATH)
+        plain_backup = f"{self.db_path}.bak"
+        if os.path.exists(plain_backup):
+            candidates.append(plain_backup)
         db_dir = os.path.dirname(self.db_path)
         if os.path.isdir(db_dir):
             for name in os.listdir(db_dir):
@@ -339,18 +338,19 @@ class DatabaseManager:
             self.error_handler("Database Error", f"Error deleting credential: {e}")
 
     def create_pre_op_backup(self, operation: str) -> Optional[str]:
-        """Create a timestamped backup before a destructive operation.
+        """Create a timestamped backup beside the vault before a destructive operation.
         Returns the backup path or None."""
         if not os.path.exists(self.db_path):
             return None
+        db_dir = os.path.dirname(self.db_path)
         try:
             if self.conn:
                 self.conn.close()
             checkpoint_database(self.db_path)
-            backup_path = get_timestamped_backup_path()
-            os.makedirs(os.path.dirname(backup_path), exist_ok=True)
+            backup_path = get_timestamped_backup_path(self.db_path)
+            os.makedirs(db_dir, exist_ok=True)
             shutil.copyfile(self.db_path, backup_path)
-            rotate_backups()
+            rotate_backups(data_dir=db_dir)
             remote = load_settings().get("remote_backup_dir", "")
             mirror_backup(backup_path, remote)
             self._connect()

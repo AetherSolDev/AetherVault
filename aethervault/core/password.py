@@ -1,12 +1,12 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-05 15:35 CT (America/Chicago)
+# Last Edited: 2026-09-16 14:11 CT (America/Chicago)
 # Path: aethervault/core/password.py
 # Purpose: Password strength scoring and secure password generation.
 
 """Password strength scoring and secure password generation."""
 
-import random
 import re
+import secrets
 import string
 
 
@@ -54,14 +54,14 @@ def generate_strong_password(
         return ""
     password = []
     if use_lower:
-        password.append(random.choice(string.ascii_lowercase))
+        password.append(secrets.choice(string.ascii_lowercase))
     if use_upper:
-        password.append(random.choice(string.ascii_uppercase))
+        password.append(secrets.choice(string.ascii_uppercase))
     if use_digit:
-        password.append(random.choice(string.digits))
+        password.append(secrets.choice(string.digits))
     if use_symbol:
-        password.append(random.choice(string.punctuation))
+        password.append(secrets.choice(string.punctuation))
     while len(password) < length:
-        password.append(random.choice(all_chars))
-    random.shuffle(password)
+        password.append(secrets.choice(all_chars))
+    secrets.SystemRandom().shuffle(password)
     return "".join(password[:length])
