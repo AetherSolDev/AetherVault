@@ -1,0 +1,22 @@
+# Created: 2026-09-16
+# Last Edited: 2026-09-16 17:53 CT (America/Chicago)
+# Path: tools/docker-compose.sync.yml
+# Purpose: Compose file for the AetherVault sync server (OpenWrt/NAS/Docker host).
+
+services:
+  aethervault-sync:
+    build:
+      context: .
+      dockerfile: Dockerfile.sync
+    image: aethervault-sync:latest
+    container_name: aethervault-sync
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      AETHERVAULT_SYNC_TOKEN: "${AETHERVAULT_SYNC_TOKEN:?set AETHERVAULT_SYNC_TOKEN to a long random string}"
+    volumes:
+      - aethervault-sync-data:/data
+
+volumes:
+  aethervault-sync-data:
