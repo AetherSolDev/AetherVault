@@ -39,10 +39,6 @@
 
 </head>
 <body>
-<h1 id="created-2026-07-24">Created: 2026-07-24</h1>
-<h1 id="last-edited-2026-08-05-1751-ct-americachicago">Last Edited: 2026-08-05 17:51 CT (America/Chicago)</h1>
-<h1 id="path-docsuser_guidemd">Path: docs/USER_GUIDE.md</h1>
-<h1 id="purpose-user-facing-handbook-for-aethervault">Purpose: User-facing handbook for AetherVault.</h1>
 <h1 id="aethervault-user-guide">AetherVault — User Guide</h1>
 <h2 id="table-of-contents">Table of Contents</h2>
 <ol>
@@ -69,19 +65,25 @@
 <ul>
 <li><strong>OS</strong>: Windows 10+, Linux (any modern distro), macOS 12+</li>
 <li><strong>Python</strong>: 3.10+</li>
-<li><strong>Dependencies</strong>: PySide6, cryptography</li>
+<li><strong>Dependencies</strong>: cryptography (always); PySide6 (desktop GUI only)</li>
 </ul>
 <h3 id="install-from-pypi">Install from PyPI</h3>
-<p>The PyPI distribution is <code>aethervault-py</code>; the app/import/CLI name is <code>aethervault</code>.</p>
-<pre><code class="language-bash">pip install aethervault-py
+<p>The PyPI distribution is <code>aethervault-py</code>; the app/import/CLI name is <code>aethervault</code>.
+The desktop GUI is the <strong><code>gui</code> extra</strong>; a plain install is headless (SDK + CLI only).</p>
+<pre><code class="language-bash">pip install 'aethervault-py[gui]'   # desktop app (pulls in PySide6/Qt)
 aethervault
 </code></pre>
+<p>For a headless install (server, CI, or a phone via Termux on Android) — no Qt:</p>
+<pre><code class="language-bash">pip install aethervault-py          # cryptography only
+aethervault-cli --help
+</code></pre>
+<p>See <a href="SDK.md">SDK.md</a> for the full SDK and CLI reference.</p>
 <h3 id="setup-from-source">Setup from Source</h3>
 <pre><code class="language-bash">git clone https://github.com/AetherSolDev/AetherVault.git
 cd AetherVault
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -e .
+pip install -e '.[gui]'   # or: pip install -e .  (headless)
 aethervault
 </code></pre>
 <h3 id="cli-reference">CLI Reference</h3>
@@ -113,6 +115,10 @@ aethervault
 <td><code>aethervault --foreground</code> / <code>-f</code></td>
 <td>Keep terminal attached (for debugging)</td>
 </tr>
+<tr>
+<td><code>aethervault-cli &lt;command&gt;</code></td>
+<td>Headless CLI — see <a href="SDK.md">SDK.md</a></td>
+</tr>
 </tbody>
 </table>
 <h3 id="standalone-executable">Standalone Executable</h3>
@@ -137,7 +143,11 @@ aethervault
 <h3 id="credential-management">Credential Management</h3>
 <ul>
 <li>Add, edit, and delete credential entries</li>
-<li>Fields: Title, URL, Username, Email, Password, Phone, Address, Category, Notes</li>
+<li>Fields: Title, URL, Username, Email, Password, Phone, Address, Category, Tags</li>
+<li><strong>Notes</strong> — click the <strong>▶ Notes</strong> toggle to expand the rich-text editor (with B/I/U
+  formatting); a preview of the first line shows when collapsed</li>
+<li><strong>Custom Fields</strong> — click <strong>Custom Fields...</strong> to open a dialog for adding extra
+  field/value pairs (e.g. API keys, recovery codes); the field count shows next to the button</li>
 <li>Search/filter by title, username, URL, category, or notes</li>
 </ul>
 <h3 id="strong-password-generator">Strong Password Generator</h3>
@@ -157,6 +167,22 @@ aethervault
 <li>Copy buttons for password, username, and URL</li>
 <li>Clipboard auto-clears after 15 seconds</li>
 <li>Clipboard cleared on application lock</li>
+</ul>
+<h3 id="two-factor-totp-codes">Two-Factor (TOTP) Codes</h3>
+<ul>
+<li>Store an authenticator secret on any entry — AetherVault generates the rolling
+  6-digit code, so a separate authenticator app isn't needed.</li>
+<li><strong>Set up:</strong> open an entry in edit mode and click <strong>Set up 2FA...</strong>, then paste the
+  site's <code>otpauth://</code> URI or its base32 secret. You can also paste the site's recovery
+  codes and verify the current code before saving.</li>
+<li><strong>Use:</strong> the form shows the live code with a 30-second countdown; <strong>Copy Code</strong> copies
+  it (clipboard clears after 15s). The code updates automatically.</li>
+<li><strong>Recovery codes:</strong> expand <strong>▶ Recovery Codes</strong> to view or copy them.</li>
+<li><strong>Remove:</strong> in edit mode, click <strong>Remove 2FA</strong> to clear the secret and codes.</li>
+<li>Secrets and recovery codes are encrypted at rest like passwords and are <strong>excluded
+  from CSV exports</strong>.</li>
+<li><strong>Wrong code?</strong> TOTP needs an accurate clock — make sure your computer's date/time is
+  correct and set to sync automatically.</li>
 </ul>
 <h3 id="data-management">Data Management</h3>
 <ul>
@@ -220,6 +246,25 @@ aethervault
 </tr>
 </tbody>
 </table>
+<h3 id="remote-backup-folder">Remote Backup Folder</h3>
+<p>In addition to local backups, AetherVault can mirror every backup to a second
+location — a NAS share, USB drive, or any other mounted folder — as a
+dual-backup safety copy.</p>
+<ul>
+<li><strong>Set it up:</strong> <code>Settings &gt; Remote Backup Folder...</code> and pick a directory. The
+  choice is saved and reused for all future backups.</li>
+<li><strong>What happens:</strong> every manual backup (<code>File &gt; Backup</code>) and every automatic
+  pre-operation backup (before import, duplicate removal, etc.) is also copied
+  to the folder, rotated to keep the 5 most recent copies — matching the local
+  rotation.</li>
+<li><strong>Security:</strong> the remote copy is the same encrypted <code>.db.bak</code> file, so it is
+  safe to leave on a NAS or shared drive. The <strong>duress wipe does not touch the
+  remote folder</strong> — it survives as your recovery copy.</li>
+<li><strong>Clear it:</strong> run <code>Settings &gt; Remote Backup Folder...</code> again and click
+  <strong>Cancel</strong> with no folder selected, then confirm "Clear".</li>
+<li><strong>Restore from it:</strong> use <code>File &gt; Restore Vault</code> and navigate to the folder —
+  the <code>.db.bak</code> filter is enabled.</li>
+</ul>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <h3 id="icon-file-not-found-warning-in-console">"Icon file not found" warning in console</h3>
 <p>The app icon is optional. The application will run fine without it. To resolve, place an icon file in an <code>assets/</code> directory next to the executable.</p>

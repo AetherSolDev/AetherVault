@@ -26,6 +26,8 @@ dependencies = [
 # The core SDK/CLI (aethervault.sdk, aethervault.cli) is headless and does NOT need PySide6,
 # so the package installs cleanly on Termux/Android and servers.
 gui = ["PySide6>=6.5.0"]
+# Docs tooling: renders USER_GUIDE.md -> USER_GUIDE.html (scripts/build_user_guide.py).
+docs = ["markdown>=3.4"]
 
 [project.scripts]
 aethervault = "aethervault.__main__:run"
