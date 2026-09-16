@@ -148,13 +148,28 @@ aethervault
   formatting); a preview of the first line shows when collapsed</li>
 <li><strong>Custom Fields</strong> — click <strong>Custom Fields...</strong> to open a dialog for adding extra
   field/value pairs (e.g. API keys, recovery codes); the field count shows next to the button</li>
-<li>Search/filter by title, username, URL, category, or notes</li>
+<li>Search/filter by title, username, URL, category, notes, or tags; use the Category and Tag
+  dropdowns next to the search box</li>
+<li><strong>Sort</strong> by clicking a column header (click again to reverse the order)</li>
+<li><strong>Double-click a cell</strong> to copy its value; <strong>click a Category cell</strong> to filter by it</li>
+<li><strong>Right-click a row</strong> for Copy Username / Copy Password / Edit / Delete</li>
+<li>Keyboard: <code>Ctrl+N</code> new, <code>Ctrl+E</code> edit, <code>Ctrl+S</code> save, <code>Esc</code> cancel, <code>/</code> focus search</li>
 </ul>
 <h3 id="strong-password-generator">Strong Password Generator</h3>
 <ul>
 <li>Configurable length (8–64 characters)</li>
 <li>Toggle character sets: lowercase, uppercase, digits, symbols</li>
 <li>One-click "Use Password" inserts into the form</li>
+</ul>
+<h3 id="password-health-report">Password Health Report</h3>
+<ul>
+<li><code>Tools &gt; Password Health</code> scans the vault for weak, short, and reused passwords</li>
+<li>Use it to prioritize which credentials to rotate first</li>
+</ul>
+<h3 id="favicons">Favicons</h3>
+<ul>
+<li><code>Tools &gt; Fetch Favicons</code> downloads site icons for entries that have a URL (cached for the
+  session); the icon appears next to the title in the list</li>
 </ul>
 <h3 id="auto-lock-security">Auto-Lock Security</h3>
 <ul>
@@ -188,7 +203,7 @@ aethervault
 <ul>
 <li><strong>Auto-Backup</strong>: Automatic backup on save and application shutdown</li>
 <li><strong>Manual Backup</strong>: <code>File &gt; Backup Vault</code></li>
-<li><strong>Restore</strong>: <code>File &gt; Restore Vault</code> — select a <code>.db</code> backup file</li>
+<li><strong>Restore</strong>: <code>File &gt; Restore Vault</code> — select a <code>.db</code> or <code>.db.bak</code> backup file</li>
 <li><strong>Export</strong>: <code>File &gt; Export Vault (CSV)</code> — unencrypted plain text</li>
 <li><strong>Import</strong>: <code>File &gt; Import Vault (CSV)</code> — add/update from CSV</li>
 </ul>
@@ -204,6 +219,16 @@ aethervault
 <li>Access via <code>Settings &gt; Auto-Lock</code> menu</li>
 <li>Options: After 1, 3, 5, 10, 30 minutes, or Never</li>
 <li>Setting persists across sessions in <code>.app_settings.json</code></li>
+</ul>
+<h3 id="theme">Theme</h3>
+<ul>
+<li><code>Settings &gt; Theme</code> toggles <strong>Dark / Light</strong>; the choice is saved in <code>.app_settings.json</code>.</li>
+</ul>
+<h3 id="portable-mode">Portable Mode</h3>
+<ul>
+<li><code>Settings &gt; Portable Mode</code> keeps all data (vault, key, settings, backups) in the
+  application directory, so the app and its data travel together on a USB stick.</li>
+<li>Toggling it creates or removes a <code>.portable</code> marker file in the app directory.</li>
 </ul>
 <h3 id="duress-password-optional">Duress Password (optional)</h3>
 <ul>
@@ -276,7 +301,10 @@ dual-backup safety copy.</p>
 <ul>
 <li><strong>Can I recover a forgotten master password?</strong> No. The master password is not stored; only a one-way hash is saved. Without the original password, your vault is permanently inaccessible.</li>
 <li><strong>Is my data secure?</strong> Yes. All passwords are encrypted with AES-256 (Fernet). The encryption key is derived from your master password using PBKDF2 with 600,000 iterations.</li>
-<li><strong>Can I use the same database on multiple computers?</strong> Yes. Copy the <code>data/aethervault.db</code> file to another computer with the application installed. Use the same master password to unlock it.</li>
+<li><strong>Can I use the same database on multiple computers?</strong> Yes — copy <strong>both</strong>
+  <code>data/aethervault.db</code> and <code>data/.master.key</code> to the other computer (the key file holds the
+  hash needed to derive the encryption key), then unlock with the same master password. Don't
+  run two copies against the same synced folder at once.</li>
 <li><strong>How do I migrate from another password manager?</strong> Export your data to CSV and import it via <code>File &gt; Import Vault (CSV)</code>. The CSV must have columns: title, username, password, url, email, phone, address, category, notes.</li>
 </ul>
 </body>

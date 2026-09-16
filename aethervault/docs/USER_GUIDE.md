@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
+# Last Edited: 2026-09-16 17:26 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -104,12 +104,25 @@ A pre-built executable is available (see Releases). No Python installation requi
   formatting); a preview of the first line shows when collapsed
 - **Custom Fields** — click **Custom Fields...** to open a dialog for adding extra
   field/value pairs (e.g. API keys, recovery codes); the field count shows next to the button
-- Search/filter by title, username, URL, category, or notes
+- Search/filter by title, username, URL, category, notes, or tags; use the Category and Tag
+  dropdowns next to the search box
+- **Sort** by clicking a column header (click again to reverse the order)
+- **Double-click a cell** to copy its value; **click a Category cell** to filter by it
+- **Right-click a row** for Copy Username / Copy Password / Edit / Delete
+- Keyboard: `Ctrl+N` new, `Ctrl+E` edit, `Ctrl+S` save, `Esc` cancel, `/` focus search
 
 ### Strong Password Generator
 - Configurable length (8–64 characters)
 - Toggle character sets: lowercase, uppercase, digits, symbols
 - One-click "Use Password" inserts into the form
+
+### Password Health Report
+- `Tools > Password Health` scans the vault for weak, short, and reused passwords
+- Use it to prioritize which credentials to rotate first
+
+### Favicons
+- `Tools > Fetch Favicons` downloads site icons for entries that have a URL (cached for the
+  session); the icon appears next to the title in the list
 
 ### Auto-Lock Security
 - Configurable inactivity timeout (1, 3, 5, 10, 30 minutes, or Never)
@@ -139,7 +152,7 @@ A pre-built executable is available (see Releases). No Python installation requi
 ### Data Management
 - **Auto-Backup**: Automatic backup on save and application shutdown
 - **Manual Backup**: `File > Backup Vault`
-- **Restore**: `File > Restore Vault` — select a `.db` backup file
+- **Restore**: `File > Restore Vault` — select a `.db` or `.db.bak` backup file
 - **Export**: `File > Export Vault (CSV)` — unencrypted plain text
 - **Import**: `File > Import Vault (CSV)` — add/update from CSV
 
@@ -154,6 +167,14 @@ A pre-built executable is available (see Releases). No Python installation requi
 - Access via `Settings > Auto-Lock` menu
 - Options: After 1, 3, 5, 10, 30 minutes, or Never
 - Setting persists across sessions in `.app_settings.json`
+
+### Theme
+- `Settings > Theme` toggles **Dark / Light**; the choice is saved in `.app_settings.json`.
+
+### Portable Mode
+- `Settings > Portable Mode` keeps all data (vault, key, settings, backups) in the
+  application directory, so the app and its data travel together on a USB stick.
+- Toggling it creates or removes a `.portable` marker file in the app directory.
 
 ### Duress Password (optional)
 - Configured via `Settings > Duress Password...` (requires your master password)
@@ -209,5 +230,8 @@ Adjust the auto-lock timeout in `Settings > Auto-Lock`. The default is 3 minutes
 
 - **Can I recover a forgotten master password?** No. The master password is not stored; only a one-way hash is saved. Without the original password, your vault is permanently inaccessible.
 - **Is my data secure?** Yes. All passwords are encrypted with AES-256 (Fernet). The encryption key is derived from your master password using PBKDF2 with 600,000 iterations.
-- **Can I use the same database on multiple computers?** Yes. Copy the `data/aethervault.db` file to another computer with the application installed. Use the same master password to unlock it.
+- **Can I use the same database on multiple computers?** Yes — copy **both**
+  `data/aethervault.db` and `data/.master.key` to the other computer (the key file holds the
+  hash needed to derive the encryption key), then unlock with the same master password. Don't
+  run two copies against the same synced folder at once.
 - **How do I migrate from another password manager?** Export your data to CSV and import it via `File > Import Vault (CSV)`. The CSV must have columns: title, username, password, url, email, phone, address, category, notes.
