@@ -226,9 +226,10 @@ All SDK errors derive from `VaultError`:
 - **Encryption is unchanged.** Passwords (and TOTP secrets) are encrypted at rest with
   AES-256/Fernet; the key is derived from the stored master-password hash exactly as the
   GUI does. Plaintext is only held in memory while a `Vault` is unlocked.
-- **The duress password is not honoured.** Entering the duress password through the SDK or
-  CLI raises `AuthenticationError`; it never wipes the vault. This makes automation safe by
-  construction — the destructive duress path exists only in the GUI login screen.
+- **Duress is local-only.** The CLI honours the duress password by default: it wipes **only
+  that vault's local files**, returns the same `Invalid master password` error, and exits. It
+  never syncs, so the hub and every other device are unaffected. Disable it for automation
+  with `--no-duress` (or `Vault.unlock(..., allow_duress_wipe=False)`, the SDK default).
 - **CSV export is plaintext.** `export`/`export_csv` write decrypted passwords. Treat the
   output file as sensitive and delete it when done.
 - **Keep the master key file safe.** `data/.master.key` stores the master-password hash;

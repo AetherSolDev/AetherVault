@@ -106,9 +106,12 @@ def _entry_password(args: argparse.Namespace) -> str:
 
 
 def _open_vault(args: argparse.Namespace) -> Vault:
-    """Open and unlock the vault described by the CLI options."""
+    """Open and unlock the vault. Honours the duress password unless ``--no-duress``."""
     db_path, key_file = _resolve_paths(args)
-    return Vault(db_path, key_file).unlock(_master_password(args))
+    return Vault(db_path, key_file).unlock(
+        _master_password(args),
+        allow_duress_wipe=not getattr(args, "no_duress", False),
+    )
 
 
 def _entry_dict(entry: CredentialEntry, show_password: bool = False) -> Dict[str, Any]:
@@ -389,6 +392,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Directory holding aethervault.db + .master.key")
     parser.add_argument("--master-password-stdin", action="store_true",
                         help="Read the master password from stdin")
+    parser.add_argument("--no-duress", action="store_true",
+                        help="Do not honour the duress password (never wipe on login)")
 
     sub = parser.add_subparsers(dest="command", metavar="COMMAND")
 

@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-09-16 14:13 CT (America/Chicago)
+# Last Edited: 2026-09-16 17:53 CT (America/Chicago)
 # Path: aethervault/core/engine.py
 # Purpose: Encryption, hashing, key derivation, backup/wipe, and settings management.
 
@@ -260,6 +260,31 @@ def wipe_vault() -> bool:
             continue
         if name == ".portable":
             continue
+        _overwrite_and_remove(path)
+    return True
+
+
+def wipe_vault_files(db_path: str, key_file: str) -> bool:
+    """Destroy only the vault's own files at a custom path (SDK/CLI duress).
+
+    Unlike :func:`wipe_vault` (which clears the whole dedicated data directory), this leaves
+    unrelated files in the directory alone — important when ``--vault-dir`` points at a
+    shared/synced folder. Keys are removed first (crypto erasure), then the database, its
+    WAL/SHM sidecars, backups, and settings."""
+    directory = os.path.dirname(os.path.abspath(db_path))
+    key_dir = os.path.dirname(os.path.abspath(key_file))
+    for key in (key_file, os.path.join(key_dir, ".duress.key")):
+        _overwrite_and_remove(key)
+    targets = [
+        db_path, f"{db_path}-wal", f"{db_path}-shm", f"{db_path}.bak",
+        os.path.join(directory, ".app_settings.json"),
+        os.path.join(directory, "sync.json"),
+    ]
+    if os.path.isdir(directory):
+        for name in os.listdir(directory):
+            if name.startswith("aethervault_") and name.endswith(".db.bak"):
+                targets.append(os.path.join(directory, name))
+    for path in targets:
         _overwrite_and_remove(path)
     return True
 
