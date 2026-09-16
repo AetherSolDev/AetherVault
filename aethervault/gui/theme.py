@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-09-16 14:46 CT (America/Chicago)
+# Last Edited: 2026-09-16 17:28 CT (America/Chicago)
 # Path: aethervault/gui/theme.py
 # Purpose: Unified theme system for AetherVault — dark/light palettes and QSS.
 
@@ -150,6 +150,9 @@ QProgressBar {
 QProgressBar::chunk {
     border-radius: 4px;
 }
+QHeaderView {
+    color: #2f3542;
+}
 QHeaderView::section {
     background-color: #f1f2f6;
     padding: 4px 6px;
@@ -158,6 +161,7 @@ QHeaderView::section {
     border-bottom: 1px solid #ced6e0;
     font-weight: 600;
     font-size: 11pt;
+    color: #2f3542;
 }
 QLabel {
     color: #2f3542;
@@ -297,6 +301,9 @@ QProgressBar {
 }
 QProgressBar::chunk {
     border-radius: 4px;
+}
+QHeaderView {
+    color: #e8e8e8;
 }
 QHeaderView::section {
     background-color: #3d3d5c;
