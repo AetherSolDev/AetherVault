@@ -1,8 +1,7 @@
 # Created: 2026-09-16
-# Last Edited: 2026-09-16 14:11 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: aethervault/cli.py
 # Purpose: Headless command-line interface to a vault (no GUI/PySide6 dependency).
-
 """Command-line interface for AetherVault.
 
 A headless front-end over :class:`aethervault.sdk.Vault` for terminals — and for
@@ -30,11 +29,13 @@ import getpass
 import json
 import os
 import sys
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from aethervault import VERSION
 from aethervault.core.engine import DB_PATH, MASTER_KEY_FILE
 from aethervault.core.password import generate_strong_password
+from aethervault.core.totp import generate_code, resolve_config
 from aethervault.sdk import Vault, VaultError
 from aethervault.shared.models import CredentialEntry
 
@@ -46,7 +47,11 @@ MASTER_PASSWORD_ENV = "AETHERVAULT_MASTER_PASSWORD"
 _FIELD_FLAGS = (
     "title", "url", "username", "email", "phone",
     "address", "category", "notes", "tags", "custom_fields",
+    "totp_secret", "recovery_codes",
 )
+
+#: Secret fields masked in output unless ``--show-password`` is given.
+_MASKED_FIELDS = ("password", "totp_secret", "recovery_codes")
 
 
 # --------------------------------------------------------------------------- #
@@ -105,10 +110,12 @@ def _open_vault(args: argparse.Namespace) -> Vault:
 
 
 def _entry_dict(entry: CredentialEntry, show_password: bool = False) -> Dict[str, Any]:
-    """Serialize an entry, masking the password unless explicitly requested."""
+    """Serialize an entry, masking secret fields unless explicitly requested."""
     data = entry.to_dict()
-    if not show_password and data.get("password"):
-        data["password"] = "*" * 8
+    if not show_password:
+        for field in _MASKED_FIELDS:
+            if data.get(field):
+                data[field] = "*" * 8
     return data
 
 
@@ -276,6 +283,26 @@ def cmd_backup(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_totp(args: argparse.Namespace) -> int:
+    with _open_vault(args) as vault:
+        entry = vault.get(args.id)
+        value = entry.totp_secret
+    if not value:
+        raise VaultError(f"Entry {args.id} has no TOTP secret.")
+    config = resolve_config(value)
+    code = generate_code(config["secret"], digits=config["digits"],
+                         period=config["period"], algorithm=config["algorithm"])
+    remaining = config["period"] - int(time.time()) % config["period"]
+    if args.json:
+        print(json.dumps({
+            "db_id": args.id, "code": code, "remaining": remaining,
+            "period": config["period"], "digits": config["digits"],
+        }))
+    else:
+        print(f"{code}  ({remaining}s remaining)")
+    return 0
+
+
 # --------------------------------------------------------------------------- #
 # Parser
 # --------------------------------------------------------------------------- #
@@ -291,6 +318,10 @@ def _add_field_flags(parser: argparse.ArgumentParser, include_password: bool = T
     parser.add_argument("--notes", help="Plain-text notes")
     parser.add_argument("--tags", help="Comma-separated tags")
     parser.add_argument("--custom_fields", help="Custom fields as a JSON string")
+    parser.add_argument("--totp-secret", dest="totp_secret",
+                        help="TOTP base32 secret or otpauth:// URI")
+    parser.add_argument("--recovery-codes", dest="recovery_codes",
+                        help="TOTP recovery codes (multi-line)")
     if include_password:
         parser.add_argument("--password", help="Password (prompted if omitted)")
         parser.add_argument(
@@ -368,6 +399,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_backup = sub.add_parser("backup", help="Create a timestamped vault backup")
     p_backup.set_defaults(func=cmd_backup)
+
+    p_totp = sub.add_parser("totp", help="Show the current TOTP code for an entry")
+    p_totp.add_argument("id", type=int, help="Entry db_id")
+    p_totp.add_argument("--json", action="store_true", help="Output JSON")
+    p_totp.set_defaults(func=cmd_totp)
 
     return parser
 

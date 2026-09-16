@@ -1,10 +1,9 @@
 # Created: 2026-08-05
-# Last Edited: 2026-08-12 16:33 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: tests/test_credential_form.py
-# Purpose: Unit tests for the CredentialForm copy buttons (regression for late-binding lambda bug)
-#          and the collapsible notes / custom-fields dialog integration (v6.6.1).
+# Purpose: Unit tests for the CredentialForm copy buttons, notes/custom-fields, and TOTP.
 
-"""Unit tests for the CredentialForm copy buttons and notes/custom-fields integration."""
+"""Unit tests for the CredentialForm copy buttons, notes/custom-fields, and TOTP."""
 
 import os
 
@@ -142,3 +141,101 @@ class TestCustomFieldsDialogIntegration:
         form._update_cf_count()
         assert form.cf_count_label.text() == "(1 field)"
         assert form.get_form_data()["custom_fields"] == '[{"field": "Key", "value": "Value"}]'
+
+
+class TestTotpIntegration:
+    """A21 — TOTP section in the credential form."""
+
+    SECRET = "JBSWY3DPEHPK3PXP"
+
+    def test_section_hidden_and_button_shown_without_secret(self, form):
+        form.fill_form(CredentialEntry(title="T", password="p"))
+        assert form.totp_section.isHidden() is True
+        assert form.totp_btn.isHidden() is False
+
+    def test_section_shown_with_secret(self, form):
+        form.fill_form(CredentialEntry(title="T", password="p", totp_secret=self.SECRET))
+        assert form.totp_section.isHidden() is False
+        assert form.totp_btn.isHidden() is True
+        assert len(form.totp_section.current_code()) == 6
+        assert form.totp_section.current_code().isdigit()
+
+    def test_countdown_in_range(self, form):
+        form.fill_form(CredentialEntry(title="T", password="p", totp_secret=self.SECRET))
+        assert 0 <= form.totp_section.countdown.value() <= 30
+
+    def test_form_data_includes_totp(self, form):
+        entry = CredentialEntry(title="T", password="p", totp_secret=self.SECRET,
+                                recovery_codes="a\nb")
+        form.fill_form(entry)
+        data = form.get_form_data()
+        assert data["totp_secret"] == self.SECRET
+        assert data["recovery_codes"] == "a\nb"
+
+    def test_remove_clears_totp_and_marks_modified(self, form):
+        form.fill_form(CredentialEntry(title="T", password="p", totp_secret=self.SECRET))
+        form.is_editing = True
+        form.totp_section.remove_requested.emit()
+        assert form._totp_secret == ""
+        assert form._recovery_codes == ""
+        assert form.totp_section.isHidden() is True
+        assert form.get_form_data()["totp_secret"] == ""
+
+    def test_copy_code_emits_code(self, form):
+        form.fill_form(CredentialEntry(title="T", password="p", totp_secret=self.SECRET))
+        emissions = []
+        form.copy_requested.connect(lambda text, name: emissions.append((name, text)))
+        form.totp_section.copy_btn.click()
+        assert emissions
+        assert emissions[0][0] == "2FA code"
+        assert emissions[0][1].isdigit() and len(emissions[0][1]) == 6
+
+    def test_otpauth_uri_honours_custom_digits(self, form):
+        import base64
+        secret = base64.b32encode(b"12345678901234567890").decode("ascii")
+        uri = f"otpauth://totp/Acme:joe?secret={secret}&digits=8"
+        form.fill_form(CredentialEntry(title="T", password="p", totp_secret=uri))
+        assert len(form.totp_section.current_code()) == 8
+
+
+class TestTotpSetupDialog:
+    def test_raw_secret_round_trip(self, qapp):
+        from aethervault.gui.dialogs import TOTPSetupDialog
+        dlg = TOTPSetupDialog()
+        dlg.secret_input.setText("JBSWY3DPEHPK3PXP")
+        dlg.recovery_input.setPlainText("one\ntwo")
+        dlg.accept()
+        assert dlg.get_secret() == "JBSWY3DPEHPK3PXP"
+        assert dlg.get_raw() == "JBSWY3DPEHPK3PXP"
+        assert dlg.get_recovery_codes() == "one\ntwo"
+
+    def test_otpauth_uri_round_trip(self, qapp):
+        import base64
+        from aethervault.gui.dialogs import TOTPSetupDialog
+        secret = base64.b32encode(b"12345678901234567890").decode("ascii")
+        uri = f"otpauth://totp/Acme:joe?secret={secret}&digits=8&period=60"
+        dlg = TOTPSetupDialog()
+        dlg.secret_input.setText(uri)
+        dlg.accept()
+        assert dlg.get_secret() == secret
+        assert dlg.get_raw() == uri
+        assert dlg.get_config()["digits"] == 8
+
+    def test_invalid_secret_is_rejected(self, qapp, monkeypatch):
+        from aethervault.gui import dialogs
+        from aethervault.gui.dialogs import TOTPSetupDialog
+        monkeypatch.setattr(dialogs.QMessageBox, "warning", lambda *a, **k: None)
+        dlg = TOTPSetupDialog()
+        dlg.secret_input.setText("@@@@")
+        dlg.accept()
+        assert dlg.get_secret() == ""
+
+    def test_wrong_verify_code_is_rejected(self, qapp, monkeypatch):
+        from aethervault.gui import dialogs
+        from aethervault.gui.dialogs import TOTPSetupDialog
+        monkeypatch.setattr(dialogs.QMessageBox, "warning", lambda *a, **k: None)
+        dlg = TOTPSetupDialog()
+        dlg.secret_input.setText("JBSWY3DPEHPK3PXP")
+        dlg.verify_input.setText("000000")
+        dlg.accept()
+        assert dlg.get_secret() == ""

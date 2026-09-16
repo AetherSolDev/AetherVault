@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-09-16 14:15 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: docs/sys/AetherVault.mmd
 # Purpose: Mermaid diagram and ASCII flowchart for AetherVault architecture.
 
@@ -418,7 +418,8 @@ classDiagram
         +db_id, title, url, username
         +email, password, phone, address
         +category, notes, tags
-        +custom_fields, parent_id
+        +custom_fields, totp_secret, recovery_codes
+        +parent_id
         +created_at, modified_at
         +to_dict()
     }
@@ -453,6 +454,7 @@ classDiagram
     CLI ..> Vault : headless (no PySide6)
     DatabaseManager --> CredentialEntry
     DatabaseManager ..> core/engine : encrypt/decrypt
+    DatabaseManager ..> core/totp : RFC 6238 codes
 ```
 
 ## CI/CD Pipeline

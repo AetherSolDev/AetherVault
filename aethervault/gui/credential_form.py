@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-09-16 14:46 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: aethervault/gui/credential_form.py
 # Purpose: Credential detail/edit form widget for the right panel.
 
@@ -24,8 +24,9 @@ from PySide6.QtWidgets import (
 
 from aethervault.shared.models import CredentialEntry
 from aethervault.gui.click_to_copy_filter import ClickToCopyFilter
-from aethervault.gui.dialogs import CustomFieldsDialog
+from aethervault.gui.dialogs import CustomFieldsDialog, TOTPSetupDialog
 from aethervault.gui.password_strength import PasswordStrengthBar
+from aethervault.gui.totp_section import TotpSection
 
 
 class CredentialForm(QWidget):
@@ -43,6 +44,8 @@ class CredentialForm(QWidget):
         self.input_fields = {}
         self._custom_fields_json = "[]"
         self._notes_expanded = False
+        self._totp_secret = ""
+        self._recovery_codes = ""
         self._build_ui()
 
     def _build_ui(self):
@@ -202,6 +205,20 @@ class CredentialForm(QWidget):
         cf_row.addStretch()
         layout.addLayout(cf_row)
 
+        # 2FA / TOTP — setup button (no secret) or live code section (secret present)
+        totp_row = QHBoxLayout()
+        self.totp_btn = QPushButton("Set up 2FA...")
+        self.totp_btn.setToolTip("Add a TOTP authenticator secret to this entry")
+        self.totp_btn.clicked.connect(self._open_totp_dialog)
+        totp_row.addWidget(self.totp_btn)
+        totp_row.addStretch()
+        layout.addLayout(totp_row)
+
+        self.totp_section = TotpSection()
+        self.totp_section.copy_requested.connect(self.copy_requested.emit)
+        self.totp_section.remove_requested.connect(self._remove_totp)
+        layout.addWidget(self.totp_section)
+
         fbl = QHBoxLayout()
         self.save_btn = QPushButton("Save")
         self.save_btn.setToolTip("Save this entry (Ctrl+S)")
@@ -245,6 +262,31 @@ class CredentialForm(QWidget):
             self._update_cf_count()
             self._on_field_modified()
 
+    def _open_totp_dialog(self):
+        dlg = TOTPSetupDialog(self._totp_secret, self._recovery_codes, self)
+        if dlg.exec() == QDialog.Accepted:
+            self._totp_secret = dlg.get_raw()
+            self._recovery_codes = dlg.get_recovery_codes()
+            self._refresh_totp()
+            self._on_field_modified()
+
+    def _remove_totp(self):
+        self._totp_secret = ""
+        self._recovery_codes = ""
+        self._refresh_totp()
+        self._on_field_modified()
+
+    def _refresh_totp(self):
+        """Show the live code section when a secret is set, else the setup button."""
+        if self._totp_secret:
+            self.totp_section.set_entry(self._totp_secret, self._recovery_codes)
+            self.totp_section.show()
+            self.totp_btn.hide()
+        else:
+            self.totp_section.clear()
+            self.totp_section.hide()
+            self.totp_btn.show()
+
     def _update_cf_count(self):
         try:
             pairs = json.loads(self._custom_fields_json)
@@ -274,6 +316,8 @@ class CredentialForm(QWidget):
         data = {k: e.text() for k, e in self.input_fields.items()}
         data["notes"] = self.notes_entry.toHtml()
         data["custom_fields"] = self._custom_fields_json
+        data["totp_secret"] = self._totp_secret
+        data["recovery_codes"] = self._recovery_codes
         data["db_id"] = self.current_entry_id
         return data
 
@@ -288,6 +332,9 @@ class CredentialForm(QWidget):
         self.notes_entry.blockSignals(False)
         self._custom_fields_json = entry.custom_fields or "[]"
         self._update_cf_count()
+        self._totp_secret = entry.totp_secret or ""
+        self._recovery_codes = entry.recovery_codes or ""
+        self._refresh_totp()
         self._update_notes_preview()
         self.current_entry_id = entry.db_id
         self.is_form_modified = False
@@ -305,6 +352,9 @@ class CredentialForm(QWidget):
         self.notes_entry.blockSignals(False)
         self._custom_fields_json = "[]"
         self._update_cf_count()
+        self._totp_secret = ""
+        self._recovery_codes = ""
+        self._refresh_totp()
         self._update_notes_preview()
         if self.password_entry_ref.echoMode() == QLineEdit.EchoMode.Normal:
             self.password_entry_ref.setEchoMode(QLineEdit.EchoMode.Password)
@@ -320,6 +370,8 @@ class CredentialForm(QWidget):
         self.notes_toggle.setEnabled(True)
         self.cf_btn.setEnabled(True)
         self.cf_btn.setVisible(True)
+        self.totp_btn.setEnabled(not ro)
+        self.totp_section.set_editable(not ro)
         for btn in [self.notes_bold_btn, self.notes_italic_btn, self.notes_underline_btn]:
             btn.setVisible(not ro)
 

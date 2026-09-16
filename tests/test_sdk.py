@@ -146,6 +146,17 @@ class TestCrud:
         with pytest.raises(EntryNotFoundError):
             vault.delete(999)
 
+    def test_totp_code(self, vault):
+        entry_id = vault.add(title="GitHub", password="p",
+                             totp_secret="JBSWY3DPEHPK3PXP")
+        code = vault.totp_code(entry_id)
+        assert code.isdigit() and len(code) == 6
+
+    def test_totp_code_without_secret_raises(self, vault):
+        entry_id = vault.add(title="GitHub", password="p")
+        with pytest.raises(VaultError, match="no TOTP"):
+            vault.totp_code(entry_id)
+
     def test_search_matches_multiple_fields(self, vault):
         vault.add(title="GitHub", username="octocat", password="x")
         vault.add(title="GitLab", category="dev", password="y")

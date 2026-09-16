@@ -1,5 +1,5 @@
 # Created: 2026-09-16
-# Last Edited: 2026-09-16 14:20 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: docs/SDK.md
 # Purpose: Reference for the headless SDK (aethervault.sdk) and CLI (aethervault.cli).
 
@@ -94,12 +94,18 @@ order).
 | `add --title T [--password P \| --generate [LEN]] [fields...] [--json]` | Add an entry |
 | `update ID [fields...] [--password P \| --generate [LEN]] [--json]` | Update fields on an entry |
 | `delete ID [--yes]` | Delete an entry |
+| `totp ID [--json]` | Print the current TOTP code for an entry |
 | `export PATH` | Export all entries to CSV |
 | `import PATH` | Import entries from CSV |
 | `backup` | Create a timestamped backup beside the vault |
 
 `fields...` are any of: `--url --username --email --phone --address --category --notes
---tags --custom_fields`.
+--tags --custom_fields --totp-secret --recovery-codes`.
+
+> `--totp-secret` accepts either a bare base32 secret or a full `otpauth://` URI
+> (non-default `digits`/`period`/`algorithm` are honoured). TOTP secrets and recovery
+> codes are masked in output unless `--show-password` is given, and are never written to
+> CSV exports.
 
 ### Examples
 
@@ -113,6 +119,10 @@ aethervault-cli list --json | jq '.[].title'
 
 # Work on a synced vault folder (e.g. on a phone)
 aethervault-cli --vault-dir ~/storage/shared/AetherVault list
+
+# Add a TOTP secret and print the current 2FA code
+aethervault-cli add --title GitHub --password '…' --totp-secret JBSWY3DPEHPK3PXP
+aethervault-cli totp 1
 
 # Non-interactive master password (CI)
 AETHERVAULT_MASTER_PASSWORD=… aethervault-cli list --json
@@ -165,6 +175,7 @@ different vault.
 | `search(query)` | Entries matching `query` (case-insensitive substring across title/url/username/email/category/tags/notes) |
 | `get(db_id)` | The entry with `db_id` |
 | `find(title=None, username=None)` | First exact (case-insensitive) match, or `None` |
+| `totp_code(db_id)` | Current RFC 6238 TOTP code for an entry (raises `VaultError` if none) |
 
 ### Writes
 
@@ -197,8 +208,9 @@ All SDK errors derive from `VaultError`:
 ### Entry fields
 
 `CredentialEntry` exposes: `db_id`, `title`, `url`, `username`, `email`, `password`,
-`phone`, `address`, `category`, `notes`, `tags`, `custom_fields`, `parent_id`,
-`created_at`, `modified_at`, `time_last_used`, `time_password_changed`, plus `to_dict()`.
+`phone`, `address`, `category`, `notes`, `tags`, `custom_fields`, `totp_secret`,
+`recovery_codes`, `parent_id`, `created_at`, `modified_at`, `time_last_used`,
+`time_password_changed`, plus `to_dict()`.
 
 ---
 

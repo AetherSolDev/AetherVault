@@ -150,6 +150,40 @@ class TestWriteCommands:
         assert json.loads(capsys.readouterr().out) == []
 
 
+class TestTotp:
+    SECRET = "JBSWY3DPEHPK3PXP"
+
+    def test_add_totp_and_generate_code(self, vault_dir, capsys):
+        assert run(vault_dir, "add", "--title", "GitHub", "--password", "p",
+                   "--totp-secret", self.SECRET, "--json") == 0
+        entry_id = json.loads(capsys.readouterr().out)["db_id"]
+        assert run(vault_dir, "totp", str(entry_id)) == 0
+        code = capsys.readouterr().out.strip().split()[0]
+        assert code.isdigit() and len(code) == 6
+
+    def test_totp_json(self, vault_dir, capsys):
+        run(vault_dir, "add", "--title", "GitHub", "--password", "p",
+            "--totp-secret", self.SECRET, "--json")
+        entry_id = json.loads(capsys.readouterr().out)["db_id"]
+        assert run(vault_dir, "totp", str(entry_id), "--json") == 0
+        data = json.loads(capsys.readouterr().out)
+        assert data["code"].isdigit() and len(data["code"]) == 6
+        assert 0 < data["remaining"] <= 30
+
+    def test_totp_missing_secret_errors(self, vault_dir, capsys):
+        run(vault_dir, "add", "--title", "GitHub", "--password", "p")
+        capsys.readouterr()
+        assert run(vault_dir, "totp", "1") == 1
+        assert "no TOTP" in capsys.readouterr().err
+
+    def test_list_masks_totp_secret(self, vault_dir, capsys):
+        run(vault_dir, "add", "--title", "GitHub", "--password", "p",
+            "--totp-secret", self.SECRET)
+        capsys.readouterr()
+        assert run(vault_dir, "list", "--json") == 0
+        assert json.loads(capsys.readouterr().out)[0]["totp_secret"] == "*" * 8
+
+
 class TestMaintenance:
     def test_export_import_round_trip(self, vault_dir, tmp_path, capsys, monkeypatch):
         monkeypatch.setattr(engine, "DB_PATH", str(vault_dir / "aethervault.db"))

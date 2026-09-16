@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-09-16 14:13 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: aethervault/shared/database.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
@@ -215,6 +215,8 @@ class DatabaseManager:
             notes TEXT,
             tags TEXT DEFAULT '',
             custom_fields TEXT DEFAULT '',
+            totp_secret TEXT DEFAULT '',
+            recovery_codes TEXT DEFAULT '',
             parent_id INTEGER DEFAULT 0,
             created_at TEXT NOT NULL,
             modified_at TEXT NOT NULL,
@@ -227,7 +229,10 @@ class DatabaseManager:
             self.conn.commit()
         except sqlite3.Error as e:
             self.error_handler("Database Error", f"Error creating table: {e}")
-        known_columns = {"tags", "custom_fields", "time_last_used", "time_password_changed"}
+        known_columns = {
+            "tags", "custom_fields", "time_last_used", "time_password_changed",
+            "totp_secret", "recovery_codes",
+        }
         for col in known_columns:
             try:
                 self.cursor.execute(f"ALTER TABLE credentials ADD COLUMN {col} TEXT DEFAULT ''")
@@ -250,6 +255,12 @@ class DatabaseManager:
                 entry_data = dict(row)
                 decrypted_password = decrypt_data(row["password"], self.encryption_key)
                 entry_data["password"] = decrypted_password
+                entry_data["totp_secret"] = decrypt_data(
+                    entry_data.get("totp_secret") or "", self.encryption_key
+                )
+                entry_data["recovery_codes"] = decrypt_data(
+                    entry_data.get("recovery_codes") or "", self.encryption_key
+                )
                 credentials.append(CredentialEntry(**entry_data))
         except sqlite3.Error as e:
             self.error_handler("Database Error", f"Error loading credentials: {e}")
@@ -272,15 +283,22 @@ class DatabaseManager:
         entry_dict["password"] = encrypt_data(
             entry_dict["password"], self.encryption_key
         )
+        entry_dict["totp_secret"] = encrypt_data(
+            entry_dict.get("totp_secret") or "", self.encryption_key
+        )
+        entry_dict["recovery_codes"] = encrypt_data(
+            entry_dict.get("recovery_codes") or "", self.encryption_key
+        )
         sql = """
         INSERT INTO credentials (
             title, url, username, email, password, phone, address, category,
-            notes, tags, custom_fields, parent_id, created_at, modified_at,
-            time_last_used, time_password_changed
+            notes, tags, custom_fields, totp_secret, recovery_codes, parent_id,
+            created_at, modified_at, time_last_used, time_password_changed
         )
         VALUES (
             :title, :url, :username, :email, :password, :phone, :address,
-            :category, :notes, :tags, :custom_fields, :parent_id, :created_at,
+            :category, :notes, :tags, :custom_fields, :totp_secret,
+            :recovery_codes, :parent_id, :created_at,
             :modified_at, :time_last_used, :time_password_changed
         )
         """
@@ -311,11 +329,18 @@ class DatabaseManager:
         entry_dict["password"] = encrypt_data(
             entry_dict["password"], self.encryption_key
         )
+        entry_dict["totp_secret"] = encrypt_data(
+            entry_dict.get("totp_secret") or "", self.encryption_key
+        )
+        entry_dict["recovery_codes"] = encrypt_data(
+            entry_dict.get("recovery_codes") or "", self.encryption_key
+        )
         sql = """
         UPDATE credentials SET
             title = :title, url = :url, username = :username, email = :email, password = :password,
             phone = :phone, address = :address, category = :category, notes = :notes,
             tags = :tags, custom_fields = :custom_fields,
+            totp_secret = :totp_secret, recovery_codes = :recovery_codes,
             parent_id = :parent_id, modified_at = :modified_at,
             time_last_used = :time_last_used, time_password_changed = :time_password_changed
         WHERE db_id = :db_id
@@ -406,7 +431,10 @@ class DatabaseManager:
         ]
         try:
             with open(file_path, mode="w", newline="", encoding="utf-8") as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                # extrasaction="ignore" deliberately drops TOTP secrets/recovery codes:
+                # they are never written to a plaintext CSV export.
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames,
+                                        extrasaction="ignore")
                 writer.writeheader()
                 count = 0
                 for entry in credentials:

@@ -1,5 +1,5 @@
 # Created: 2026-07-24
-# Last Edited: 2026-09-16 14:20 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: docs/USER_GUIDE.md
 # Purpose: User-facing handbook for AetherVault.
 
@@ -120,6 +120,21 @@ A pre-built executable is available (see Releases). No Python installation requi
 - Copy buttons for password, username, and URL
 - Clipboard auto-clears after 15 seconds
 - Clipboard cleared on application lock
+
+### Two-Factor (TOTP) Codes
+- Store an authenticator secret on any entry — AetherVault generates the rolling
+  6-digit code, so a separate authenticator app isn't needed.
+- **Set up:** open an entry in edit mode and click **Set up 2FA...**, then paste the
+  site's `otpauth://` URI or its base32 secret. You can also paste the site's recovery
+  codes and verify the current code before saving.
+- **Use:** the form shows the live code with a 30-second countdown; **Copy Code** copies
+  it (clipboard clears after 15s). The code updates automatically.
+- **Recovery codes:** expand **▶ Recovery Codes** to view or copy them.
+- **Remove:** in edit mode, click **Remove 2FA** to clear the secret and codes.
+- Secrets and recovery codes are encrypted at rest like passwords and are **excluded
+  from CSV exports**.
+- **Wrong code?** TOTP needs an accurate clock — make sure your computer's date/time is
+  correct and set to sync automatically.
 
 ### Data Management
 - **Auto-Backup**: Automatic backup on save and application shutdown

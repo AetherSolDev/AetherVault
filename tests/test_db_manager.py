@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-11 13:17 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: tests/test_db_manager.py
 # Purpose: Integration tests for DatabaseManager CRUD operations.
 
@@ -398,3 +398,84 @@ class TestDatabaseManager:
 
         dm = DatabaseManager(db_path, lambda t, m: None)
         assert dm.conn is None
+
+
+class TestTotpColumns:
+    """A21 — totp_secret / recovery_codes persistence, encryption, and migration."""
+
+    def test_totp_fields_round_trip_and_encrypted_at_rest(self, temp_db):
+        entry = CredentialEntry(
+            title="GitHub", password="p",
+            totp_secret="JBSWY3DPEHPK3PXP", recovery_codes="code1\ncode2",
+        )
+        entry_id = temp_db.save_credential(entry)
+        raw = temp_db.cursor.execute(
+            "SELECT totp_secret, recovery_codes FROM credentials WHERE db_id = ?",
+            (entry_id,),
+        ).fetchone()
+        assert raw[0] != "JBSWY3DPEHPK3PXP"
+        assert raw[1] != "code1\ncode2"
+
+        loaded = temp_db.load_all_credentials()[0]
+        assert loaded.totp_secret == "JBSWY3DPEHPK3PXP"
+        assert loaded.recovery_codes == "code1\ncode2"
+
+    def test_update_persists_totp(self, temp_db):
+        temp_db.save_credential(CredentialEntry(title="GitHub", password="p"))
+        entry = temp_db.load_all_credentials()[0]
+        entry.totp_secret = "JBSWY3DPEHPK3PXP"
+        temp_db.update_credential(entry)
+        assert temp_db.load_all_credentials()[0].totp_secret == "JBSWY3DPEHPK3PXP"
+
+    def test_export_csv_excludes_totp(self, temp_db, tmp_path):
+        temp_db.save_credential(CredentialEntry(
+            title="GitHub", password="p", totp_secret="JBSWY3DPEHPK3PXP",
+        ))
+        out = str(tmp_path / "export.csv")
+        temp_db.export_to_csv(out, temp_db.load_all_credentials())
+        with open(out, encoding="utf-8") as f:
+            content = f.read()
+        assert "totp_secret" not in content
+        assert "JBSWY3DPEHPK3PXP" not in content
+
+    def test_migration_adds_totp_columns_to_existing_db(self, tmp_path):
+        import sqlite3
+
+        from aethervault.shared.database import DatabaseManager
+
+        db_path = str(tmp_path / "legacy.db")
+        conn = sqlite3.connect(db_path)
+        conn.execute(
+            """
+            CREATE TABLE credentials (
+                db_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL, url TEXT, username TEXT, email TEXT,
+                password TEXT NOT NULL, phone TEXT, address TEXT, category TEXT,
+                notes TEXT, tags TEXT DEFAULT '', custom_fields TEXT DEFAULT '',
+                parent_id INTEGER DEFAULT 0, created_at TEXT NOT NULL,
+                modified_at TEXT NOT NULL, time_last_used TEXT DEFAULT '',
+                time_password_changed TEXT DEFAULT ''
+            )
+            """
+        )
+        conn.execute(
+            "INSERT INTO credentials (title, password, created_at, modified_at) "
+            "VALUES (?, ?, ?, ?)",
+            ("Legacy", "ciphertext", "2026-01-01", "2026-01-01"),
+        )
+        conn.commit()
+        conn.close()
+
+        dm = DatabaseManager(db_path, lambda t, m: None)
+        dm.set_encryption_key("test-key")
+        columns = {
+            row[1] for row in dm.cursor.execute("PRAGMA table_info(credentials)").fetchall()
+        }
+        assert {"totp_secret", "recovery_codes"} <= columns
+
+        loaded = dm.load_all_credentials()
+        assert len(loaded) == 1
+        assert loaded[0].title == "Legacy"
+        assert loaded[0].totp_secret == ""
+        assert loaded[0].recovery_codes == ""
+        dm.conn.close()

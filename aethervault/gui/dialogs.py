@@ -1,9 +1,9 @@
 # Created: 2025-12-04
-# Last Edited: 2026-08-12 16:33 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: aethervault/gui/dialogs.py
-# Purpose: Dialog classes for password generation and documentation viewing.
+# Purpose: Dialog classes for password generation, custom fields, TOTP setup, and docs.
 
-"""Dialog classes for password generation and documentation viewing."""
+"""Dialog classes for password generation, custom fields, TOTP setup, and documentation."""
 
 import json
 import os
@@ -15,10 +15,12 @@ from PySide6.QtWidgets import (
     QAbstractScrollArea,
     QCheckBox,
     QDialog,
+    QDialogButtonBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QSpinBox,
     QTableWidget,
@@ -31,6 +33,7 @@ from PySide6.QtWidgets import (
 
 from aethervault import PROJECT_ROOT
 from aethervault.core.password import generate_strong_password
+from aethervault.core.totp import resolve_config, verify_code
 
 
 def resource_path(relative_path):
@@ -263,3 +266,93 @@ class DocumentationDialog(QDialog):
             )
         except OSError as e:
             self.text_editor.setPlainText(f"ERROR: Failed to load documentation: {e}")
+
+
+class TOTPSetupDialog(QDialog):
+    """Paste an ``otpauth://`` URI or base32 secret, with optional recovery codes.
+
+    Callers read the result with :meth:`get_config` / :meth:`get_secret` /
+    :meth:`get_recovery_codes` after ``exec()`` returns ``Accepted``.
+    """
+
+    def __init__(self, secret: str = "", recovery_codes: str = "", parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Set Up 2FA / TOTP")
+        self.setMinimumWidth(460)
+        self._config: dict = {}
+        self._recovery_codes = recovery_codes or ""
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(QLabel("Authenticator secret or otpauth:// URI:"))
+        self.secret_input = QLineEdit()
+        self.secret_input.setPlaceholderText("otpauth://totp/...   or   JBSWY3DPEHPK3PXP")
+        self.secret_input.setToolTip(
+            "Paste the secret shown during the site's 2FA setup, or the full otpauth:// URI"
+        )
+        layout.addWidget(self.secret_input)
+
+        layout.addWidget(QLabel("Recovery codes (optional):"))
+        self.recovery_input = QTextEdit()
+        self.recovery_input.setPlaceholderText("One code per line")
+        self.recovery_input.setMinimumHeight(80)
+        layout.addWidget(self.recovery_input)
+
+        layout.addWidget(QLabel("Verify current code (optional):"))
+        self.verify_input = QLineEdit()
+        self.verify_input.setPlaceholderText("e.g. 123456")
+        self.verify_input.setToolTip(
+            "Enter the code your authenticator shows right now to confirm the secret"
+        )
+        layout.addWidget(self.verify_input)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+        if secret:
+            self.secret_input.setText(secret)
+        if recovery_codes:
+            self.recovery_input.setPlainText(recovery_codes)
+
+    def _resolve(self) -> dict:
+        text = self.secret_input.text().strip()
+        if not text:
+            raise ValueError("Paste an otpauth:// URI or a base32 secret.")
+        return resolve_config(text)
+
+    def accept(self):
+        try:
+            config = self._resolve()
+        except ValueError as e:
+            QMessageBox.warning(self, "Invalid 2FA Secret", str(e))
+            return
+        code = self.verify_input.text().strip()
+        if code and not verify_code(
+            config["secret"], code, digits=config["digits"],
+            period=config["period"], algorithm=config["algorithm"],
+        ):
+            QMessageBox.warning(
+                self, "Verification Failed",
+                "That code doesn't match. Check your device clock and try again.",
+            )
+            return
+        self._config = config
+        self._recovery_codes = self.recovery_input.toPlainText()
+        super().accept()
+
+    def get_secret(self) -> str:
+        """Return the resolved base32 secret."""
+        return self._config.get("secret", "")
+
+    def get_raw(self) -> str:
+        """Return the raw text the user entered (base32 secret or otpauth URI)."""
+        return self.secret_input.text().strip()
+
+    def get_config(self) -> dict:
+        """Return the full resolved config (secret, period, digits, algorithm, ...)."""
+        return dict(self._config)
+
+    def get_recovery_codes(self) -> str:
+        """Return the (possibly empty) recovery-codes text."""
+        return self._recovery_codes

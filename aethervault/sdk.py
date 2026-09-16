@@ -1,5 +1,5 @@
 # Created: 2026-09-16
-# Last Edited: 2026-09-16 14:04 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: aethervault/sdk.py
 # Purpose: Programmatic client SDK to unlock and manage a vault without the GUI.
 
@@ -43,6 +43,7 @@ from aethervault.core.engine import (
     load_master_password,
     verify_password,
 )
+from aethervault.core.totp import generate_code, resolve_config
 from aethervault.shared.database import DatabaseManager
 from aethervault.shared.models import CredentialEntry
 
@@ -258,6 +259,20 @@ class Vault:
         self._require_unlocked()
         self.get(db_id)
         self._db.delete_credential(db_id)
+
+    def totp_code(self, db_id: int) -> str:
+        """Return the current TOTP code for ``db_id`` (RFC 6238).
+
+        Raises :class:`VaultError` when the entry has no TOTP secret configured.
+        """
+        entry = self.get(db_id)
+        if not entry.totp_secret:
+            raise VaultError(f"Entry {db_id} has no TOTP secret.")
+        config = resolve_config(entry.totp_secret)
+        return generate_code(
+            config["secret"], digits=config["digits"],
+            period=config["period"], algorithm=config["algorithm"],
+        )
 
     # --- maintenance ---
 
