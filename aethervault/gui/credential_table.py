@@ -136,9 +136,10 @@ class CredentialTable(QWidget):
                 (4, str(entry.db_id)),
                 (5, entry.time_last_used), (6, entry.time_password_changed),
             ]:
-                item = QTableWidgetItem(val)
+                item = QTableWidgetItem(self._display_url(val) if ci == 2 else val)
                 if val:
                     item.setToolTip(val)
+                    item.setData(Qt.UserRole, val)
                 if self._search_text and self._search_text in val.lower():
                     item.setBackground(highlight)
                 if ci == 0 and entry.url:
@@ -169,6 +170,16 @@ class CredentialTable(QWidget):
         self.table.horizontalHeader().setFixedHeight(50)
         self._populate_category_filter()
         self._populate_tag_filter()
+
+    @staticmethod
+    def _display_url(url: str) -> str:
+        """Show just the host (no scheme/``www.``) in the URL column; full URL stays in data."""
+        if not url:
+            return ""
+        host = QUrl(url).host()
+        if host.lower().startswith("www."):
+            host = host[4:]
+        return host or url
 
     def _filter_credentials(self) -> List[CredentialEntry]:
         search = self._search_text
@@ -225,12 +236,13 @@ class CredentialTable(QWidget):
         item = self.table.item(row, col)
         if not item or not item.text():
             return
+        text = item.data(Qt.UserRole) or item.text()
         labels = {
             0: "title", 1: "username", 2: "url", 3: "category",
             5: "last used", 6: "pass changed",
         }
         label = labels.get(col, "value")
-        self.copy_requested.emit(item.text(), label)
+        self.copy_requested.emit(text, label)
 
     def _on_cell_clicked(self, row: int, col: int):
         if col != 3:

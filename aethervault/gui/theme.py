@@ -161,6 +161,9 @@ QHeaderView::section {
 }
 QLabel {
     color: #2f3542;
+    background: transparent;
+    border: none;
+    padding: 0;
 }
 QStatusBar {
     background-color: #f1f2f6;
@@ -307,6 +310,9 @@ QHeaderView::section {
 }
 QLabel {
     color: #e8e8e8;
+    background: transparent;
+    border: none;
+    padding: 0;
 }
 QStatusBar {
     background-color: #3d3d5c;

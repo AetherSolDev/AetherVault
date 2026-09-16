@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-08-05 15:52 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:45 CT (America/Chicago)
 # Path: aethervault/gui/conflict_dialog.py
 # Purpose: Import conflict review dialog for per-entry resolution.
 
@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
+    QWidget,
 )
 
 
@@ -41,7 +42,10 @@ class ImportConflictDialog(QDialog):
             "This dialog is in a secure context — only visible to you."
         )
         warning.setWordWrap(True)
-        warning.setStyleSheet("padding: 8px; background: #fff3cd; border: 1px solid #ffc107;")
+        warning.setStyleSheet(
+            "padding: 8px; background: #fff3cd; border: 1px solid #ffc107; "
+            "color: #664d03;"
+        )
         layout.addWidget(warning)
 
         table = QTableWidget()
