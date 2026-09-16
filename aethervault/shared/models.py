@@ -29,6 +29,7 @@ class CredentialEntry:
         self.recovery_codes = kwargs.get("recovery_codes", "")
         self.entry_uuid = kwargs.get("entry_uuid", "")
         self.deleted = kwargs.get("deleted", 0)
+        self.sync_rev = kwargs.get("sync_rev", "")
         self.parent_id = kwargs.get("parent_id", 0)
         self.created_at = kwargs.get("created_at")
         self.modified_at = kwargs.get("modified_at")
@@ -54,6 +55,7 @@ class CredentialEntry:
             "recovery_codes": self.recovery_codes,
             "entry_uuid": self.entry_uuid,
             "deleted": self.deleted,
+            "sync_rev": self.sync_rev,
             "parent_id": self.parent_id,
             "created_at": self.created_at,
             "modified_at": self.modified_at,

@@ -35,6 +35,7 @@ class TestCredentialEntry:
         assert e.recovery_codes == ""
         assert e.entry_uuid == ""
         assert e.deleted == 0
+        assert e.sync_rev == ""
         assert e.parent_id == 0
         assert e.time_last_used == ""
         assert e.time_password_changed == ""
@@ -45,7 +46,7 @@ class TestCredentialEntry:
         expected_keys = {
             "db_id", "title", "url", "username", "email", "password",
             "phone", "address", "category", "notes", "tags", "custom_fields",
-            "totp_secret", "recovery_codes", "entry_uuid", "deleted",
+            "totp_secret", "recovery_codes", "entry_uuid", "deleted", "sync_rev",
             "parent_id", "created_at", "modified_at",
             "time_last_used", "time_password_changed",
         }

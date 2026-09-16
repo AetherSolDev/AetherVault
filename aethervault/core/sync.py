@@ -1,28 +1,34 @@
 # Created: 2026-09-16
-# Last Edited: 2026-09-16 17:53 CT (America/Chicago)
+# Last Edited: 2026-09-16 18:31 CT (America/Chicago)
 # Path: aethervault/core/sync.py
-# Purpose: Offline-first sync core — encrypted payloads and per-entry LWW merge.
+# Purpose: Relay-aligned sync core — key wrapping, HLC revisions, record payloads, merge.
 
-"""Sync core: encrypted payloads and per-entry last-writer-wins merge.
+"""Relay-aligned sync core.
 
-Design (zero-knowledge): a client builds a payload of its entries, **encrypts it with a key
-derived from the master password hash**, and hands the ciphertext to a sync server. The
-server only ever stores ciphertext. Merging happens client-side after decrypt.
+The relay (`server/`) is a zero-knowledge, **record-level** delta service:
 
-Entries are matched by their stable ``entry_uuid`` (not ``db_id``, which is per-vault) and
-resolved last-writer-wins on ``modified_at``. Deletions are tombstones (``deleted=1``) so a
-removal on one device is not resurrected by an older copy on another.
+* it stores the vault's *wrapped* data key + KDF params (so a new device can bootstrap),
+  opaque per-record ``payload`` ciphertext, and hashed device tokens;
+* record merge is last-write-wins by the client's HLC ``rev`` (compared as a string);
+* clients pull deltas with ``GET /v1/changes?since=N`` and push with ``POST /v1/changes``.
+
+Key model: a random 32-byte **data key** encrypts record payloads. It is wrapped with a KEK
+derived from the master password (PBKDF2 + a stored salt) and kept on the relay, so changing
+the password only re-wraps the key. A new device enrolls (enrollment secret), fetches
+``/v1/vault/meta``, derives the KEK from the password, and unwraps the data key.
 """
 
 from __future__ import annotations
 
 import base64
 import json
+import os
 import time
 import urllib.error
 import urllib.request
 from typing import Dict, List, Optional, Tuple
 
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -30,136 +36,197 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from aethervault.core.engine import decrypt_data, encrypt_data
 
 __all__ = [
-    "SYNC_FIELDS",
-    "SYNC_PAYLOAD_VERSION",
-    "SyncClient",
-    "SyncError",
-    "build_payload",
-    "decrypt_payload",
-    "derive_sync_key",
-    "encrypt_payload",
-    "entry_to_record",
+    "HLC",
+    "KDF_ALGORITHM",
+    "KDF_ITERATIONS",
+    "RelayClient",
+    "RelayError",
+    "SyncConfig",
+    "decrypt_record",
+    "derive_kek",
+    "encrypt_record",
+    "entry_to_payload",
     "merge_records",
-    "payload_from_records",
+    "new_data_key",
+    "new_kdf_salt",
+    "record_to_apply",
+    "unwrap_data_key",
+    "wrap_data_key",
 ]
 
-#: Distinct KDF salt so the sync key differs from the local encryption key.
-SYNC_SALT = b"aethervault_sync_key_salt_v1"
-SYNC_KDF_ITERATIONS = 480000
-SYNC_PAYLOAD_VERSION = 1
+SYNC_FORMAT_VERSION = 1
+KDF_ALGORITHM = "pbkdf2-sha256"
+KDF_ITERATIONS = 480000
 
-#: Entry fields carried in a sync payload (``db_id`` is deliberately excluded — it is
-#: per-vault; ``entry_uuid`` is the stable cross-device identifier).
-SYNC_FIELDS = (
-    "entry_uuid", "title", "url", "username", "email", "password", "phone",
-    "address", "category", "notes", "tags", "custom_fields",
-    "totp_secret", "recovery_codes", "parent_id",
-    "created_at", "modified_at", "time_last_used", "time_password_changed",
-    "deleted",
+#: Entry fields carried inside an encrypted record payload (record-level uuid/rev/deleted
+#: live on the record itself, not in the payload).
+PAYLOAD_FIELDS = (
+    "title", "url", "username", "email", "password", "phone", "address",
+    "category", "notes", "tags", "custom_fields", "totp_secret", "recovery_codes",
+    "parent_id", "created_at", "time_last_used", "time_password_changed",
 )
 
 
-def derive_sync_key(master_password: str) -> bytes:
-    """Derive a Fernet key for sync payloads from the master password.
+# --------------------------------------------------------------------------- #
+# Key wrapping
+# --------------------------------------------------------------------------- #
 
-    Uses a distinct KDF salt (deliberately **not** the per-vault stored hash, which is salted
-    randomly), so every device sharing the same master password derives the same sync key and
-    can decrypt each other's payloads — while the server, which never sees the password,
-    cannot.
-    """
-    if not master_password:
-        raise ValueError("Master password cannot be empty for sync key derivation.")
+def new_data_key() -> bytes:
+    """Generate a new random Fernet data key for record payloads."""
+    return Fernet.generate_key()
+
+
+def new_kdf_salt() -> str:
+    """Generate a fresh base64 KDF salt."""
+    return base64.b64encode(os.urandom(16)).decode("ascii")
+
+
+def derive_kek(password: str, kdf_salt: str, iterations: int = KDF_ITERATIONS) -> bytes:
+    """Derive a key-encryption key from the master password and the relay's KDF salt."""
+    if not password:
+        raise ValueError("Master password cannot be empty.")
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
-        salt=SYNC_SALT,
-        iterations=SYNC_KDF_ITERATIONS,
+        salt=base64.b64decode(kdf_salt),
+        iterations=iterations,
         backend=default_backend(),
     )
-    return base64.urlsafe_b64encode(kdf.derive(master_password.encode("utf-8")))
+    return base64.urlsafe_b64encode(kdf.derive(password.encode("utf-8")))
 
 
-def entry_to_record(entry) -> Dict:
-    """Convert a CredentialEntry into a plain sync record."""
+def wrap_data_key(data_key: bytes, kek: bytes) -> str:
+    """Encrypt the data key with the KEK, returning an opaque string."""
+    return Fernet(kek).encrypt(data_key).decode("ascii")
+
+
+def unwrap_data_key(wrapped: str, kek: bytes) -> bytes:
+    """Recover the data key from its wrapped form, raising ValueError on a bad KEK."""
+    try:
+        return Fernet(kek).decrypt(wrapped.encode("ascii"))
+    except (InvalidToken, ValueError, TypeError) as e:
+        raise ValueError("Could not unwrap the data key (wrong password?).") from e
+
+
+# --------------------------------------------------------------------------- #
+# Record payloads
+# --------------------------------------------------------------------------- #
+
+def entry_to_payload(entry) -> Dict:
+    """Return the plaintext payload dict for a CredentialEntry."""
     data = entry.to_dict()
-    return {field: data.get(field) for field in SYNC_FIELDS}
+    return {field: data.get(field) for field in PAYLOAD_FIELDS}
 
 
-def build_payload(entries) -> Dict:
-    """Build a sync payload dict from a list of CredentialEntry objects."""
-    return payload_from_records([entry_to_record(e) for e in entries])
+def encrypt_record(payload: Dict, data_key: bytes) -> str:
+    """Encrypt a payload dict to an opaque ciphertext string."""
+    return encrypt_data(json.dumps(payload, separators=(",", ":"), sort_keys=True), data_key)
 
 
-def payload_from_records(records) -> Dict:
-    """Wrap a list of sync records into a payload dict."""
+def decrypt_record(payload: str, data_key: bytes) -> Dict:
+    """Decrypt a record payload string back to a dict."""
+    text = decrypt_data(payload, data_key)
+    try:
+        result = json.loads(text)
+    except (json.JSONDecodeError, TypeError) as e:
+        raise ValueError("Invalid record payload (wrong key or corrupt data).") from e
+    if not isinstance(result, dict):
+        raise ValueError("Malformed record payload.")
+    return result
+
+
+def record_to_apply(record: Dict, data_key: bytes) -> Dict:
+    """Convert a relay record into a dict for ``DatabaseManager.apply_sync_records``."""
+    fields = {field: "" for field in PAYLOAD_FIELDS}
+    if not record.get("deleted"):
+        fields.update(decrypt_record(record["payload"], data_key))
     return {
-        "version": SYNC_PAYLOAD_VERSION,
-        "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "entries": list(records),
+        **fields,
+        "entry_uuid": record["uuid"],
+        "deleted": 1 if record.get("deleted") else 0,
+        "sync_rev": record.get("rev", ""),
+        "modified_at": record.get("updated_at") or "",
     }
 
 
-def encrypt_payload(payload: Dict, key: bytes) -> str:
-    """Encrypt a sync payload dict to an opaque ciphertext token."""
-    return encrypt_data(json.dumps(payload, separators=(",", ":"), sort_keys=True), key)
-
-
-def decrypt_payload(token: str, key: bytes) -> Dict:
-    """Decrypt a sync payload token back to a dict, raising ValueError on bad input."""
-    text = decrypt_data(token, key)
-    try:
-        payload = json.loads(text)
-    except (json.JSONDecodeError, TypeError) as e:
-        raise ValueError("Invalid sync payload (wrong key or corrupt data).") from e
-    if not isinstance(payload, dict) or "entries" not in payload:
-        raise ValueError("Malformed sync payload.")
-    return payload
-
-
-def _wins(a: Dict, b: Dict) -> bool:
-    """Return True if record ``a`` should win over ``b`` (LWW on modified_at)."""
-    ta, tb = str(a.get("modified_at") or ""), str(b.get("modified_at") or "")
-    if ta != tb:
-        return ta > tb
-    # Tie-break: a tombstone wins over a concurrent edit so entries are not resurrected.
-    return bool(a.get("deleted")) and not bool(b.get("deleted"))
-
-
 def merge_records(local: List[Dict], remote: List[Dict]) -> List[Dict]:
-    """Merge two lists of sync records by ``entry_uuid``, last-writer-wins.
-
-    Records without an ``entry_uuid`` are skipped (cannot be merged safely).
-    """
+    """Merge relay records by ``uuid``, keeping the highest ``rev`` (string compare)."""
     by_uuid: Dict[str, Dict] = {}
     for record in list(local) + list(remote):
-        uuid = record.get("entry_uuid")
+        uuid = record.get("uuid")
         if not uuid:
             continue
         current = by_uuid.get(uuid)
-        if current is None or _wins(record, current):
+        if current is None or str(record.get("rev", "")) > str(current.get("rev", "")):
             by_uuid[uuid] = record
     return list(by_uuid.values())
 
 
-class SyncError(Exception):
-    """Raised for sync transport or authentication failures."""
+# --------------------------------------------------------------------------- #
+# Hybrid logical clock
+# --------------------------------------------------------------------------- #
+
+class HLC:
+    """A monotonic, string-sortable revision clock: ``<millis:016d>:<counter:06d>:<device>``."""
+
+    def __init__(self, device_id: str, last_rev: str = ""):
+        self.device_id = device_id or "device"
+        self.last_millis = 0
+        self.counter = 0
+        self.last_rev = last_rev
+        if last_rev:
+            self.observe(last_rev)
+
+    def observe(self, rev: str) -> None:
+        """Advance the clock past a remote ``rev`` (standard HLC receive)."""
+        try:
+            millis_s, counter_s, _ = rev.split(":", 2)
+            millis, counter = int(millis_s), int(counter_s)
+        except (ValueError, AttributeError):
+            return
+        if millis > self.last_millis:
+            self.last_millis = millis
+            self.counter = counter
+        elif millis == self.last_millis and counter > self.counter:
+            self.counter = counter
+
+    def next(self) -> str:
+        """Return a new revision string greater than any previously issued one."""
+        now = int(time.time() * 1000)
+        if now > self.last_millis:
+            self.last_millis = now
+            self.counter = 0
+        else:
+            self.counter += 1
+        self.last_rev = f"{self.last_millis:016d}:{self.counter:06d}:{self.device_id}"
+        return self.last_rev
 
 
-class SyncClient:
-    """Minimal HTTP client for the AetherVault sync server."""
+# --------------------------------------------------------------------------- #
+# Relay client
+# --------------------------------------------------------------------------- #
 
-    def __init__(self, base_url: str, token: str = "", timeout: int = 15):
+class RelayError(Exception):
+    """Raised for relay transport or authentication failures."""
+
+
+class RelayClient:
+    """HTTP client for the AetherVault sync relay."""
+
+    def __init__(self, base_url: str, token: str = "", timeout: int = 20):
         self.base_url = (base_url or "").rstrip("/")
         self.token = token or ""
         self.timeout = timeout
 
-    def _request(self, method: str, path: str,
-                 body: Optional[dict] = None) -> Tuple[int, dict]:
+    def _request(self, method: str, path: str, body: Optional[dict] = None,
+                 enroll_secret: str = "") -> Tuple[int, dict]:
         data = json.dumps(body).encode("utf-8") if body is not None else None
         req = urllib.request.Request(self.base_url + path, data=data, method=method)
         req.add_header("Content-Type", "application/json")
         if self.token:
             req.add_header("Authorization", f"Bearer {self.token}")
+        if enroll_secret:
+            req.add_header("X-Enroll-Secret", enroll_secret)
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as resp:
                 return resp.status, json.loads(resp.read() or b"{}")
@@ -170,23 +237,83 @@ class SyncClient:
                 payload = {}
             return e.code, payload
         except (urllib.error.URLError, OSError) as e:
-            raise SyncError(f"Cannot reach sync server at {self.base_url}: {e}") from e
+            raise RelayError(f"Cannot reach the sync relay at {self.base_url}: {e}") from e
 
-    def pull(self) -> Tuple[int, Optional[str]]:
-        """Return ``(version, ciphertext_or_None)`` from the server."""
-        status, body = self._request("GET", "/vault")
-        if status != 200:
-            raise SyncError(f"Pull failed (HTTP {status}): {body.get('error', 'unknown')}")
-        return int(body.get("version", 0)), body.get("payload")
+    def _ok(self, method: str, path: str, body: Optional[dict] = None,
+            enroll_secret: str = "") -> dict:
+        status, payload = self._request(method, path, body, enroll_secret)
+        if status >= 400:
+            raise RelayError(f"{method} {path} failed (HTTP {status}): "
+                             f"{payload.get('detail', payload.get('error', 'unknown'))}")
+        return payload
 
-    def push(self, base_version: int, payload: str,
-             device_id: str = "") -> Tuple[bool, int, Optional[str]]:
-        """Push ciphertext. Returns ``(ok, version, current_payload_on_conflict)``."""
-        status, body = self._request("POST", "/vault", {
-            "base_version": base_version, "payload": payload, "device_id": device_id,
-        })
-        if status == 200:
-            return True, int(body.get("version", 0)), payload
-        if status == 409:
-            return False, int(body.get("version", 0)), body.get("payload")
-        raise SyncError(f"Push failed (HTTP {status}): {body.get('error', 'unknown')}")
+    def health(self) -> bool:
+        status, _ = self._request("GET", "/healthz")
+        return status == 200
+
+    def create_vault(self, vault_id: str, kdf_salt: str, wrapped_master: str,
+                     enroll_secret: str, iterations: int = KDF_ITERATIONS) -> dict:
+        return self._ok("POST", "/v1/vault", {
+            "vault_id": vault_id,
+            "format_version": SYNC_FORMAT_VERSION,
+            "kdf_algorithm": KDF_ALGORITHM,
+            "kdf_iterations": iterations,
+            "kdf_salt": kdf_salt,
+            "wrapped_master": wrapped_master,
+        }, enroll_secret=enroll_secret)
+
+    def enroll(self, device_name: str, enroll_secret: str) -> dict:
+        return self._ok("POST", "/v1/enroll", {"device_name": device_name},
+                        enroll_secret=enroll_secret)
+
+    def vault_meta(self) -> dict:
+        return self._ok("GET", "/v1/vault/meta")
+
+    def pull(self, since: int = 0) -> Tuple[List[dict], int]:
+        payload = self._ok("GET", f"/v1/changes?since={int(since)}")
+        return payload.get("records", []), int(payload.get("server_rev", 0))
+
+    def push(self, records: List[dict]) -> Tuple[int, int]:
+        payload = self._ok("POST", "/v1/changes", {"records": records})
+        return int(payload.get("applied", 0)), int(payload.get("server_rev", 0))
+
+    def devices(self) -> List[dict]:
+        return self._ok("GET", "/v1/devices").get("devices", [])
+
+    def revoke(self, device_id: str) -> None:
+        self._ok("DELETE", f"/v1/devices/{device_id}")
+
+
+# --------------------------------------------------------------------------- #
+# Local sync config (sync.json beside the vault)
+# --------------------------------------------------------------------------- #
+
+class SyncConfig:
+    """Persisted per-device sync state, stored as ``<db_path>.sync.json``.
+
+    Duress wipes this file (``engine.wipe_vault_files`` deletes it), which detaches the device
+    without touching the relay or other devices. It is keyed on the vault's database path so
+    multiple vaults in one directory do not collide.
+    """
+
+    def __init__(self, db_path: str):
+        self.path = f"{db_path}.sync.json"
+
+    def load(self) -> Optional[dict]:
+        if not os.path.exists(self.path):
+            return None
+        try:
+            with open(self.path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return None
+
+    def save(self, config: dict) -> None:
+        with open(self.path, "w", encoding="utf-8") as f:
+            json.dump(config, f, indent=2)
+
+    def delete(self) -> None:
+        try:
+            os.remove(self.path)
+        except OSError:
+            pass

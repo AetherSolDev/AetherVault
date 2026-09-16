@@ -1,102 +1,139 @@
 # Created: 2026-09-16
-# Last Edited: 2026-09-16 17:53 CT (America/Chicago)
+# Last Edited: 2026-09-16 18:31 CT (America/Chicago)
 # Path: tests/test_sync.py
-# Purpose: Tests for the sync core (payloads, encryption, LWW merge) and sync schema.
+# Purpose: Tests for the relay-aligned sync core and sync schema.
 
-"""Tests for aethervault.core.sync and the sync-related schema."""
+"""Tests for aethervault.core.sync (key wrapping, records, HLC, merge) and the schema."""
 
 import sqlite3
 
 import pytest
 
 from aethervault.core.sync import (
-    SYNC_FIELDS,
-    build_payload,
-    decrypt_payload,
-    derive_sync_key,
-    encrypt_payload,
+    HLC,
+    SyncConfig,
+    decrypt_record,
+    derive_kek,
+    encrypt_record,
+    entry_to_payload,
     merge_records,
+    new_data_key,
+    new_kdf_salt,
+    record_to_apply,
+    unwrap_data_key,
+    wrap_data_key,
 )
 from aethervault.shared.database import DatabaseManager
 from aethervault.shared.models import CredentialEntry
 
 
-def rec(uuid, modified, deleted=0, title=""):
-    record = {field: "" for field in SYNC_FIELDS}
-    record.update({
-        "entry_uuid": uuid,
-        "modified_at": modified,
-        "deleted": deleted,
-        "title": title,
-    })
-    return record
+class TestKeyWrapping:
+    def test_wrap_unwrap_round_trip(self):
+        data_key = new_data_key()
+        kek = derive_kek("pw", new_kdf_salt())
+        assert unwrap_data_key(wrap_data_key(data_key, kek), kek) == data_key
 
-
-class TestDeriveSyncKey:
-    def test_deterministic(self):
-        assert derive_sync_key("hash") == derive_sync_key("hash")
-
-    def test_differs_from_encryption_key(self):
-        from aethervault.core.engine import derive_encryption_key
-        assert derive_sync_key("hash") != derive_encryption_key("hash")
-
-    def test_empty_raises(self):
+    def test_wrong_password_fails(self):
+        data_key = new_data_key()
+        salt = new_kdf_salt()
+        wrapped = wrap_data_key(data_key, derive_kek("pw", salt))
         with pytest.raises(ValueError):
-            derive_sync_key("")
+            unwrap_data_key(wrapped, derive_kek("other", salt))
+
+    def test_kek_is_deterministic(self):
+        salt = new_kdf_salt()
+        assert derive_kek("pw", salt) == derive_kek("pw", salt)
 
 
-class TestPayloadEncryption:
+class TestRecordCrypto:
     def test_round_trip_and_opaque(self):
-        key = derive_sync_key("hash")
-        payload = build_payload([CredentialEntry(
-            title="GitHub", password="p", entry_uuid="u1",
-            modified_at="2026-01-01 00:00:00",
-        )])
-        token = encrypt_payload(payload, key)
-        assert isinstance(token, str)
+        data_key = new_data_key()
+        payload = {"title": "GitHub", "password": "p"}
+        token = encrypt_record(payload, data_key)
         assert "GitHub" not in token
-        assert decrypt_payload(token, key)["entries"][0]["title"] == "GitHub"
+        assert decrypt_record(token, data_key) == payload
 
     def test_wrong_key_raises(self):
-        token = encrypt_payload({"version": 1, "entries": []}, derive_sync_key("a"))
+        token = encrypt_record({"title": "x"}, new_data_key())
         with pytest.raises(ValueError):
-            decrypt_payload(token, derive_sync_key("b"))
+            decrypt_record(token, new_data_key())
 
-    def test_garbage_raises(self):
-        with pytest.raises(ValueError):
-            decrypt_payload("not-a-token", derive_sync_key("a"))
+
+class TestEntryToPayload:
+    def test_carries_fields_but_not_record_ids(self):
+        payload = entry_to_payload(CredentialEntry(
+            title="GitHub", password="p", totp_secret="SECRET",
+        ))
+        assert payload["title"] == "GitHub"
+        assert payload["totp_secret"] == "SECRET"
+        assert "entry_uuid" not in payload
+        assert "deleted" not in payload
+
+
+class TestRecordToApply:
+    def test_live_record(self):
+        data_key = new_data_key()
+        record = {
+            "uuid": "u1", "rev": "1", "deleted": False, "updated_at": "2026-01-01",
+            "payload": encrypt_record({"title": "GitHub", "password": "p"}, data_key),
+        }
+        applied = record_to_apply(record, data_key)
+        assert applied["entry_uuid"] == "u1"
+        assert applied["title"] == "GitHub"
+        assert applied["deleted"] == 0
+
+    def test_deleted_record(self):
+        applied = record_to_apply(
+            {"uuid": "u1", "rev": "2", "deleted": True, "updated_at": "2026-01-02",
+             "payload": ""},
+            new_data_key(),
+        )
+        assert applied["entry_uuid"] == "u1"
+        assert applied["deleted"] == 1
+
+
+class TestHLC:
+    def test_monotonic_and_sortable(self):
+        clock = HLC("dev")
+        revs = [clock.next() for _ in range(5)]
+        assert revs == sorted(revs)
+        assert len(set(revs)) == 5
+
+    def test_observe_advances_past_remote(self):
+        clock = HLC("dev")
+        clock.observe("9999999999999999:000005:other")
+        assert clock.next() > "9999999999999999:000005:other"
+
+    def test_rev_format(self):
+        parts = HLC("dev").next().split(":")
+        assert len(parts) == 3 and parts[2] == "dev"
 
 
 class TestMerge:
-    def test_newest_wins(self):
+    def test_higher_rev_wins(self):
         merged = merge_records(
-            [rec("u1", "2026-01-02 00:00:00", title="new")],
-            [rec("u1", "2026-01-01 00:00:00", title="old")],
+            [{"uuid": "u1", "rev": "2", "payload": "b"}],
+            [{"uuid": "u1", "rev": "1", "payload": "a"}],
         )
-        assert len(merged) == 1
-        assert merged[0]["title"] == "new"
+        assert merged[0]["payload"] == "b"
 
     def test_union_of_distinct(self):
-        merged = merge_records([rec("u1", "2026-01-01")], [rec("u2", "2026-01-01")])
-        assert {m["entry_uuid"] for m in merged} == {"u1", "u2"}
-
-    def test_tombstone_wins_tie(self):
-        merged = merge_records(
-            [rec("u1", "2026-01-01 00:00:00", deleted=1)],
-            [rec("u1", "2026-01-01 00:00:00", deleted=0)],
-        )
-        assert bool(merged[0]["deleted"]) is True
-
-    def test_edit_after_delete_wins(self):
-        merged = merge_records(
-            [rec("u1", "2026-01-02 00:00:00", deleted=0, title="resurrected")],
-            [rec("u1", "2026-01-01 00:00:00", deleted=1)],
-        )
-        assert bool(merged[0]["deleted"]) is False
+        merged = merge_records([{"uuid": "u1", "rev": "1"}], [{"uuid": "u2", "rev": "1"}])
+        assert {m["uuid"] for m in merged} == {"u1", "u2"}
 
     def test_missing_uuid_skipped(self):
-        merged = merge_records([{"entry_uuid": "", "modified_at": "x"}], [rec("u1", "y")])
-        assert len(merged) == 1
+        assert len(merge_records([{"rev": "1"}], [{"uuid": "u1", "rev": "1"}])) == 1
+
+
+class TestSyncConfig:
+    def test_save_load_delete(self, tmp_path):
+        config = SyncConfig(str(tmp_path / "vault.db"))
+        assert config.load() is None
+        config.save({"relay_url": "http://x", "device_id": "d", "token": "t",
+                     "last_server_rev": 3})
+        assert config.load()["last_server_rev"] == 3
+        config.delete()
+        assert config.load() is None
 
 
 class TestSyncSchema:
@@ -109,8 +146,7 @@ class TestSyncSchema:
         temp_db.delete_credential(entry_id)
         assert temp_db.load_all_credentials() == []
         tombstoned = temp_db.load_all_credentials(include_deleted=True)
-        assert len(tombstoned) == 1
-        assert int(tombstoned[0].deleted) == 1
+        assert len(tombstoned) == 1 and int(tombstoned[0].deleted) == 1
 
     def test_migration_backfills_entry_uuid(self, tmp_path):
         db_path = str(tmp_path / "legacy.db")
@@ -138,8 +174,7 @@ class TestSyncSchema:
         dm = DatabaseManager(db_path, lambda t, m: None)
         dm.set_encryption_key("test-key")
         loaded = dm.load_all_credentials()
-        assert len(loaded) == 1
-        assert loaded[0].entry_uuid  # backfilled
+        assert len(loaded) == 1 and loaded[0].entry_uuid
         assert int(loaded[0].deleted) == 0
         dm.conn.close()
 
@@ -148,8 +183,7 @@ class TestSyncSchema:
             "entry_uuid": "u1", "title": "GitHub", "password": "p",
             "modified_at": "2026-01-01 00:00:00",
         }])
-        entries = temp_db.load_all_credentials()
-        assert len(entries) == 1 and entries[0].entry_uuid == "u1"
+        assert temp_db.load_all_credentials()[0].entry_uuid == "u1"
 
         temp_db.apply_sync_records([{
             "entry_uuid": "u1", "title": "GitHub2", "password": "p",

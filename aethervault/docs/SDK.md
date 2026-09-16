@@ -95,7 +95,11 @@ order).
 | `update ID [fields...] [--password P \| --generate [LEN]] [--json]` | Update fields on an entry |
 | `delete ID [--yes]` | Delete an entry |
 | `totp ID [--json]` | Print the current TOTP code for an entry |
-| `sync --server URL [--token T] [--device-id ID]` | Pull-merge-push with a sync server |
+| `sync` | Pull + merge + push with the configured relay |
+| `sync-setup --server URL --enroll-secret S` | Create the relay vault + enroll this device (first device) |
+| `sync-enroll --server URL --enroll-secret S` | Enroll this device into an existing relay vault |
+| `sync-devices` | List devices enrolled on the relay |
+| `sync-revoke DEVICE_ID` | Revoke a device on the relay |
 | `export PATH` | Export all entries to CSV |
 | `import PATH` | Import entries from CSV |
 | `backup` | Create a timestamped backup beside the vault |
@@ -198,7 +202,10 @@ different vault.
 | `backup()` | Create a timestamped backup beside the vault; returns its path |
 | `export_csv(path)` | Export all entries to CSV; returns the row count |
 | `import_csv(path)` | Import entries from CSV; returns the count inserted |
-| `sync(server_url, token="", device_id="")` | Pull-merge-push with a sync server; returns `{"version", "entries"}` |
+| `sync(server_url, token="", device_id="")` | Pull-merge-push with the configured relay; returns `{"pulled", "pushed", "server_rev"}` |
+| `setup_sync(relay_url, enroll_secret, device_name="")` | Create the relay vault + enroll this device |
+| `enroll_sync(relay_url, enroll_secret, device_name="")` | Enroll this device into an existing relay vault |
+| `sync_devices()` / `sync_revoke(device_id)` | List / revoke relay devices |
 
 ### Exceptions
 

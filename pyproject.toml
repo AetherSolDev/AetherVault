@@ -1,5 +1,5 @@
 # Created: 2026-07-25
-# Last Edited: 2026-09-16 17:11 CT (America/Chicago)
+# Last Edited: 2026-09-16 18:31 CT (America/Chicago)
 # Path: pyproject.toml
 # Purpose: Build configuration for pip-installable AetherVault package with CLI entry point.
 
@@ -26,8 +26,10 @@ dependencies = [
 # The core SDK/CLI (aethervault.sdk, aethervault.cli) is headless and does NOT need PySide6,
 # so the package installs cleanly on Termux/Android and servers.
 gui = ["PySide6>=6.5.0"]
-# Docs tooling: renders USER_GUIDE.md -> USER_GUIDE.html (scripts/build_user_guide.py).
+# Docs tooling: renders USER_GUIDE.md -> USER_GUIDE.html (tools/build_user_guide.py).
 docs = ["markdown>=3.4"]
+# Test tooling: pytest + the FastAPI relay deps (sync integration tests start the relay).
+test = ["pytest>=7", "fastapi>=0.110", "uvicorn[standard]>=0.27"]
 
 [project.scripts]
 aethervault = "aethervault.__main__:run"
