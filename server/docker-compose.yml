@@ -1,0 +1,36 @@
+# Created: 2026-09-16
+# Last Edited: 2026-09-16 12:57 CT (America/Chicago)
+# Path: server/docker-compose.yml
+# Purpose: Run the AetherVault sync relay on the Protectli (Tailscale-only).
+
+services:
+  relay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aethervault-relay:latest
+    container_name: aethervault-relay
+    restart: unless-stopped
+    # Host networking: the relay binds the Tailscale IP directly (no Docker bridge
+    # or NAT), so OpenWrt's fw4 tailscale zone reaches it and nothing is exposed
+    # on the LAN. This avoids fw4 not forwarding into an unzoned Docker bridge.
+    network_mode: host
+    environment:
+      AETHERVAULT_DATA_DIR: /data
+      AETHERVAULT_HOST: "${TAILSCALE_IP:?set TAILSCALE_IP in .env}"
+      AETHERVAULT_PORT: "8787"
+      AETHERVAULT_ENROLL_SECRET: "${AETHERVAULT_ENROLL_SECRET:?set AETHERVAULT_ENROLL_SECRET in .env}"
+    volumes:
+      - ./data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
