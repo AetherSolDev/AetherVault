@@ -343,6 +343,26 @@ class TestDatabaseManager:
         assert result is not None
         assert os.path.exists(result)
 
+    def test_manual_restore_from_backup(self, temp_db):
+        """Copying a backup over the live DB (the Restore flow) preserves data."""
+        import shutil
+
+        from aethervault.shared.database import DatabaseManager
+
+        temp_db.save_credential(CredentialEntry(title="GitHub", password="s3cret"))
+        backup = temp_db.create_pre_op_backup("Verify")
+        assert backup and os.path.exists(backup)
+
+        temp_db.conn.close()
+        shutil.copyfile(backup, temp_db.db_path)
+
+        restored = DatabaseManager(temp_db.db_path, lambda t, m: None)
+        restored.set_encryption_key("test_key_placeholder_12345678901234567890")
+        loaded = restored.load_all_credentials()
+        assert len(loaded) == 1
+        assert loaded[0].password == "s3cret"
+        restored.conn.close()
+
     # --- integrity check & recovery (F14) ---
 
     def test_integrity_check_passes_on_valid_db(self, temp_db):
