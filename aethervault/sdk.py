@@ -42,7 +42,6 @@ from aethervault.core.engine import (
     hash_password,
     load_master_password,
     verify_password,
-    wipe_vault_files,
 )
 from aethervault.core.sync import (
     SyncClient,
@@ -164,22 +163,10 @@ class Vault:
         self._open_with(load_master_password(self.key_file))
         self._sync_key = derive_sync_key(password)
 
-    def unlock(self, password: str, allow_duress_wipe: bool = False) -> "Vault":
-        """Verify ``password`` and open the vault. Returns ``self`` for chaining.
-
-        With ``allow_duress_wipe=True`` (used by the CLI), entering the duress password
-        destroys **only this vault's local files** and raises ``AuthenticationError`` — the
-        same error as a wrong password. Nothing is pushed to sync, so the hub and every other
-        device are unaffected.
-        """
+    def unlock(self, password: str) -> "Vault":
+        """Verify ``password`` and open the vault. Returns ``self`` for chaining."""
         if not os.path.exists(self.key_file):
             raise VaultNotFoundError(f"No master key file at {self.key_file}.")
-        if allow_duress_wipe:
-            duress_file = os.path.join(os.path.dirname(self.key_file), ".duress.key")
-            duress_hash = load_master_password(duress_file)
-            if duress_hash and verify_password(password, duress_hash):
-                wipe_vault_files(self.db_path, self.key_file)
-                raise AuthenticationError("Invalid master password.")
         stored = load_master_password(self.key_file)
         if not stored or not verify_password(password, stored):
             raise AuthenticationError("Invalid master password.")
