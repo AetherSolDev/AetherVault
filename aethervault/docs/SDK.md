@@ -1,5 +1,5 @@
 # Created: 2026-09-16
-# Last Edited: 2026-09-16 17:53 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:45 CT (America/Chicago)
 # Path: docs/SDK.md
 # Purpose: Reference for the headless SDK (aethervault.sdk) and CLI (aethervault.cli).
 
@@ -95,7 +95,6 @@ order).
 | `update ID [fields...] [--password P \| --generate [LEN]] [--json]` | Update fields on an entry |
 | `delete ID [--yes]` | Delete an entry |
 | `totp ID [--json]` | Print the current TOTP code for an entry |
-| `sync --server URL [--token T] [--device-id ID]` | Pull-merge-push with a sync server |
 | `export PATH` | Export all entries to CSV |
 | `import PATH` | Import entries from CSV |
 | `backup` | Create a timestamped backup beside the vault |
@@ -198,7 +197,6 @@ different vault.
 | `backup()` | Create a timestamped backup beside the vault; returns its path |
 | `export_csv(path)` | Export all entries to CSV; returns the row count |
 | `import_csv(path)` | Import entries from CSV; returns the count inserted |
-| `sync(server_url, token="", device_id="")` | Pull-merge-push with a sync server; returns `{"version", "entries"}` |
 
 ### Exceptions
 

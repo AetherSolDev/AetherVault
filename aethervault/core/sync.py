@@ -19,9 +19,7 @@ from __future__ import annotations
 import base64
 import json
 import time
-import urllib.error
-import urllib.request
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -32,15 +30,12 @@ from aethervault.core.engine import decrypt_data, encrypt_data
 __all__ = [
     "SYNC_FIELDS",
     "SYNC_PAYLOAD_VERSION",
-    "SyncClient",
-    "SyncError",
     "build_payload",
     "decrypt_payload",
     "derive_sync_key",
     "encrypt_payload",
     "entry_to_record",
     "merge_records",
-    "payload_from_records",
 ]
 
 #: Distinct KDF salt so the sync key differs from the local encryption key.
@@ -59,16 +54,10 @@ SYNC_FIELDS = (
 )
 
 
-def derive_sync_key(master_password: str) -> bytes:
-    """Derive a Fernet key for sync payloads from the master password.
-
-    Uses a distinct KDF salt (deliberately **not** the per-vault stored hash, which is salted
-    randomly), so every device sharing the same master password derives the same sync key and
-    can decrypt each other's payloads — while the server, which never sees the password,
-    cannot.
-    """
-    if not master_password:
-        raise ValueError("Master password cannot be empty for sync key derivation.")
+def derive_sync_key(master_password_hash: str) -> bytes:
+    """Derive a Fernet key for sync payloads (separate from the local encryption key)."""
+    if not master_password_hash:
+        raise ValueError("Master password hash cannot be empty for sync key derivation.")
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
@@ -76,7 +65,7 @@ def derive_sync_key(master_password: str) -> bytes:
         iterations=SYNC_KDF_ITERATIONS,
         backend=default_backend(),
     )
-    return base64.urlsafe_b64encode(kdf.derive(master_password.encode("utf-8")))
+    return base64.urlsafe_b64encode(kdf.derive(master_password_hash.encode("utf-8")))
 
 
 def entry_to_record(entry) -> Dict:
@@ -87,15 +76,10 @@ def entry_to_record(entry) -> Dict:
 
 def build_payload(entries) -> Dict:
     """Build a sync payload dict from a list of CredentialEntry objects."""
-    return payload_from_records([entry_to_record(e) for e in entries])
-
-
-def payload_from_records(records) -> Dict:
-    """Wrap a list of sync records into a payload dict."""
     return {
         "version": SYNC_PAYLOAD_VERSION,
         "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "entries": list(records),
+        "entries": [entry_to_record(e) for e in entries],
     }
 
 
@@ -139,54 +123,3 @@ def merge_records(local: List[Dict], remote: List[Dict]) -> List[Dict]:
         if current is None or _wins(record, current):
             by_uuid[uuid] = record
     return list(by_uuid.values())
-
-
-class SyncError(Exception):
-    """Raised for sync transport or authentication failures."""
-
-
-class SyncClient:
-    """Minimal HTTP client for the AetherVault sync server."""
-
-    def __init__(self, base_url: str, token: str = "", timeout: int = 15):
-        self.base_url = (base_url or "").rstrip("/")
-        self.token = token or ""
-        self.timeout = timeout
-
-    def _request(self, method: str, path: str,
-                 body: Optional[dict] = None) -> Tuple[int, dict]:
-        data = json.dumps(body).encode("utf-8") if body is not None else None
-        req = urllib.request.Request(self.base_url + path, data=data, method=method)
-        req.add_header("Content-Type", "application/json")
-        if self.token:
-            req.add_header("Authorization", f"Bearer {self.token}")
-        try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                return resp.status, json.loads(resp.read() or b"{}")
-        except urllib.error.HTTPError as e:
-            try:
-                payload = json.loads(e.read() or b"{}")
-            except (json.JSONDecodeError, ValueError):
-                payload = {}
-            return e.code, payload
-        except (urllib.error.URLError, OSError) as e:
-            raise SyncError(f"Cannot reach sync server at {self.base_url}: {e}") from e
-
-    def pull(self) -> Tuple[int, Optional[str]]:
-        """Return ``(version, ciphertext_or_None)`` from the server."""
-        status, body = self._request("GET", "/vault")
-        if status != 200:
-            raise SyncError(f"Pull failed (HTTP {status}): {body.get('error', 'unknown')}")
-        return int(body.get("version", 0)), body.get("payload")
-
-    def push(self, base_version: int, payload: str,
-             device_id: str = "") -> Tuple[bool, int, Optional[str]]:
-        """Push ciphertext. Returns ``(ok, version, current_payload_on_conflict)``."""
-        status, body = self._request("POST", "/vault", {
-            "base_version": base_version, "payload": payload, "device_id": device_id,
-        })
-        if status == 200:
-            return True, int(body.get("version", 0)), payload
-        if status == 409:
-            return False, int(body.get("version", 0)), body.get("payload")
-        raise SyncError(f"Push failed (HTTP {status}): {body.get('error', 'unknown')}")
