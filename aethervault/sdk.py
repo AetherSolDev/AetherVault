@@ -34,7 +34,6 @@ from __future__ import annotations
 
 import logging
 import os
-import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
 from aethervault.core.engine import (
@@ -46,19 +45,14 @@ from aethervault.core.engine import (
     wipe_vault_files,
 )
 from aethervault.core.sync import (
-    HLC,
-    KDF_ITERATIONS,
-    RelayClient,
-    RelayError,
-    SyncConfig,
-    derive_kek,
-    encrypt_record,
-    entry_to_payload,
-    new_data_key,
-    new_kdf_salt,
-    record_to_apply,
-    unwrap_data_key,
-    wrap_data_key,
+    SyncClient,
+    SyncError,
+    decrypt_payload,
+    derive_sync_key,
+    encrypt_payload,
+    entry_to_record,
+    merge_records,
+    payload_from_records,
 )
 from aethervault.core.totp import generate_code, resolve_config
 from aethervault.shared.database import DatabaseManager
@@ -115,7 +109,7 @@ class Vault:
         self.db_path = db_path or DB_PATH
         self.key_file = key_file or MASTER_KEY_FILE
         self._db: Optional[DatabaseManager] = None
-        self._master_password: str = ""
+        self._sync_key: bytes = b""
         self.last_error: Optional[Tuple[str, str]] = None
 
     # --- lifecycle ---
@@ -168,7 +162,7 @@ class Vault:
         except OSError as e:
             raise VaultError(f"Could not write master key file: {e}") from e
         self._open_with(load_master_password(self.key_file))
-        self._master_password = password
+        self._sync_key = derive_sync_key(password)
 
     def unlock(self, password: str, allow_duress_wipe: bool = False) -> "Vault":
         """Verify ``password`` and open the vault. Returns ``self`` for chaining.
@@ -190,7 +184,7 @@ class Vault:
         if not stored or not verify_password(password, stored):
             raise AuthenticationError("Invalid master password.")
         self._open_with(stored)
-        self._master_password = password
+        self._sync_key = derive_sync_key(password)
         return self
 
     def lock(self) -> None:
@@ -198,7 +192,7 @@ class Vault:
         if self._db is not None:
             self._db.__exit__(None, None, None)
         self._db = None
-        self._master_password = ""
+        self._sync_key = b""
 
     def __enter__(self) -> "Vault":
         self._require_unlocked()
@@ -321,138 +315,30 @@ class Vault:
         """Import entries from a CSV file; returns the count inserted."""
         return self._require_unlocked().import_from_csv(file_path)
 
-    def sync(self, server_url: str = "", token: str = "", device_id: str = "",
+    def sync(self, server_url: str, token: str = "", device_id: str = "",
              max_retries: int = 5) -> Dict[str, int]:
-        """Pull remote changes, merge, and push local changes to the relay.
+        """Pull-merge-push with an AetherVault sync server.
 
-        Requires the vault to have been set up (:meth:`setup_sync`) or enrolled
-        (:meth:`enroll_sync`). Returns ``{"pulled", "pushed", "server_rev"}``.
+        Offline-first: local and remote entries are merged by ``entry_uuid`` (last-writer-wins
+        on ``modified_at``), the merged result is written locally, then pushed. A version
+        conflict (another device pushed first) triggers a re-pull/re-merge, up to
+        ``max_retries``. Returns ``{"version": <server version>, "entries": <count>}``.
         """
         db = self._require_unlocked()
-        if not self._master_password:
-            raise VaultError("The master password is required to sync.")
-        config = self._sync_config()
-        cfg = config.load()
-        if not cfg:
-            raise VaultError("This vault is not configured for sync.")
-        client = RelayClient(cfg["relay_url"], cfg.get("token", ""))
-        data_key = self._unwrap_data_key(client)
-        hlc = HLC(cfg["device_id"], cfg.get("hlc_last", ""))
-        db.rev_provider = hlc.next
-
-        records, server_rev = client.pull(int(cfg.get("last_server_rev", 0)))
-        local_revs = {e.entry_uuid: e.sync_rev
-                      for e in db.load_all_credentials(include_deleted=True)}
-        to_apply = []
-        for rec in records:
-            hlc.observe(rec.get("rev", ""))
-            if str(rec.get("rev", "")) > str(local_revs.get(rec["uuid"], "")):
-                to_apply.append(record_to_apply(rec, data_key))
-        if to_apply:
-            db.apply_sync_records(to_apply)
-
-        pushed = self._build_records(db, data_key, hlc, cfg["vault_id"], cfg["device_id"])
-        applied, push_rev = client.push(pushed)
-        cfg.update({"last_server_rev": max(server_rev, push_rev), "hlc_last": hlc.last_rev})
-        config.save(cfg)
-        return {"pulled": len(to_apply), "pushed": applied,
-                "server_rev": cfg["last_server_rev"]}
-
-    def setup_sync(self, relay_url: str, enroll_secret: str,
-                   device_name: str = "") -> Dict[str, Any]:
-        """Create the vault on the relay and enroll THIS device (first device)."""
-        db = self._require_unlocked()
-        if not self._master_password:
-            raise VaultError("The master password is required to set up sync.")
-        config = self._sync_config()
-        if config.load():
-            raise VaultError("This vault is already configured for sync.")
-        data_key = new_data_key()
-        kdf_salt = new_kdf_salt()
-        wrapped = wrap_data_key(data_key, derive_kek(self._master_password, kdf_salt))
-        vault_id = str(uuid.uuid4())
-        client = RelayClient(relay_url)
-        client.create_vault(vault_id, kdf_salt, wrapped, enroll_secret)
-        enrolled = client.enroll(device_name, enroll_secret)
-        device_id, token = enrolled["device_id"], enrolled["token"]
-        client = RelayClient(relay_url, token)
-        hlc = HLC(device_id)
-        db.rev_provider = hlc.next
-        records = self._build_records(db, data_key, hlc, vault_id, device_id)
-        _applied, server_rev = client.push(records)
-        config.save({"relay_url": relay_url, "vault_id": vault_id, "device_id": device_id,
-                     "token": token, "last_server_rev": server_rev, "hlc_last": hlc.last_rev})
-        return {"vault_id": vault_id, "device_id": device_id, "pushed": len(records)}
-
-    def enroll_sync(self, relay_url: str, enroll_secret: str,
-                    device_name: str = "") -> Dict[str, Any]:
-        """Enroll THIS device into an existing relay vault, then pull and push."""
-        db = self._require_unlocked()
-        if not self._master_password:
-            raise VaultError("The master password is required to enroll.")
-        config = self._sync_config()
-        if config.load():
-            raise VaultError("This vault is already configured for sync.")
-        client = RelayClient(relay_url)
-        enrolled = client.enroll(device_name, enroll_secret)
-        device_id, token = enrolled["device_id"], enrolled["token"]
-        client = RelayClient(relay_url, token)
-        data_key = self._unwrap_data_key(client)
-        hlc = HLC(device_id)
-        db.rev_provider = hlc.next
-
-        records, server_rev = client.pull(0)
-        applied = [record_to_apply(r, data_key) for r in records]
-        for rec in records:
-            hlc.observe(rec.get("rev", ""))
-        if applied:
-            db.apply_sync_records(applied)
-
-        vault_id = enrolled.get("vault_id", "")
-        pushed = self._build_records(db, data_key, hlc, vault_id, device_id)
-        applied_push, push_rev = client.push(pushed)
-        config.save({"relay_url": relay_url, "vault_id": vault_id, "device_id": device_id,
-                     "token": token, "last_server_rev": max(server_rev, push_rev),
-                     "hlc_last": hlc.last_rev})
-        return {"device_id": device_id, "pulled": len(applied), "pushed": applied_push}
-
-    def sync_devices(self) -> List[Dict[str, Any]]:
-        """List devices enrolled on the relay."""
-        cfg = self._sync_config().load()
-        if not cfg:
-            raise VaultError("This vault is not configured for sync.")
-        return RelayClient(cfg["relay_url"], cfg.get("token", "")).devices()
-
-    def sync_revoke(self, device_id: str) -> None:
-        """Revoke another enrolled device on the relay."""
-        cfg = self._sync_config().load()
-        if not cfg:
-            raise VaultError("This vault is not configured for sync.")
-        RelayClient(cfg["relay_url"], cfg.get("token", "")).revoke(device_id)
-
-    def _sync_config(self) -> SyncConfig:
-        return SyncConfig(self.db_path)
-
-    def _unwrap_data_key(self, client: RelayClient) -> bytes:
-        meta = client.vault_meta()
-        kek = derive_kek(self._master_password, meta["kdf_salt"],
-                         int(meta.get("kdf_iterations", KDF_ITERATIONS)))
-        return unwrap_data_key(meta["wrapped_master"], kek)
-
-    def _build_records(self, db, data_key, hlc, vault_id, device_id) -> List[Dict]:
-        records = []
-        for entry in db.load_all_credentials(include_deleted=True):
-            rev = entry.sync_rev or hlc.next()
-            if not entry.sync_rev:
-                db.set_sync_rev(entry.db_id, rev)
-            records.append({
-                "uuid": entry.entry_uuid,
-                "vault_id": vault_id,
-                "device_id": device_id,
-                "rev": rev,
-                "deleted": bool(int(entry.deleted or 0)),
-                "deleted_at": "",
-                "updated_at": entry.modified_at or "",
-                "payload": encrypt_record(entry_to_payload(entry), data_key),
-            })
-        return records
+        if not self._sync_key:
+            raise VaultError("Vault must be unlocked with a master password to sync.")
+        key = self._sync_key
+        client = SyncClient(server_url, token)
+        local = [entry_to_record(e) for e in db.load_all_credentials(include_deleted=True)]
+        for _ in range(max_retries):
+            version, blob = client.pull()
+            remote = decrypt_payload(blob, key).get("entries", []) if blob else []
+            merged = merge_records(local, remote)
+            db.apply_sync_records(merged)
+            ok, new_version, _current = client.push(
+                version, encrypt_payload(payload_from_records(merged), key), device_id
+            )
+            if ok:
+                return {"version": new_version, "entries": len(merged)}
+            local = merged  # someone pushed first — retry with the merged set
+        raise SyncError("Sync failed after repeated version conflicts.")

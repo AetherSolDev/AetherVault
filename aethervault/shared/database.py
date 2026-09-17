@@ -75,25 +75,8 @@ class DatabaseManager:
         self.cursor = None
         self.error_handler = error_handler
         self.encryption_key: bytes = b""
-        self.rev_provider = None
         self._connect()
         self._create_table()
-
-    def _new_rev(self) -> str:
-        """Return a fresh sync revision for a local change ('' when sync is unconfigured)."""
-        return self.rev_provider() if self.rev_provider else ""
-
-    def set_sync_rev(self, db_id: int, rev: str) -> None:
-        """Store the sync revision for an entry without touching ``modified_at``."""
-        if not self.conn:
-            return
-        try:
-            self.cursor.execute(
-                "UPDATE credentials SET sync_rev = ? WHERE db_id = ?", (rev, db_id)
-            )
-            self.conn.commit()
-        except sqlite3.Error:
-            pass
 
     def set_encryption_key(self, master_password_hash: str):
         """Derive and store the encryption key from the master password hash."""
@@ -237,7 +220,6 @@ class DatabaseManager:
             recovery_codes TEXT DEFAULT '',
             entry_uuid TEXT DEFAULT '',
             deleted INTEGER DEFAULT 0,
-            sync_rev TEXT DEFAULT '',
             parent_id INTEGER DEFAULT 0,
             created_at TEXT NOT NULL,
             modified_at TEXT NOT NULL,
@@ -252,7 +234,7 @@ class DatabaseManager:
             self.error_handler("Database Error", f"Error creating table: {e}")
         known_columns = {
             "tags", "custom_fields", "time_last_used", "time_password_changed",
-            "totp_secret", "recovery_codes", "entry_uuid", "sync_rev",
+            "totp_secret", "recovery_codes", "entry_uuid",
         }
         for col in known_columns:
             try:
@@ -340,18 +322,17 @@ class DatabaseManager:
         )
         entry_dict["entry_uuid"] = entry_dict.get("entry_uuid") or str(uuid.uuid4())
         entry_dict["deleted"] = 0
-        entry_dict["sync_rev"] = self._new_rev()
         sql = """
         INSERT INTO credentials (
             title, url, username, email, password, phone, address, category,
             notes, tags, custom_fields, totp_secret, recovery_codes,
-            entry_uuid, deleted, sync_rev, parent_id,
+            entry_uuid, deleted, parent_id,
             created_at, modified_at, time_last_used, time_password_changed
         )
         VALUES (
             :title, :url, :username, :email, :password, :phone, :address,
             :category, :notes, :tags, :custom_fields, :totp_secret,
-            :recovery_codes, :entry_uuid, :deleted, :sync_rev, :parent_id, :created_at,
+            :recovery_codes, :entry_uuid, :deleted, :parent_id, :created_at,
             :modified_at, :time_last_used, :time_password_changed
         )
         """
@@ -388,14 +369,12 @@ class DatabaseManager:
         entry_dict["recovery_codes"] = encrypt_data(
             entry_dict.get("recovery_codes") or "", self.encryption_key
         )
-        entry_dict["sync_rev"] = self._new_rev()
         sql = """
         UPDATE credentials SET
             title = :title, url = :url, username = :username, email = :email, password = :password,
             phone = :phone, address = :address, category = :category, notes = :notes,
             tags = :tags, custom_fields = :custom_fields,
             totp_secret = :totp_secret, recovery_codes = :recovery_codes,
-            sync_rev = :sync_rev,
             parent_id = :parent_id, modified_at = :modified_at,
             time_last_used = :time_last_used, time_password_changed = :time_password_changed
         WHERE db_id = :db_id
@@ -410,10 +389,9 @@ class DatabaseManager:
         """Soft-delete a credential (tombstone) so the deletion can propagate via sync."""
         if not self.conn:
             return
-        sql = "UPDATE credentials SET deleted = 1, sync_rev = ?, modified_at = ? WHERE db_id = ?"
+        sql = "UPDATE credentials SET deleted = 1, modified_at = ? WHERE db_id = ?"
         try:
-            self.cursor.execute(sql, (self._new_rev(),
-                                      time.strftime("%Y-%m-%d %H:%M:%S"), db_id))
+            self.cursor.execute(sql, (time.strftime("%Y-%m-%d %H:%M:%S"), db_id))
             self.conn.commit()
         except sqlite3.Error as e:
             self.error_handler("Database Error", f"Error deleting credential: {e}")
@@ -453,7 +431,6 @@ class DatabaseManager:
                 "time_password_changed": rec.get("time_password_changed") or "",
                 "entry_uuid": entry_uuid,
                 "deleted": 1 if rec.get("deleted") else 0,
-                "sync_rev": rec.get("sync_rev") or "",
             }
             try:
                 existing = self.cursor.execute(
@@ -470,8 +447,7 @@ class DatabaseManager:
                             custom_fields = :custom_fields, totp_secret = :totp_secret,
                             recovery_codes = :recovery_codes, parent_id = :parent_id,
                             modified_at = :modified_at, time_last_used = :time_last_used,
-                            time_password_changed = :time_password_changed, deleted = :deleted,
-                            sync_rev = :sync_rev
+                            time_password_changed = :time_password_changed, deleted = :deleted
                         WHERE db_id = :db_id
                         """,
                         data,
@@ -482,12 +458,12 @@ class DatabaseManager:
                         INSERT INTO credentials (
                             title, url, username, email, password, phone, address,
                             category, notes, tags, custom_fields, totp_secret,
-                            recovery_codes, entry_uuid, deleted, sync_rev, parent_id,
+                            recovery_codes, entry_uuid, deleted, parent_id,
                             created_at, modified_at, time_last_used, time_password_changed
                         ) VALUES (
                             :title, :url, :username, :email, :password, :phone, :address,
                             :category, :notes, :tags, :custom_fields, :totp_secret,
-                            :recovery_codes, :entry_uuid, :deleted, :sync_rev, :parent_id,
+                            :recovery_codes, :entry_uuid, :deleted, :parent_id,
                             :created_at, :modified_at, :time_last_used, :time_password_changed
                         )
                         """,

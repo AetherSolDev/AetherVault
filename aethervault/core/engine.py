@@ -277,15 +277,12 @@ def wipe_vault_files(db_path: str, key_file: str) -> bool:
         _overwrite_and_remove(key)
     targets = [
         db_path, f"{db_path}-wal", f"{db_path}-shm", f"{db_path}.bak",
-        f"{db_path}.sync.json",
         os.path.join(directory, ".app_settings.json"),
         os.path.join(directory, "sync.json"),
     ]
     if os.path.isdir(directory):
         for name in os.listdir(directory):
             if name.startswith("aethervault_") and name.endswith(".db.bak"):
-                targets.append(os.path.join(directory, name))
-            if name.endswith(".sync.json"):
                 targets.append(os.path.join(directory, name))
     for path in targets:
         _overwrite_and_remove(path)

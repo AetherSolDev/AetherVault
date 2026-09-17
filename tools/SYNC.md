@@ -1,63 +1,116 @@
 # Created: 2026-09-16
-# Last Edited: 2026-09-16 18:31 CT (America/Chicago)
+# Last Edited: 2026-09-16 17:53 CT (America/Chicago)
 # Path: tools/SYNC.md
-# Purpose: Client guide for AetherVault sync (the relay lives in server/).
+# Purpose: Deploy + design guide for the AetherVault zero-knowledge sync server.
 
-# AetherVault Sync — client guide
+# AetherVault Sync
 
-Sync uses the **zero-knowledge relay** under [`server/`](../server/) (FastAPI, deployed on the
-Protectli router, Tailscale-only). See [`server/README.md`](../server/README.md) for the relay
-API and deployment.
+A small **zero-knowledge** sync hub you run yourself — on an OpenWrt router, NAS, or any
+Docker host — reachable over your LAN or Tailscale. Clients (desktop/phone) pull the
+encrypted blob, **merge locally**, and push with optimistic concurrency. The server never
+sees your master password, key, or plaintext.
 
-## How it works
-
-- Each entry is a **record** with a stable `uuid`, a hybrid-logical-clock `rev`, a `deleted`
-  tombstone, and an opaque `payload` (the entry fields, encrypted).
-- A random 32-byte **data key** encrypts payloads. It is wrapped with a KEK derived from the
-  master password + the relay's KDF salt, and stored on the relay — so the relay is
-  zero-knowledge and a password change only re-wraps the key.
-- A new device **enrolls** with the enrollment secret, fetches `/v1/vault/meta`, derives the
-  KEK from the password, and unwraps the data key.
-- Sync is **pull → merge → push**: `GET /v1/changes?since=N` returns records newer than the
-  last cursor; local and remote records merge by `uuid`, **last-writer-wins** on `rev`;
-  local changes push with `POST /v1/changes`.
-
-## First device (creates the relay vault)
-
-```sh
-export AETHERVAULT_ENROLL_SECRET="<the relay's enroll secret>"
-aethervault-cli --vault-dir ~/vault sync-setup --server http://openwrt:8787 --device-name laptop
+```
+ desktop ─┐                         ┌─ pull / merge / push (HTTPS or Tailscale)
+ phone ───┼── Tailscale / LAN ──►  │  aethervault-sync (Docker)
+ other ───┘                         └─ stores ONE opaque ciphertext blob + version
 ```
 
-## Additional devices
+## Why not Syncthing the vault file
+
+- The vault is SQLite in **WAL mode**; copying/syncing `aethervault.db` without its `-wal`
+  file mid-transaction yields a corrupt DB.
+- Two devices editing between syncs produce **divergent databases** that can't be merged.
+- **Duress would propagate**: wiping one device deletes the files everywhere.
+
+The sync server avoids all three: clients exchange an **encrypted entry payload** and merge
+per entry (see below).
+
+## Deploy (OpenWrt / Docker)
 
 ```sh
-aethervault-cli --vault-dir ~/vault sync-enroll --server http://openwrt:8787 --device-name phone
+# on the router / Docker host
+git clone https://github.com/AetherSolDev/AetherVault.git
+cd AetherVault/tools
+
+export AETHERVAULT_SYNC_TOKEN="$(openssl rand -hex 32)"   # save this — clients need it
+docker compose -f docker-compose.sync.yml up -d --build
 ```
 
-## Day to day
+The service listens on `8787`. Reach it over:
+
+- **Tailscale** (recommended): `http://openwrt:8787` or `http://100.84.231.97:8787`
+  (WireGuard already encrypts transport; no certs needed).
+- **LAN**: `http://<router-ip>:8787` — fine on a trusted network. For untrusted networks put
+  it behind a TLS reverse proxy (Caddy/nginx).
+
+Quick check:
 
 ```sh
-aethervault-cli --vault-dir ~/vault sync            # pull + merge + push
-aethervault-cli --vault-dir ~/vault sync-devices    # list enrolled devices
-aethervault-cli --vault-dir ~/vault sync-revoke <id># revoke a lost device
+curl http://openwrt:8787/health                 # {"status":"ok"}
+curl -H "Authorization: Bearer $AETHERVAULT_SYNC_TOKEN" http://openwrt:8787/vault
 ```
 
-Python:
+## Client usage
+
+All devices must use the **same master password** (the sync key is derived from it).
+
+```sh
+export AETHERVAULT_SYNC_TOKEN="<the token you generated>"
+
+# desktop
+aethervault-cli sync --server http://openwrt:8787 --device-id laptop
+
+# phone (Termux)
+aethervault-cli sync --server http://openwrt:8787 --device-id phone
+```
+
+Or from Python:
 
 ```python
 from aethervault.sdk import Vault
 with Vault().unlock("master-password") as vault:
-    print(vault.sync())          # {"pulled": 2, "pushed": 1, "server_rev": 42}
+    print(vault.sync("http://openwrt:8787", token="...", device_id="laptop"))
+    # {"version": 3, "entries": 12}
 ```
 
-## Duress
+Sync is **pull → merge → push**: safe to run repeatedly; a `409` is handled internally by
+re-pulling and re-merging.
 
-Entering the **duress password** on a synced client wipes only that device's local files
-(including `<db>.sync.json`) and **never pushes**. The relay and every other device are
-untouched. To also revoke the lost device, run `sync-revoke <device_id>` from another device.
+## Security model
 
-## Config
+- **Zero-knowledge:** the payload is encrypted on the client with a key derived from the
+  master-password hash (PBKDF2, separate salt from the local vault key). The server only
+  stores ciphertext + a version counter.
+- **Auth:** a bearer token (`AETHERVAULT_SYNC_TOKEN`). Tailscale additionally restricts who
+  can even reach the port.
+- **Transport:** Tailscale (encrypted) or TLS via reverse proxy.
+- The server can be destroyed/replaced freely — clients hold the only key.
 
-Per-vault state lives in `<vault.db>.sync.json` (`relay_url`, `vault_id`, `device_id`,
-`token`, `last_server_rev`, `hlc_last`). Delete it to detach a device without wiping.
+## Duress semantics
+
+Entering the **duress password on a synced client wipes only the local copy and detaches
+from sync** — it never pushes. The hub and every other device stay intact, so the legitimate
+owner can recover with the real master password. (This matches the existing rule that duress
+leaves the remote *backup folder* untouched.)
+
+## Merge model
+
+Each entry has a stable `entry_uuid`. On sync, a client:
+
+1. decrypts the server payload,
+2. **unions** local + remote entries by `entry_uuid`,
+3. resolves each conflict **last-writer-wins** on `modified_at` (a deletion tombstone wins a
+   tie so entries aren't resurrected),
+4. writes the merged result back locally,
+5. pushes it with `base_version`; a `409` means someone else pushed first — re-pull, re-merge,
+   retry.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `401 unauthorized` | Token mismatch — set the same `AETHERVAULT_SYNC_TOKEN` on client and server. |
+| `409 version conflict` | Normal under concurrency; the client re-pulls and re-merges. |
+| Can't reach `:8787` | Check Tailscale (`tailscale status`), firewall, and that the container is up (`docker logs aethervault-sync`). |
+| Lost the token | Set a new one and update every client; the blob is unaffected. |

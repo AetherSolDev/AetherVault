@@ -36,7 +36,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from aethervault import VERSION
 from aethervault.core.engine import DB_PATH, MASTER_KEY_FILE
 from aethervault.core.password import generate_strong_password
-from aethervault.core.sync import RelayError
+from aethervault.core.sync import SyncError
 from aethervault.core.totp import generate_code, resolve_config
 from aethervault.sdk import Vault, VaultError
 from aethervault.shared.models import CredentialEntry
@@ -318,53 +318,10 @@ def cmd_backup(args: argparse.Namespace) -> int:
 
 
 def cmd_sync(args: argparse.Namespace) -> int:
+    token = args.token or os.environ.get("AETHERVAULT_SYNC_TOKEN", "")
     with _open_vault(args) as vault:
-        result = vault.sync()
-    print(f"Synced: pulled {result['pulled']}, pushed {result['pushed']} "
-          f"(server rev {result['server_rev']}).")
-    return 0
-
-
-def _enroll_secret(args: argparse.Namespace) -> str:
-    secret = getattr(args, "enroll_secret", "") or os.environ.get(
-        "AETHERVAULT_ENROLL_SECRET", ""
-    )
-    if not secret:
-        raise VaultError("An enrollment secret is required (--enroll-secret).")
-    return secret
-
-
-def cmd_sync_setup(args: argparse.Namespace) -> int:
-    with _open_vault(args) as vault:
-        result = vault.setup_sync(args.server, _enroll_secret(args),
-                                  args.device_name or "")
-    print(f"Sync set up: vault {result['vault_id']}, device {result['device_id']}, "
-          f"pushed {result['pushed']}.")
-    return 0
-
-
-def cmd_sync_enroll(args: argparse.Namespace) -> int:
-    with _open_vault(args) as vault:
-        result = vault.enroll_sync(args.server, _enroll_secret(args),
-                                   args.device_name or "")
-    print(f"Enrolled as {result['device_id']}: pulled {result['pulled']}, "
-          f"pushed {result['pushed']}.")
-    return 0
-
-
-def cmd_sync_devices(args: argparse.Namespace) -> int:
-    with _open_vault(args) as vault:
-        devices = vault.sync_devices()
-    for device in devices:
-        print(f"{device.get('device_id', '')}  {device.get('name', '')}  "
-              f"last_seen={device.get('last_seen', '')}")
-    return 0
-
-
-def cmd_sync_revoke(args: argparse.Namespace) -> int:
-    with _open_vault(args) as vault:
-        vault.sync_revoke(args.device_id)
-    print(f"Revoked {args.device_id}.")
+        result = vault.sync(args.server, token=token, device_id=args.device_id or "")
+    print(f"Synced {result['entries']} entries (server version {result['version']}).")
     return 0
 
 
@@ -494,29 +451,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_totp.add_argument("--json", action="store_true", help="Output JSON")
     p_totp.set_defaults(func=cmd_totp)
 
-    p_sync = sub.add_parser("sync", help="Pull + push changes with the relay")
+    p_sync = sub.add_parser("sync", help="Sync with an AetherVault sync server")
+    p_sync.add_argument("--server", required=True,
+                        help="Server base URL, e.g. http://openwrt:8787")
+    p_sync.add_argument("--token", help="Bearer token (or AETHERVAULT_SYNC_TOKEN)")
+    p_sync.add_argument("--device-id", help="Device identifier recorded on the server")
     p_sync.set_defaults(func=cmd_sync)
-
-    p_ss = sub.add_parser("sync-setup",
-                          help="Create the relay vault and enroll this device")
-    p_ss.add_argument("--server", required=True, help="Relay base URL")
-    p_ss.add_argument("--enroll-secret", help="Enrollment secret (or AETHERVAULT_ENROLL_SECRET)")
-    p_ss.add_argument("--device-name", help="Human-readable device name")
-    p_ss.set_defaults(func=cmd_sync_setup)
-
-    p_se = sub.add_parser("sync-enroll",
-                          help="Enroll this device into an existing relay vault")
-    p_se.add_argument("--server", required=True, help="Relay base URL")
-    p_se.add_argument("--enroll-secret", help="Enrollment secret (or AETHERVAULT_ENROLL_SECRET)")
-    p_se.add_argument("--device-name", help="Human-readable device name")
-    p_se.set_defaults(func=cmd_sync_enroll)
-
-    p_sd = sub.add_parser("sync-devices", help="List devices enrolled on the relay")
-    p_sd.set_defaults(func=cmd_sync_devices)
-
-    p_sr = sub.add_parser("sync-revoke", help="Revoke a device on the relay")
-    p_sr.add_argument("device_id", help="Device id to revoke (not this device)")
-    p_sr.set_defaults(func=cmd_sync_revoke)
 
     return parser
 
@@ -538,7 +478,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     except VaultError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
-    except RelayError as e:
+    except SyncError as e:
         print(f"sync error: {e}", file=sys.stderr)
         return 1
     except OSError as e:
