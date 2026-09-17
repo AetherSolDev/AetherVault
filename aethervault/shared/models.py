@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-09-16 17:53 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: aethervault/shared/models.py
 # Purpose: Data model for a single credential entry.
 
@@ -27,8 +27,6 @@ class CredentialEntry:
         self.custom_fields = kwargs.get("custom_fields", "")
         self.totp_secret = kwargs.get("totp_secret", "")
         self.recovery_codes = kwargs.get("recovery_codes", "")
-        self.entry_uuid = kwargs.get("entry_uuid", "")
-        self.deleted = kwargs.get("deleted", 0)
         self.parent_id = kwargs.get("parent_id", 0)
         self.created_at = kwargs.get("created_at")
         self.modified_at = kwargs.get("modified_at")
@@ -52,8 +50,6 @@ class CredentialEntry:
             "custom_fields": self.custom_fields,
             "totp_secret": self.totp_secret,
             "recovery_codes": self.recovery_codes,
-            "entry_uuid": self.entry_uuid,
-            "deleted": self.deleted,
             "parent_id": self.parent_id,
             "created_at": self.created_at,
             "modified_at": self.modified_at,

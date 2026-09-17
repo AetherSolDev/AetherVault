@@ -1,5 +1,5 @@
 # Created: 2026-07-27
-# Last Edited: 2026-09-16 17:53 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: tests/test_credential_entry.py
 # Purpose: Unit tests for the CredentialEntry data model.
 
@@ -33,8 +33,6 @@ class TestCredentialEntry:
         assert e.custom_fields == ""
         assert e.totp_secret == ""
         assert e.recovery_codes == ""
-        assert e.entry_uuid == ""
-        assert e.deleted == 0
         assert e.parent_id == 0
         assert e.time_last_used == ""
         assert e.time_password_changed == ""
@@ -45,7 +43,7 @@ class TestCredentialEntry:
         expected_keys = {
             "db_id", "title", "url", "username", "email", "password",
             "phone", "address", "category", "notes", "tags", "custom_fields",
-            "totp_secret", "recovery_codes", "entry_uuid", "deleted",
+            "totp_secret", "recovery_codes",
             "parent_id", "created_at", "modified_at",
             "time_last_used", "time_password_changed",
         }

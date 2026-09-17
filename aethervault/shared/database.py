@@ -1,5 +1,5 @@
 # Created: 2026-08-05
-# Last Edited: 2026-09-16 17:53 CT (America/Chicago)
+# Last Edited: 2026-09-16 15:08 CT (America/Chicago)
 # Path: aethervault/shared/database.py
 # Purpose: SQLite database operations for AetherVault credential entries.
 
@@ -10,7 +10,6 @@ import os
 import shutil
 import sqlite3
 import time
-import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
@@ -218,8 +217,6 @@ class DatabaseManager:
             custom_fields TEXT DEFAULT '',
             totp_secret TEXT DEFAULT '',
             recovery_codes TEXT DEFAULT '',
-            entry_uuid TEXT DEFAULT '',
-            deleted INTEGER DEFAULT 0,
             parent_id INTEGER DEFAULT 0,
             created_at TEXT NOT NULL,
             modified_at TEXT NOT NULL,
@@ -234,7 +231,7 @@ class DatabaseManager:
             self.error_handler("Database Error", f"Error creating table: {e}")
         known_columns = {
             "tags", "custom_fields", "time_last_used", "time_password_changed",
-            "totp_secret", "recovery_codes", "entry_uuid",
+            "totp_secret", "recovery_codes",
         }
         for col in known_columns:
             try:
@@ -242,42 +239,14 @@ class DatabaseManager:
                 self.conn.commit()
             except sqlite3.OperationalError:
                 pass
-        # `deleted` is an INTEGER tombstone (sync); the TEXT loop above would be wrong for it.
-        try:
-            self.cursor.execute(
-                "ALTER TABLE credentials ADD COLUMN deleted INTEGER DEFAULT 0"
-            )
-            self.conn.commit()
-        except sqlite3.OperationalError:
-            pass
-        self._backfill_entry_uuids()
 
-    def _backfill_entry_uuids(self):
-        """Assign a stable UUID to any entry missing one (required for sync)."""
-        if not self.conn:
-            return
-        try:
-            rows = self.cursor.execute(
-                "SELECT db_id FROM credentials WHERE entry_uuid IS NULL OR entry_uuid = ''"
-            ).fetchall()
-            for row in rows:
-                self.cursor.execute(
-                    "UPDATE credentials SET entry_uuid = ? WHERE db_id = ?",
-                    (str(uuid.uuid4()), row["db_id"]),
-                )
-            if rows:
-                self.conn.commit()
-        except sqlite3.Error:
-            pass
-
-    def load_all_credentials(self, include_deleted: bool = False) -> List[CredentialEntry]:
-        """Load and decrypt credentials. Tombstoned rows are excluded unless requested."""
+    def load_all_credentials(self) -> List[CredentialEntry]:
+        """Load and decrypt all credentials, returning a list of CredentialEntry objects."""
         if not self.conn:
             return []
         if not self.encryption_key:
             return []
-        where = "" if include_deleted else "WHERE deleted = 0 "
-        sql = f"SELECT * FROM credentials {where}ORDER BY title COLLATE NOCASE ASC"
+        sql = "SELECT * FROM credentials ORDER BY title COLLATE NOCASE ASC"
         credentials = []
         try:
             self.cursor.execute(sql)
@@ -320,19 +289,16 @@ class DatabaseManager:
         entry_dict["recovery_codes"] = encrypt_data(
             entry_dict.get("recovery_codes") or "", self.encryption_key
         )
-        entry_dict["entry_uuid"] = entry_dict.get("entry_uuid") or str(uuid.uuid4())
-        entry_dict["deleted"] = 0
         sql = """
         INSERT INTO credentials (
             title, url, username, email, password, phone, address, category,
-            notes, tags, custom_fields, totp_secret, recovery_codes,
-            entry_uuid, deleted, parent_id,
+            notes, tags, custom_fields, totp_secret, recovery_codes, parent_id,
             created_at, modified_at, time_last_used, time_password_changed
         )
         VALUES (
             :title, :url, :username, :email, :password, :phone, :address,
             :category, :notes, :tags, :custom_fields, :totp_secret,
-            :recovery_codes, :entry_uuid, :deleted, :parent_id, :created_at,
+            :recovery_codes, :parent_id, :created_at,
             :modified_at, :time_last_used, :time_password_changed
         )
         """
@@ -386,94 +352,15 @@ class DatabaseManager:
             self.error_handler("Database Error", f"Error updating credential: {e}")
 
     def delete_credential(self, db_id: int):
-        """Soft-delete a credential (tombstone) so the deletion can propagate via sync."""
+        """Delete a credential from the database by its db_id."""
         if not self.conn:
             return
-        sql = "UPDATE credentials SET deleted = 1, modified_at = ? WHERE db_id = ?"
+        sql = "DELETE FROM credentials WHERE db_id = ?"
         try:
-            self.cursor.execute(sql, (time.strftime("%Y-%m-%d %H:%M:%S"), db_id))
+            self.cursor.execute(sql, (db_id,))
             self.conn.commit()
         except sqlite3.Error as e:
             self.error_handler("Database Error", f"Error deleting credential: {e}")
-
-    def apply_sync_records(self, records: List[Dict]) -> int:
-        """Upsert merged sync records by ``entry_uuid`` (including tombstones).
-
-        Used after a client-side merge to write the winning record for each entry back into
-        the local vault. Returns the number of records applied.
-        """
-        if not self.conn or not self.encryption_key:
-            return 0
-        now = time.strftime("%Y-%m-%d %H:%M:%S")
-        applied = 0
-        for rec in records:
-            entry_uuid = rec.get("entry_uuid")
-            if not entry_uuid:
-                continue
-            data = {
-                "title": rec.get("title") or "",
-                "url": rec.get("url") or "",
-                "username": rec.get("username") or "",
-                "email": rec.get("email") or "",
-                "password": encrypt_data(rec.get("password") or "", self.encryption_key),
-                "phone": rec.get("phone") or "",
-                "address": rec.get("address") or "",
-                "category": rec.get("category") or "",
-                "notes": rec.get("notes") or "",
-                "tags": rec.get("tags") or "",
-                "custom_fields": rec.get("custom_fields") or "",
-                "totp_secret": encrypt_data(rec.get("totp_secret") or "", self.encryption_key),
-                "recovery_codes": encrypt_data(rec.get("recovery_codes") or "", self.encryption_key),
-                "parent_id": rec.get("parent_id") or 0,
-                "created_at": rec.get("created_at") or now,
-                "modified_at": rec.get("modified_at") or now,
-                "time_last_used": rec.get("time_last_used") or "",
-                "time_password_changed": rec.get("time_password_changed") or "",
-                "entry_uuid": entry_uuid,
-                "deleted": 1 if rec.get("deleted") else 0,
-            }
-            try:
-                existing = self.cursor.execute(
-                    "SELECT db_id FROM credentials WHERE entry_uuid = ?", (entry_uuid,)
-                ).fetchone()
-                if existing:
-                    data["db_id"] = existing["db_id"]
-                    self.cursor.execute(
-                        """
-                        UPDATE credentials SET
-                            title = :title, url = :url, username = :username, email = :email,
-                            password = :password, phone = :phone, address = :address,
-                            category = :category, notes = :notes, tags = :tags,
-                            custom_fields = :custom_fields, totp_secret = :totp_secret,
-                            recovery_codes = :recovery_codes, parent_id = :parent_id,
-                            modified_at = :modified_at, time_last_used = :time_last_used,
-                            time_password_changed = :time_password_changed, deleted = :deleted
-                        WHERE db_id = :db_id
-                        """,
-                        data,
-                    )
-                else:
-                    self.cursor.execute(
-                        """
-                        INSERT INTO credentials (
-                            title, url, username, email, password, phone, address,
-                            category, notes, tags, custom_fields, totp_secret,
-                            recovery_codes, entry_uuid, deleted, parent_id,
-                            created_at, modified_at, time_last_used, time_password_changed
-                        ) VALUES (
-                            :title, :url, :username, :email, :password, :phone, :address,
-                            :category, :notes, :tags, :custom_fields, :totp_secret,
-                            :recovery_codes, :entry_uuid, :deleted, :parent_id,
-                            :created_at, :modified_at, :time_last_used, :time_password_changed
-                        )
-                        """,
-                        data,
-                    )
-                applied += 1
-            except sqlite3.Error as e:
-                self.error_handler("Sync Error", f"Failed to apply sync record: {e}")
-        self.conn.commit()
-        return applied
 
     def create_pre_op_backup(self, operation: str) -> Optional[str]:
         """Create a timestamped backup beside the vault before a destructive operation.
@@ -516,16 +403,13 @@ class DatabaseManager:
         try:
             self.cursor.execute(
                 """
-                UPDATE credentials
-                SET deleted = 1, modified_at = ?
-                WHERE deleted = 0 AND db_id NOT IN (
+                DELETE FROM credentials
+                WHERE db_id NOT IN (
                     SELECT MIN(db_id)
                     FROM credentials
-                    WHERE deleted = 0
                     GROUP BY title, username
                 )
-            """,
-                (time.strftime("%Y-%m-%d %H:%M:%S"),),
+            """
             )
             deleted_count = self.cursor.rowcount
             self.conn.commit()
